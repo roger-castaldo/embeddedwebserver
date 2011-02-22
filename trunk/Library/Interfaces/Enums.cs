@@ -7,7 +7,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
     public enum EmbeddedFileTypes
     {
         Compressed_Javascript,
-        Javscript,
+        Javascript,
         Compressed_Css,
         Css,
         Image,

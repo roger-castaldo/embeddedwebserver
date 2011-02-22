@@ -14,5 +14,18 @@ namespace Tester
                 return 8080;
             }
         }
+
+        public override List<sEmbeddedFile> EmbeddedFiles
+        {
+            get
+            {
+                return new List<sEmbeddedFile>(
+                    new sEmbeddedFile[]{
+                        new sEmbeddedFile("Tester.resources.accept.png","/resources/images/accept.png",EmbeddedFileTypes.Image,ImageTypes.png),
+                        new sEmbeddedFile("Tester.TestPostPage.html","/index.html",EmbeddedFileTypes.Text,null)
+                    }
+                    );
+            }
+        }
     }
 }
