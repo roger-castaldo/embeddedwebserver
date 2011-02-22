@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using Org.Reddragonit.EmbeddedWebServer.Components;
+using Org.Reddragonit.EmbeddedWebServer.BasicHandlers;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -44,24 +45,50 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return "/tmp"; }
         }
 
-        public virtual void ProcessRequest(HttpConnection conn)
+        public virtual string BaseSitePath
         {
-            Console.WriteLine("Request Parameters: ");
-            foreach (string str in conn.RequestParameters.Keys)
+            get { return null; }
+        }
+
+        public virtual List<sEmbeddedFile> EmbeddedFiles
+        {
+            get { return null; }
+        }
+
+        private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
+            new EmbeddedResourceHandler()
+        };
+
+        public virtual List<IRequestHandler> Handlers
+        {
+            get
             {
-                if (str == null)
-                    Console.WriteLine("NULL: " + conn.RequestParameters[str]);
-                else
-                    Console.WriteLine(str + ": " + conn.RequestParameters[str]);
+                return new List<IRequestHandler>(_defaultHandlers);
             }
-            Console.WriteLine("Uploaded Files: ");
-            foreach (string str in conn.UploadedFiles.Keys)
+        }
+
+        public virtual void Init()
+        {
+        }
+
+        public void ProcessRequest(HttpConnection conn)
+        {
+            foreach (IRequestHandler handler in Handlers)
             {
-                if (str == null)
-                    Console.WriteLine("NULL: " + conn.UploadedFiles[str].FileName);
-                else
-                    Console.WriteLine(str + ": " + conn.UploadedFiles[str].FileName);
+                if (handler.CanProcessRequest(conn, this))
+                {
+                    try
+                    {
+                        handler.ProcessRequest(conn, this);
+                    }
+                    catch (Exception e)
+                    {
+                        //return 500 error
+                    }
+                    return;
+                }
             }
+            //return 404 error
         }
 
         public Site() { }

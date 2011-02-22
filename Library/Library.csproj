@@ -37,14 +37,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
     <Compile Include="Components\Enums.cs" />
     <Compile Include="Components\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />
+    <Compile Include="Interfaces\Enums.cs" />
+    <Compile Include="Interfaces\IRequestHandler.cs" />
     <Compile Include="Interfaces\Site.cs" />
+    <Compile Include="Interfaces\Structures.cs" />
     <Compile Include="JSON.cs" />
     <Compile Include="Messages.cs" />
+    <Compile Include="Minifiers\CSSMinifier.cs" />
+    <Compile Include="Minifiers\JSMinifier.cs" />
     <Compile Include="MT19937.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerControl.cs" />
