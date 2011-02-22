@@ -73,6 +73,30 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             TcpClient clnt = _listener.EndAcceptTcpClient(res);
             _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+            HttpConnection con = new HttpConnection(clnt);
+            Site useSite = null;
+            foreach (Site s in _sites)
+            {
+                if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
+                {
+                    useSite = s;
+                    break;
+                }
+            }
+            if (useSite == null)
+            {
+                foreach (Site s in _sites)
+                {
+                    if ((s.IPToListenTo != IPAddress.Any) && (con.socket.Client.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                    {
+                        useSite = s;
+                        break;
+                    }
+                }
+            }
+            if (useSite == null)
+                useSite = _defaultSite;
+            useSite.ProcessRequest(con);
         }
     }
 }

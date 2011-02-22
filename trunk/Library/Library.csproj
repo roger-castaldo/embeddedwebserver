@@ -37,8 +37,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\PortListener.cs" />
+    <Compile Include="Components\UploadedFile.cs" />
     <Compile Include="Interfaces\Site.cs" />
     <Compile Include="JSON.cs" />
     <Compile Include="Messages.cs" />

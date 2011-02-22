@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
+using Org.Reddragonit.EmbeddedWebServer.Components;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -31,6 +32,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public virtual bool AllowGET
         {
             get { return true; }
+        }
+
+        public virtual void ProcessRequest(HttpConnection conn)
+        {
+
         }
 
         public Site() { }

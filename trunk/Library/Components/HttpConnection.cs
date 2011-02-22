@@ -12,6 +12,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
     public class HttpConnection
     {
+
+        private const int BUF_SIZE = 4096;
+        private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
+
         public TcpClient socket;        
 
         private Stream inputStream;
@@ -35,8 +39,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _version; }
         }
 
-        private Dictionary<string, string> _requestHeaders;
-        public Dictionary<string, string> RequestHeaders
+        private HeaderCollection _requestHeaders;
+        public HeaderCollection RequestHeaders
         {
             get { return _requestHeaders; }
         }
@@ -61,10 +65,61 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     _requestParameters.Add(str, col[str]);
                 }
             }
+            if (_requestHeaders.ContentLength != null)
+            {
+                MemoryStream ms = new MemoryStream();
+                int content_len = Convert.ToInt32(_requestHeaders.ContentLength);
+                if (content_len > MAX_POST_SIZE)
+                {
+                    throw new Exception(
+                        String.Format("POST Content-Length({0}) too big for this simple server",
+                          content_len));
+                }
+                byte[] buf = new byte[BUF_SIZE];
+                int to_read = content_len;
+                while (to_read > 0)
+                {
+                    Console.WriteLine("starting Read, to_read={0}", to_read);
 
+                    int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
+                    Console.WriteLine("read finished, numread={0}", numread);
+                    if (numread == 0)
+                    {
+                        if (to_read == 0)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            throw new Exception("client disconnected during post");
+                        }
+                    }
+                    to_read -= numread;
+                    ms.Write(buf, 0, numread);
+                }
+                ms.Seek(0, SeekOrigin.Begin);
+                if (_requestHeaders.ContentType.StartsWith("multipart/form-data"))
+                {
+                    if (_requestHeaders.ContentType.Contains("boundary="))
+                    {
+                        string boundary = _requestHeaders.ContentType.Substring(_requestHeaders.ContentType.IndexOf("boundary=") + "boundary=".Length);
+
+                    }else
+                        throw new Exception("Unknown format, content-type: " + _requestHeaders.ContentType + " unable to parse in parameters.");
+                }
+                else if (_requestHeaders.ContentType == "application/x-www-form-urlencoded")
+                {
+                    _url = new Uri(_url.Host+"/"+_url.AbsolutePath+"?"+new StreamReader(ms).ReadToEnd());
+                    NameValueCollection col = HttpUtility.ParseQueryString(URL.Query);
+                    foreach (string str in col.Keys)
+                    {
+                        _requestParameters.Add(str, col[str]);
+                    }
+                }
+                else
+                    throw new Exception("Unknown format, content-type: " + _requestHeaders.ContentType + " unable to parse in parameters.");
+            }
         }
-
-        private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
         public HttpConnection(TcpClient s) {
             this.socket = s;
@@ -105,7 +160,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _version = tokens[2];
             Console.WriteLine("readHeaders()");
             String line;
-            _requestHeaders = new Dictionary<string, string>();
+            _requestHeaders = new HeaderCollection();
             while ((line = streamReadLine(inputStream)) != null)
             {
                 if (line.Equals(""))
@@ -128,52 +183,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
                 string value = line.Substring(pos, line.Length - pos);
                 Console.WriteLine("header: {0}:{1}", name, value);
-                _requestHeaders.Add(name, value);
+                _requestHeaders[name] = value;
             }
-            _url = new Uri(_requestHeaders["Host"] + tokens[1]);
+            _url = new Uri(_requestHeaders.Host + tokens[1]);
         }
-
-        /*private const int BUF_SIZE = 4096;
-        public void handlePOSTRequest() {
-            // this post data processing just reads everything into a memory stream.
-            // this is fine for smallish things, but for large stuff we should really
-            // hand an input stream to the request processor. However, the input stream 
-            // we hand him needs to let him see the "end of the stream" at this content 
-            // length, because otherwise he won't know when he's seen it all! 
-
-            Console.WriteLine("get post data start");
-            int content_len = 0;
-            MemoryStream ms = new MemoryStream();
-            if (this.RequestHeaders.ContainsKey("Content-Length")) {
-                 content_len = Convert.ToInt32(this.RequestHeaders["Content-Length"]);
-                 if (content_len > MAX_POST_SIZE) {
-                     throw new Exception(
-                         String.Format("POST Content-Length({0}) too big for this simple server",
-                           content_len));
-                 }
-                 byte[] buf = new byte[BUF_SIZE];              
-                 int to_read = content_len;
-                 while (to_read > 0) {  
-                     Console.WriteLine("starting Read, to_read={0}",to_read);
-
-                     int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
-                     Console.WriteLine("read finished, numread={0}", numread);
-                     if (numread == 0) {
-                         if (to_read == 0) {
-                             break;
-                         } else {
-                             throw new Exception("client disconnected during post");
-                         }
-                     }
-                     to_read -= numread;
-                     ms.Write(buf, 0, numread);
-                 }
-                 ms.Seek(0, SeekOrigin.Begin);
-            }
-            Console.WriteLine("get post data end");
-            srv.handlePOSTRequest(this, new StreamReader(ms));
-
-        }*/
 
         public void writeSuccess() {
             outputStream.Write("HTTP/1.0 200 OK\n");
