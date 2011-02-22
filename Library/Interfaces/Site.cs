@@ -73,22 +73,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 
         public void ProcessRequest(HttpConnection conn)
         {
+            bool found = false;
             foreach (IRequestHandler handler in Handlers)
             {
                 if (handler.CanProcessRequest(conn, this))
                 {
+                    found = true;
                     try
                     {
                         handler.ProcessRequest(conn, this);
                     }
                     catch (Exception e)
                     {
-                        //return 500 error
+                        conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                        conn.ClearResponse();
+                        conn.ResponseWriter.Write(e.Message);
                     }
-                    return;
+                    break;
                 }
             }
-            //return 404 error
+            if (!found)
+            {
+                conn.ClearResponse();
+                conn.ResponseStatus = HttpStatusCodes.Not_Found;
+            }
+            conn.SendResponse();
         }
 
         public Site() { }

@@ -26,7 +26,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         Request_Entity_Too_Large = 413,
         RequestURI_Too_Long = 414,
         Unsupported_Media_Type = 415,
-        Internal_Server_Eror = 500,
+        Internal_Server_Error = 500,
         Not_Implemented = 501,
         Bad_Gateway = 502,
         Service_Unavailable = 503,

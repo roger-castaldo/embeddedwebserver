@@ -25,20 +25,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
         private static readonly Regex regClosingBracketSpacer = new Regex("}\\s{0}",RegexOptions.Compiled | RegexOptions.ECMAScript);
         //private static readonly Regex regUnit = new Regex("(px|em|%|in|cm|mm|pc|pt|ex)",RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly Regex regMarginPad = new Regex(":0"+UnitRegex+"?\\s+0"+UnitRegex+"?(\\s+0"+UnitRegex+"?(\\s+0"+UnitRegex+"?)?)?\\s*;",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regImports = new Regex("@import\\s+(url\\()?(\"|\').+\\.css(\"|\')\\)?;",RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly Regex regDoubleSpace = new Regex("\\s{2}", RegexOptions.Compiled | RegexOptions.Multiline);
 
 		
-		public static string Minify(string css,out List<string> importUrls)
+		public static string Minify(string css)
 		{
-			importUrls = new List<string>();
-            Match m = regImports.Match(css);
-			while (m.Success)
-			{
-				importUrls.Add(m.Value.Replace("@import","").Replace("url(","").Replace(");","").Replace("\"","").Replace("\'","").Replace(" ",""));
-				css = css.Replace(m.Value,"");
-				m=m.NextMatch();
-			}
 			css = StripComments(css);
             css = regBasicComment.Replace(css, string.Empty);
             css = regComplexComment.Replace(css, string.Empty);

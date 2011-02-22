@@ -23,19 +23,38 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        public List<string> Keys
+        {
+            get
+            {
+                string[] tmp = new string[_values.Count];
+                _values.Keys.CopyTo(tmp, 0);
+                return new List<string>(tmp);
+            }
+        }
+
         public string Host
         {
             get { return this["Host"]; }
+            set { this["Host"] = value; }
         }
 
         public string ContentLength
         {
             get { return this["Content-Length"]; }
+            set { this["Content-Length"] = value; }
         }
 
         public string ContentType
         {
             get { return this["Content-Type"]; }
+            set { this["Content-Type"] = value; }
+        }
+
+        public string Date
+        {
+            get { return this["Date"]; }
+            set { this["Date"] = value; }
         }
 
         public HeaderCollection()

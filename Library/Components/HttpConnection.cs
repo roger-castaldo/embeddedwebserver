@@ -19,7 +19,37 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public TcpClient socket;        
 
         private Stream inputStream;
-        public StreamWriter outputStream;
+
+        private Stream _outStream;
+
+        private StreamWriter _responseWriter;
+        public StreamWriter ResponseWriter
+        {
+            get { return _responseWriter; }
+        }
+
+        public HttpConnection(TcpClient s)
+        {
+            this.socket = s;
+            inputStream = new BufferedStream(socket.GetStream());
+
+            // we probably shouldn't be using a streamwriter for all output from handlers either
+            _outStream = new MemoryStream();
+            _responseWriter = new StreamWriter(_outStream);
+            _responseHeaders = new HeaderCollection();
+            _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
+            _responseStatus = HttpStatusCodes.OK;
+            try
+            {
+                parseRequest();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        #region Request
 
         private string _method;
         public string Method
@@ -183,47 +213,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
-        public HttpConnection(TcpClient s) {
-            this.socket = s;
-            inputStream = new BufferedStream(socket.GetStream());
-
-            // we probably shouldn't be using a streamwriter for all output from handlers either
-            outputStream = new StreamWriter(new BufferedStream(socket.GetStream()));
-            try
-            {
-                parseRequest();
-            }
-            catch (Exception e) {
-                throw e;
-            }
-        }
-        
-
-        private string streamReadLine(Stream inputStream) {
-            int next_char;
-            string data = "";
-            while (true) {
-                next_char = inputStream.ReadByte();
-                if (next_char == '\n') { break; }
-                if (next_char == '\r') { continue; }
-                if (next_char == -1) { Thread.Sleep(1); continue; };
-                data += Convert.ToChar(next_char);
-            }            
-            return data;
-        }
-
-        private string PeakLine(Stream inputStream)
+        private void parseRequest()
         {
-            long start = inputStream.Position;
-            string ret = streamReadLine(inputStream);
-            inputStream.Seek(start, SeekOrigin.Begin);
-            return ret;
-        }
-
-        private void parseRequest() {
             String request = streamReadLine(inputStream);
             string[] tokens = request.Split(' ');
-            if (tokens.Length != 3) {
+            if (tokens.Length != 3)
+            {
                 throw new Exception("invalid http request line");
             }
             _method = tokens[0].ToUpper();
@@ -255,20 +250,101 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 Console.WriteLine("header: {0}:{1}", name, value);
                 _requestHeaders[name] = value;
             }
-            _url = new Uri("http://"+_requestHeaders.Host + tokens[1]);
+            _url = new Uri("http://" + _requestHeaders.Host + tokens[1]);
         }
 
-        public void writeSuccess() {
-            outputStream.Write("HTTP/1.0 200 OK\n");
-            outputStream.Write("Content-Type: text/html\n");
-            outputStream.Write("Connection: close\n");
-            outputStream.Write("\n");
+        private string streamReadLine(Stream inputStream) {
+            int next_char;
+            string data = "";
+            while (true) {
+                next_char = inputStream.ReadByte();
+                if (next_char == '\n') { break; }
+                if (next_char == '\r') { continue; }
+                if (next_char == -1) { Thread.Sleep(1); continue; };
+                data += Convert.ToChar(next_char);
+            }            
+            return data;
         }
 
-        public void writeFailure() {
-            outputStream.Write("HTTP/1.0 404 File not found\n");
-            outputStream.Write("Connection: close\n");
-            outputStream.Write("\n");
+        private string PeakLine(Stream inputStream)
+        {
+            long start = inputStream.Position;
+            string ret = streamReadLine(inputStream);
+            inputStream.Seek(start, SeekOrigin.Begin);
+            return ret;
         }
+        #endregion
+
+        #region Response
+        public void UseResponseStream(Stream str)
+        {
+            _outStream = str;
+        }
+
+        public void ClearResponse()
+        {
+            _responseWriter = null;
+            _outStream = new MemoryStream();
+            _responseWriter = new StreamWriter(_outStream);
+        }
+
+
+        public void SendResponse()
+        {
+            ResponseWriter.Flush();
+            _responseHeaders.ContentLength = _outStream.Length.ToString();
+            if (_responseHeaders["Accept-Ranges"] == null)
+                _responseHeaders["Accept-Ranges"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.AcceptRanges"];
+            if (_responseHeaders.ContentType == null)
+                _responseHeaders.ContentType = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.ContentType"];
+            if (_responseHeaders["Server"]==null)
+                _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
+            if (_responseHeaders.Date == null)
+                _responseHeaders.Date = DateTime.Now.ToString();
+            _responseHeaders["Connection"] = "close";
+            StreamWriter outStream = new StreamWriter(socket.GetStream());
+            outStream.Write("HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n");
+            foreach (string str in _responseHeaders.Keys)
+                outStream.Write(str + ": " + _responseHeaders[str]+"\r\n");
+            outStream.Write("\r\n");
+            char[] buffer = new char[BUF_SIZE];
+            _outStream.Seek(0, SeekOrigin.Begin);
+            StreamReader sr = new StreamReader(_outStream);
+            while (_outStream.Position < _outStream.Length)
+            {
+                int len = sr.Read(buffer, 0, (int)Math.Min(BUF_SIZE, (int)(_outStream.Length - _outStream.Position)));
+                outStream.Write(buffer, 0, len);
+            }
+            outStream.Flush();
+            socket.Close();
+        }
+
+        //public void writeSuccess() {
+        //    outputStream.Write("HTTP/1.0 200 OK\n");
+        //    outputStream.Write("Content-Type: text/html\n");
+        //    outputStream.Write("Connection: close\n");
+        //    outputStream.Write("\n");
+        //}
+
+        //public void writeFailure() {
+        //    outputStream.Write("HTTP/1.0 404 File not found\n");
+        //    outputStream.Write("Connection: close\n");
+        //    outputStream.Write("\n");
+        //}
+
+        private HeaderCollection _responseHeaders;
+        public HeaderCollection ResponseHeaders
+        {
+            get { return _responseHeaders; }
+            set { _responseHeaders = value; }
+        }
+
+        private HttpStatusCodes _responseStatus;
+        public HttpStatusCodes ResponseStatus
+        {
+            get { return _responseStatus; }
+            set { _responseStatus = value; }
+        }
+        #endregion
     }
 }
