@@ -48,6 +48,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     if (add)
                         _listeners.Add(new PortListener(s));
                 }
+                foreach (PortListener pt in _listeners)
+                    pt.Start();
                 _started = true;
             }
             Monitor.Exit(_lock);

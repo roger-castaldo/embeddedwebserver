@@ -55,9 +55,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        private Dictionary<string, UploadedFile> _uploadedFiles;
+        public Dictionary<string, UploadedFile> UploadedFiles
+        {
+            get {
+                if (_uploadedFiles == null)
+                    parseParameters();
+                return _uploadedFiles; 
+            }
+        }
+
         private void parseParameters()
         {
             _requestParameters = new Dictionary<string, string>();
+            _uploadedFiles = new Dictionary<string, UploadedFile>();
             if (URL.Query != null)
             {
                 NameValueCollection col = HttpUtility.ParseQueryString(URL.Query);
@@ -102,15 +113,66 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     if (_requestHeaders.ContentType.Contains("boundary="))
                     {
-                        string boundary = _requestHeaders.ContentType.Substring(_requestHeaders.ContentType.IndexOf("boundary=") + "boundary=".Length);
-
+                        string boundary = "--"+_requestHeaders.ContentType.Substring(_requestHeaders.ContentType.IndexOf("boundary=") + "boundary=".Length).Replace("-","");
+                        string line;
+                        string var;
+                        string value;
+                        string fileName;
+                        while ((line = streamReadLine(ms)) != null)
+                        {
+                            if (line.EndsWith(boundary + "--"))
+                                break;
+                            else if (line.EndsWith(boundary))
+                            {
+                                line = streamReadLine(ms);
+                                if (line.Contains("filename="))
+                                {
+                                    var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
+                                    var = var.Substring(0, var.IndexOf("\";"));
+                                    fileName = line.Substring(line.IndexOf("filename=\"") + "filename=\"".Length);
+                                    fileName = fileName.Substring(0, fileName.Length - 1);
+                                    string contentType = streamReadLine(ms);
+                                    contentType = contentType.Substring(contentType.IndexOf(":")+1);
+                                    contentType=contentType.Trim();
+                                    streamReadLine(ms);
+                                    MemoryStream str = new MemoryStream();
+                                    BinaryWriter br = new BinaryWriter(str);
+                                    while ((line = PeakLine(ms)) != null)
+                                    {
+                                        if (line.EndsWith(boundary) || line.EndsWith(boundary + "--"))
+                                            break;
+                                        else
+                                            br.Write(line.ToCharArray());
+                                        streamReadLine(ms);
+                                    }
+                                    br.Flush();
+                                    str.Seek(0, SeekOrigin.Begin);
+                                    _uploadedFiles.Add(var, new UploadedFile(var, fileName, contentType, str));
+                                }
+                                else
+                                {
+                                    var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
+                                    var = var.Substring(0, var.Length-1);
+                                    streamReadLine(ms);
+                                    value = "";
+                                    while ((line = PeakLine(ms)) != null)
+                                    {
+                                        if (line.EndsWith(boundary)||line.EndsWith(boundary+"--"))
+                                            break;
+                                        else
+                                            value += streamReadLine(ms);
+                                    }
+                                    _requestParameters.Add(var, value.Trim());
+                                }
+                            }
+                        }
                     }else
                         throw new Exception("Unknown format, content-type: " + _requestHeaders.ContentType + " unable to parse in parameters.");
                 }
                 else if (_requestHeaders.ContentType == "application/x-www-form-urlencoded")
                 {
-                    _url = new Uri(_url.Host+"/"+_url.AbsolutePath+"?"+new StreamReader(ms).ReadToEnd());
-                    NameValueCollection col = HttpUtility.ParseQueryString(URL.Query);
+                    string postData = new StreamReader(ms).ReadToEnd();
+                    NameValueCollection col = HttpUtility.ParseQueryString(postData);
                     foreach (string str in col.Keys)
                     {
                         _requestParameters.Add(str, col[str]);
@@ -150,6 +212,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             return data;
         }
 
+        private string PeakLine(Stream inputStream)
+        {
+            long start = inputStream.Position;
+            string ret = streamReadLine(inputStream);
+            inputStream.Seek(start, SeekOrigin.Begin);
+            return ret;
+        }
+
         private void parseRequest() {
             String request = streamReadLine(inputStream);
             string[] tokens = request.Split(' ');
@@ -166,7 +236,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (line.Equals(""))
                 {
                     Console.WriteLine("got headers");
-                    return;
+                    break;
                 }
 
                 int separator = line.IndexOf(':');
@@ -185,7 +255,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 Console.WriteLine("header: {0}:{1}", name, value);
                 _requestHeaders[name] = value;
             }
-            _url = new Uri(_requestHeaders.Host + tokens[1]);
+            _url = new Uri("http://"+_requestHeaders.Host + tokens[1]);
         }
 
         public void writeSuccess() {

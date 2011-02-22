@@ -34,9 +34,34 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return true; }
         }
 
+        public virtual SiteSessionTypes SessionStateType
+        {
+            get { return SiteSessionTypes.ThreadState; }
+        }
+
+        public virtual string TMPPath
+        {
+            get { return "/tmp"; }
+        }
+
         public virtual void ProcessRequest(HttpConnection conn)
         {
-
+            Console.WriteLine("Request Parameters: ");
+            foreach (string str in conn.RequestParameters.Keys)
+            {
+                if (str == null)
+                    Console.WriteLine("NULL: " + conn.RequestParameters[str]);
+                else
+                    Console.WriteLine(str + ": " + conn.RequestParameters[str]);
+            }
+            Console.WriteLine("Uploaded Files: ");
+            foreach (string str in conn.UploadedFiles.Keys)
+            {
+                if (str == null)
+                    Console.WriteLine("NULL: " + conn.UploadedFiles[str].FileName);
+                else
+                    Console.WriteLine(str + ": " + conn.UploadedFiles[str].FileName);
+            }
         }
 
         public Site() { }
