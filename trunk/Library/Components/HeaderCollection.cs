@@ -19,7 +19,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 if (_values.ContainsKey(name))
                     _values.Remove(name);
-                _values.Add(name, value);
+                if (value!=null)
+                    _values.Add(name, value);
             }
         }
 
