@@ -46,6 +46,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         {
         }
 
+        void IRequestHandler.DeInit()
+        {
+        }
+
         #endregion
     }
 }

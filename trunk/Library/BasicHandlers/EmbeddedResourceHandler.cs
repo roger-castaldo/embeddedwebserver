@@ -5,11 +5,64 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using Org.Reddragonit.EmbeddedWebServer.Minifiers;
 using System.IO;
+using Org.Reddragonit.EmbeddedWebServer.Cache;
+using System.Threading;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
     public class EmbeddedResourceHandler : IRequestHandler
     {
+        private const int THREAD_SLEEP = 60000;
+        private const int CACHE_EXPIRY_MINUTES = 60;
+
+        private Dictionary<string, CachedItemContainer> _compressedCache;
+        private object _lock;
+        private bool _threadExit;
+        private Thread _cleanupThread;
+
+        public EmbeddedResourceHandler()
+        {
+            _lock = new object();
+            _compressedCache = new Dictionary<string, CachedItemContainer>();
+            _threadExit = false;
+            _cleanupThread = new Thread(new ThreadStart(CleanupThreadStart));
+            _cleanupThread.Start();
+        }
+
+        ~EmbeddedResourceHandler()
+        {
+            Monitor.Exit(_lock);
+            _threadExit = true;
+            Monitor.Exit(_lock);
+            try
+            {
+                _cleanupThread.Join();
+            }
+            catch (Exception e) { }
+            _compressedCache = null;
+            GC.Collect();
+        }
+
+        private void CleanupThreadStart()
+        {
+            while (!_threadExit)
+            {
+                Monitor.Enter(_lock);
+                if (_compressedCache != null)
+                {
+                    string[] keys = new string[_compressedCache.Keys.Count];
+                    _compressedCache.Keys.CopyTo(keys, 0);
+                    foreach (string str in keys)
+                    {
+                        if (DateTime.Now.Subtract(_compressedCache[str].LastAccess).TotalMinutes > CACHE_EXPIRY_MINUTES)
+                            _compressedCache.Remove(str);
+                    }
+                }
+                Monitor.Exit(_lock);
+                Thread.Sleep(THREAD_SLEEP);
+            }
+        }
+
         #region IRequestHandler Members
 
         bool IRequestHandler.IsReusable
@@ -64,23 +117,57 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     }
                     break;
                 case EmbeddedFileTypes.Css:
-                    string css = Utility.ReadEmbeddedResource(file.Value.DLLPath);
-                    if (css == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
+                    bool loadCss = true;
+                    Monitor.Enter(_lock);
+                    if (_compressedCache.ContainsKey(file.Value.DLLPath))
                     {
+                        loadCss = false;
                         conn.ResponseHeaders.ContentType = "text/css";
-                        conn.ResponseWriter.Write(CSSMinifier.Minify(css));
+                        conn.ResponseWriter.Write(_compressedCache[file.Value.DLLPath].Value);
+                    }
+                    Monitor.Exit(_lock);
+                    if (loadCss)
+                    {
+                        string css = Utility.ReadEmbeddedResource(file.Value.DLLPath);
+                        if (css == null)
+                            conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        else
+                        {
+                            conn.ResponseHeaders.ContentType = "text/css";
+                            css = CSSMinifier.Minify(css);
+                            Monitor.Enter(_lock);
+                            if (!_compressedCache.ContainsKey(file.Value.DLLPath))
+                                _compressedCache.Add(file.Value.DLLPath, new CachedItemContainer(css));
+                            Monitor.Exit(_lock);
+                            conn.ResponseWriter.Write(css);
+                        }
                     }
                     break;
                 case EmbeddedFileTypes.Javascript:
-                    string js = Utility.ReadEmbeddedResource(file.Value.DLLPath);
-                    if (js == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
+                    bool loadJS = true;
+                    Monitor.Enter(_lock);
+                    if (_compressedCache.ContainsKey(file.Value.DLLPath))
                     {
+                        loadJS = false;
                         conn.ResponseHeaders.ContentType = "text/javascript";
-                        conn.ResponseWriter.Write(JSMinifier.Minify(js));
+                        conn.ResponseWriter.Write(_compressedCache[file.Value.DLLPath].Value);
+                    }
+                    Monitor.Exit(_lock);
+                    if (loadJS)
+                    {
+                        string js = Utility.ReadEmbeddedResource(file.Value.DLLPath);
+                        if (js == null)
+                            conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        else
+                        {
+                            conn.ResponseHeaders.ContentType = "text/javascript";
+                            js = JSMinifier.Minify(js);
+                            Monitor.Enter(_lock);
+                            if (!_compressedCache.ContainsKey(file.Value.DLLPath))
+                                _compressedCache.Add(file.Value.DLLPath, new CachedItemContainer(js));
+                            Monitor.Exit(_lock);
+                            conn.ResponseWriter.Write(js);
+                        }
                     }
                     break;
                 case EmbeddedFileTypes.Image:
@@ -104,6 +191,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         }
 
         void IRequestHandler.Init()
+        {
+        }
+
+        void IRequestHandler.DeInit()
         {
         }
 
