@@ -140,10 +140,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 int to_read = content_len;
                 while (to_read > 0)
                 {
-                    Console.WriteLine("starting Read, to_read={0}", to_read);
+                    //Console.WriteLine("starting Read, to_read={0}", to_read);
 
                     int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
-                    Console.WriteLine("read finished, numread={0}", numread);
+                    //Console.WriteLine("read finished, numread={0}", numread);
                     if (numread == 0)
                     {
                         if (to_read == 0)
@@ -243,14 +243,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             _method = tokens[0].ToUpper();
             _version = tokens[2];
-            Console.WriteLine("readHeaders()");
+            //Console.WriteLine("readHeaders()");
             String line;
             _requestHeaders = new HeaderCollection();
             while ((line = streamReadLine(inputStream)) != null)
             {
                 if (line.Equals(""))
                 {
-                    Console.WriteLine("got headers");
+                    //Console.WriteLine("got headers");
                     break;
                 }
 
@@ -267,7 +267,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
 
                 string value = line.Substring(pos, line.Length - pos);
-                Console.WriteLine("header: {0}:{1}", name, value);
+                //Console.WriteLine("header: {0}:{1}", name, value);
                 _requestHeaders[name] = value;
             }
             _url = new Uri("http://" + _requestHeaders.Host + tokens[1]);

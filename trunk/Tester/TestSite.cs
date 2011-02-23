@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
+using Org.Reddragonit.EmbeddedWebServer.Components;
 
 namespace Tester
 {
@@ -12,6 +13,14 @@ namespace Tester
             get
             {
                 return 8080;
+            }
+        }
+
+        public override SiteSessionTypes SessionStateType
+        {
+            get
+            {
+                return SiteSessionTypes.ThreadState;
             }
         }
 
