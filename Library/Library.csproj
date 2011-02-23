@@ -39,6 +39,7 @@
   <ItemGroup>
     <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
     <Compile Include="BasicHandlers\FileHandler.cs" />
+    <Compile Include="Cache\CachedItemContainer.cs" />
     <Compile Include="Components\CookieCollection.cs" />
     <Compile Include="Components\Enums.cs" />
     <Compile Include="Components\HeaderCollection.cs" />

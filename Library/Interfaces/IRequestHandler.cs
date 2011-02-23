@@ -12,5 +12,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         bool CanProcessRequest(HttpConnection conn, Site site);
         void ProcessRequest(HttpConnection conn,Site site);
         void Init();
+        void DeInit();
     }
 }
