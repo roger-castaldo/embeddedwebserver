@@ -302,24 +302,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (_responseHeaders.Date == null)
                 _responseHeaders.Date = DateTime.Now.ToString("r");
             _responseHeaders["Connection"] = "close";
-            StreamWriter outStream = new StreamWriter(new MemoryStream());
-            outStream.Write("HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n");
+            Stream outStream = socket.GetStream();
+            string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n";
             foreach (string str in _responseHeaders.Keys)
-                outStream.Write(str + ": " + _responseHeaders[str]+"\n");
-            outStream.Write("\n");
+                line+=str + ": " + _responseHeaders[str]+"\n";
+            line += "\n";
+            outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
             byte[] buffer = new byte[socket.Client.SendBufferSize];
             _outStream.Seek(0, SeekOrigin.Begin);
             while (_outStream.Position < _outStream.Length)
             {
                 int len = _outStream.Read(buffer,0,(int)Math.Min(socket.Client.SendBufferSize, (int)(_outStream.Length - _outStream.Position)));
-                outStream.BaseStream.Write(buffer, 0, len);
-            }
-            outStream.Flush();
-            outStream.BaseStream.Position=0;
-            while (outStream.BaseStream.Position<outStream.BaseStream.Length)
-            {
-                int len = outStream.BaseStream.Read(buffer, 0, (int)Math.Min(socket.Client.SendBufferSize, (int)(outStream.BaseStream.Length - outStream.BaseStream.Position)));
-                socket.GetStream().Write(buffer, 0, len);
+                outStream.Write(buffer, 0, len);
             }
             socket.Close();
         }
