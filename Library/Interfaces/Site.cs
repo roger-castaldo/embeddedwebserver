@@ -55,6 +55,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return null; }
         }
 
+        public virtual int SessionTimeoutMinutes
+        {
+            get { return 60; }
+        }
+
+        public virtual int? CookieExpireMinutes
+        {
+            get { return null; }
+        }
+
         private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
             new EmbeddedResourceHandler(),
             new FileHandler()

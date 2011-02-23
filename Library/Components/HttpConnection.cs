@@ -7,6 +7,7 @@ using System.Collections;
 using System.Threading;
 using System.Web;
 using System.Collections.Specialized;
+using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -39,6 +40,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _responseHeaders = new HeaderCollection();
             _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
             _responseStatus = HttpStatusCodes.OK;
+            _responseCookie = new CookieCollection();
             try
             {
                 parseRequest();
@@ -93,6 +95,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     parseParameters();
                 return _uploadedFiles; 
             }
+        }
+
+        private CookieCollection _requestCookie;
+        public CookieCollection RequestCookie
+        {
+            get { return _requestCookie; }
         }
 
         private void parseParameters()
@@ -251,6 +259,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _requestHeaders[name] = value;
             }
             _url = new Uri("http://" + _requestHeaders.Host + tokens[1]);
+            _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
         }
 
         private string streamReadLine(Stream inputStream) {
@@ -306,6 +315,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n";
             foreach (string str in _responseHeaders.Keys)
                 line+=str + ": " + _responseHeaders[str]+"\n";
+            if (_responseCookie != null)
+            {
+                foreach (string str in _responseCookie.Keys)
+                {
+                    line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r")+"\n";
+                }
+            }
             line += "\n";
             outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
             byte[] buffer = new byte[socket.Client.SendBufferSize];
@@ -330,6 +346,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             get { return _responseStatus; }
             set { _responseStatus = value; }
+        }
+
+        private CookieCollection _responseCookie;
+        public CookieCollection ResponseCookie
+        {
+            get { return _responseCookie; }
+            set { _responseCookie = value; }
         }
         #endregion
     }

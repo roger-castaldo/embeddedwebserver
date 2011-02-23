@@ -87,6 +87,7 @@ namespace Org.Reddragonit.EmbeddedServices
     /// </remarks>
     public class MT19937 : Random
     {
+
         /// <summary>
         /// Creates a new pseudo-random number generator with a given seed.
         /// </summary>
