@@ -13,5 +13,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         void ProcessRequest(HttpConnection conn,Site site);
         void Init();
         void DeInit();
+        bool RequiresSessionForRequest(HttpConnection conn, Site site);
     }
 }

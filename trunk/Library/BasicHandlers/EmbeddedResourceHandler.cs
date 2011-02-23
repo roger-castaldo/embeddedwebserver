@@ -188,6 +188,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         {
         }
 
+        bool IRequestHandler.RequiresSessionForRequest(HttpConnection conn, Site site)
+        {
+            return false;
+        }
+
         #endregion
     }
 }

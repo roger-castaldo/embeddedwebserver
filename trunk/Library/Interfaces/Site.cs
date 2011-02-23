@@ -144,6 +144,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 if (handler.CanProcessRequest(conn, this))
                 {
                     found = true;
+                    if (handler.RequiresSessionForRequest(conn, this))
+                        SessionManager.LoadStateForConnection(conn, this);
                     try
                     {
                         handler.ProcessRequest(conn, this);
@@ -154,6 +156,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         conn.ClearResponse();
                         conn.ResponseWriter.Write(e.Message);
                     }
+                    if (handler.RequiresSessionForRequest(conn,this))
+                        SessionManager.StoreSessionForConnection(conn, this);
                     break;
                 }
             }
@@ -162,7 +166,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 conn.ClearResponse();
                 conn.ResponseStatus = HttpStatusCodes.Not_Found;
             }
-            SessionManager.StoreSessionForConnection(conn, this);
             conn.SendResponse();
         }
 
