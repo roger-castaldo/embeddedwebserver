@@ -68,7 +68,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
-        public virtual void Init()
+        public virtual void Start()
+        {
+        }
+
+        public virtual void Stop()
         {
         }
 
