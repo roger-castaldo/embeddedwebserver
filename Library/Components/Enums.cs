@@ -8,8 +8,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     {
         None,
         ThreadState,
-        FileSystem,
-        Cookie
+        FileSystem
     }
 
     public enum HttpStatusCodes

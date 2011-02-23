@@ -4,6 +4,7 @@ using System.Text;
 using System.Net;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using Org.Reddragonit.EmbeddedWebServer.BasicHandlers;
+using Org.Reddragonit.EmbeddedWebServer.Sessions;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -37,7 +38,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 
         public virtual SiteSessionTypes SessionStateType
         {
-            get { return SiteSessionTypes.ThreadState; }
+            get { return SiteSessionTypes.None; }
         }
 
         public virtual string TMPPath
@@ -112,6 +113,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 conn.ClearResponse();
                 conn.ResponseStatus = HttpStatusCodes.Not_Found;
             }
+            SessionManager.StoreSessionForConnection(conn, this);
             conn.SendResponse();
         }
 

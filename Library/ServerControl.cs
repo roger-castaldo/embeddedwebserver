@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Sessions;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
@@ -12,6 +13,23 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private static object _lock=new object();
         private static List<PortListener> _listeners;
         private static bool _started = false;
+
+        public static List<Site> Sites
+        {
+            get
+            {
+                List<Site> ret = new List<Site>();
+                Monitor.Enter(_lock);
+                if (_listeners!=null){
+                    foreach (PortListener pt in _listeners)
+                    {
+                        ret.AddRange(pt.Sites);
+                    }
+                }
+                Monitor.Exit(_lock);
+                return ret;
+            }
+        }
 
         public static bool IsStarted
         {
@@ -50,6 +68,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 }
                 foreach (PortListener pt in _listeners)
                     pt.Start();
+                SessionManager.Start();
                 _started = true;
             }
             Monitor.Exit(_lock);
@@ -72,6 +91,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     {
                     }
                 }
+                SessionManager.Stop();
                 _listeners = null;
                 _started = false;
             }

@@ -75,7 +75,7 @@
 
 using System;
 
-namespace Org.Reddragonit.EmbeddedServices
+namespace Org.Reddragonit.EmbeddedWebServer
 {
     /// <summary>
     /// Generates pseudo-random numbers using the Mersenne Twister algorithm.
