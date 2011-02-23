@@ -54,6 +54,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         public void Start()
         {
+            foreach (Site site in _sites)
+                site.Start();
             _listener = new TcpListener(_ip, _port);
             _listener.Start();
             _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
@@ -67,6 +69,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             catch (Exception e) { }
             _listener.Stop();
+            foreach (Site site in _sites)
+                site.Stop();
         }
 
         private void RecieveClient(IAsyncResult res)
