@@ -9,6 +9,7 @@ using System.Web;
 using System.Collections.Specialized;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
+using System.Net;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -18,7 +19,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private const int BUF_SIZE = 4096;
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
-        public TcpClient socket;        
+        private TcpClient socket;
+        public EndPoint Client
+        {
+            get { return socket.Client.RemoteEndPoint; }
+        }
+
+        public EndPoint LocalEndPoint
+        {
+            get { return socket.Client.LocalEndPoint; }
+        }
 
         private Stream inputStream;
 
@@ -43,6 +53,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         public HttpConnection(TcpClient s)
         {
+            DateTime start = DateTime.Now;
             this.socket = s;
             inputStream = new BufferedStream(socket.GetStream());
 
@@ -61,6 +72,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 throw e;
             }
+            System.Diagnostics.Debug.WriteLine("Total time to load request: "+DateTime.Now.Subtract(start).TotalMilliseconds.ToString()+"ms");
         }
 
         #region Request
