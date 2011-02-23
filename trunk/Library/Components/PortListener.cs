@@ -121,6 +121,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     useSite = _defaultSite;
                 System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
+                Site.SetCurrentSite(useSite);
                 useSite.ProcessRequest(con);
                 System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }

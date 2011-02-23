@@ -39,8 +39,10 @@
   <ItemGroup>
     <Compile Include="Attributes\BackgroundOperationCall.cs" />
     <Compile Include="Attributes\Enums.cs" />
+    <Compile Include="Attributes\WebMethodAttribute.cs" />
     <Compile Include="BackgroundOperationRunner.cs" />
     <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
+    <Compile Include="BasicHandlers\EmbeddedServiceHandler.cs" />
     <Compile Include="BasicHandlers\FileHandler.cs" />
     <Compile Include="Components\CachedItemContainer.cs" />
     <Compile Include="Components\CookieCollection.cs" />
@@ -49,6 +51,7 @@
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />
+    <Compile Include="Interfaces\EmbeddedService.cs" />
     <Compile Include="Interfaces\Enums.cs" />
     <Compile Include="Interfaces\IBackgroundOperationContainer.cs" />
     <Compile Include="Interfaces\IRequestHandler.cs" />

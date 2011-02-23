@@ -12,6 +12,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
     public abstract class Site : IBackgroundOperationContainer
     {
+        [ThreadStatic()]
+        private static Site _currentSite;
+        public static Site CurrentSite
+        {
+            get { return _currentSite; }
+        }
+
+        internal static void SetCurrentSite(Site site)
+        {
+            _currentSite = site;
+        }
 
         #region virtual
         public virtual int Port
@@ -70,6 +81,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
+            new EmbeddedServiceHandler(),
             new EmbeddedResourceHandler(),
             new FileHandler()
         };
@@ -87,14 +99,37 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return 60; }
         }
 
-        public virtual void Start()
+        public virtual List<Type> EmbeddedServiceTypes
         {
+            get
+            {
+                return Utility.LocateTypeInstances(typeof(EmbeddedService));
+            }
         }
 
-        public virtual void Stop()
-        {
-        }
+        protected abstract void _Start();
+        protected abstract void _Stop();
         #endregion
+
+        public void Start()
+        {
+            _Start();
+            _currentSite = this;
+            foreach (IRequestHandler handler in Handlers)
+            {
+                handler.Init();
+            }
+        }
+
+        public void Stop()
+        {
+            _currentSite = this;
+            foreach (IRequestHandler handler in Handlers)
+            {
+                handler.DeInit();
+            }
+            _Stop();
+        }
 
         private object _lock = new object();
         private Dictionary<string, CachedItemContainer> _cache;
@@ -138,6 +173,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 
         public void ProcessRequest(HttpConnection conn)
         {
+            _currentSite = this;
             bool found = false;
             foreach (IRequestHandler handler in Handlers)
             {
