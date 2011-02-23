@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using System.Net;
 using System.Net.Sockets;
+using Org.Reddragonit.EmbeddedWebServer.Sessions;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -11,6 +12,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     {
         private TcpListener _listener;
         private List<Site> _sites;
+        public List<Site> Sites
+        {
+            get { return _sites; }
+        }
 
         private Site _defaultSite
         {
@@ -107,6 +112,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 if (useSite == null)
                     useSite = _defaultSite;
+                SessionManager.LoadStateForConnection(con, useSite);
                 useSite.ProcessRequest(con);
             }
         }

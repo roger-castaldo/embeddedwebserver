@@ -8,6 +8,7 @@ using System.Threading;
 using System.Web;
 using System.Collections.Specialized;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
+using Org.Reddragonit.EmbeddedWebServer.Sessions;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -27,6 +28,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public StreamWriter ResponseWriter
         {
             get { return _responseWriter; }
+        }
+
+        private SessionState _session;
+        public SessionState Session
+        {
+            get { return _session; }
+        }
+
+        internal void SetSession(SessionState session)
+        {
+            _session = session;
         }
 
         public HttpConnection(TcpClient s)
