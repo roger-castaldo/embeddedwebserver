@@ -5,61 +5,51 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using Org.Reddragonit.EmbeddedWebServer.Minifiers;
 using System.IO;
-using Org.Reddragonit.EmbeddedWebServer.Cache;
 using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
-    public class EmbeddedResourceHandler : IRequestHandler
+    public class EmbeddedResourceHandler : IRequestHandler,IBackgroundOperationContainer
     {
         private const int THREAD_SLEEP = 60000;
         private const int CACHE_EXPIRY_MINUTES = 60;
 
         private Dictionary<string, CachedItemContainer> _compressedCache;
         private object _lock;
-        private bool _threadExit;
-        private Thread _cleanupThread;
 
         public EmbeddedResourceHandler()
         {
             _lock = new object();
             _compressedCache = new Dictionary<string, CachedItemContainer>();
-            _threadExit = false;
-            _cleanupThread = new Thread(new ThreadStart(CleanupThreadStart));
-            _cleanupThread.Start();
         }
 
-        ~EmbeddedResourceHandler()
+        [BackgroundOperationCall(-1, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
+        public static void CleanupCache()
         {
-            Monitor.Exit(_lock);
-            _threadExit = true;
-            Monitor.Exit(_lock);
-            try
+            List<Site> sites = ServerControl.Sites;
+            foreach (Site s in sites)
             {
-                _cleanupThread.Join();
-            }
-            catch (Exception e) { }
-            _compressedCache = null;
-            GC.Collect();
-        }
-
-        private void CleanupThreadStart()
-        {
-            while (!_threadExit)
-            {
-                Monitor.Enter(_lock);
-                if (_compressedCache != null)
+                foreach (IRequestHandler handler in s.Handlers)
                 {
-                    string[] keys = new string[_compressedCache.Keys.Count];
-                    _compressedCache.Keys.CopyTo(keys, 0);
-                    foreach (string str in keys)
+                    if (handler is EmbeddedResourceHandler)
                     {
-                        if (DateTime.Now.Subtract(_compressedCache[str].LastAccess).TotalMinutes > CACHE_EXPIRY_MINUTES)
-                            _compressedCache.Remove(str);
+                        EmbeddedResourceHandler hand = (EmbeddedResourceHandler)handler;
+                        Monitor.Enter(hand._lock);
+                        if (hand._compressedCache != null)
+                        {
+                            string[] keys = new string[hand._compressedCache.Keys.Count];
+                            hand._compressedCache.Keys.CopyTo(keys, 0);
+                            foreach (string str in keys)
+                            {
+                                if (DateTime.Now.Subtract(hand._compressedCache[str].LastAccess).TotalMinutes > CACHE_EXPIRY_MINUTES)
+                                    hand._compressedCache.Remove(str);
+                            }
+                        }
+                        Monitor.Exit(hand._lock);
+                        break;
                     }
                 }
-                Monitor.Exit(_lock);
-                Thread.Sleep(THREAD_SLEEP);
             }
         }
 

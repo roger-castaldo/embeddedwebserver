@@ -5,10 +5,11 @@ using Org.Reddragonit.EmbeddedWebServer.Components;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using System.Threading;
 using System.IO;
+using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Sessions
 {
-    internal class SessionManager
+    internal class SessionManager : IBackgroundOperationContainer
     {
         private const string _ALLOWED_SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         private const int SESSION_ID_LEN = 12;
@@ -17,72 +18,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
         private static object _lock = new object();
         private static List<SessionState> _sessions;
         private static MT19937 _rand = new MT19937();
-        private static Thread _sessionCleanupThread;
-        private static bool _exit = false;
 
-        public static void Start()
+        [BackgroundOperationCall(-1,-1,-1,-1,BackgroundOperationDaysOfWeek.All)]
+        public static void CleanupSessions()
         {
             Monitor.Enter(_lock);
-            if (_sessionCleanupThread == null)
+            if (_sessions != null)
             {
-                _exit = false;
-                _sessionCleanupThread = new Thread(new ThreadStart(CleanupRun));
-            }
-            Monitor.Exit(_lock);
-        }
-
-        public static void Stop()
-        {
-            Monitor.Enter(_lock);
-            _exit = true;
-            try
-            {
-                _sessionCleanupThread.Join();
-            }
-            catch (Exception e) { }
-            _sessionCleanupThread = null;
-            Monitor.Exit(_lock);
-        }
-
-        private static void CleanupRun()
-        {
-            while (!_exit)
-            {
-                Thread.Sleep(THREAD_SLEEP);
-                Monitor.Enter(_lock);
-                if (_sessions != null)
+                for (int x = 0; x < _sessions.Count; x++)
                 {
-                    for (int x = 0; x < _sessions.Count; x++)
+                    if (_sessions[x].Expiry.Ticks < DateTime.Now.Ticks)
                     {
-                        if (_sessions[x].Expiry.Ticks < DateTime.Now.Ticks)
-                        {
-                            _sessions.RemoveAt(x);
-                            x--;
-                        }
+                        _sessions.RemoveAt(x);
+                        x--;
                     }
                 }
-                List<Site> sites = ServerControl.Sites;
-                foreach (Site s in sites)
-                {
-                    if (s.SessionStateType == SiteSessionTypes.FileSystem)
-                    {
-                        DirectoryInfo di = new DirectoryInfo(s.TMPPath + Path.DirectorySeparatorChar + "Sessions");
-                        if (di.Exists)
-                        {
-                            foreach (FileInfo fi in di.GetFiles("*.xml"))
-                            {
-                                if (SessionState.GetExpiryFromFile(fi.FullName).Ticks < DateTime.Now.Ticks)
-                                    fi.Delete();
-                            }
-                        }
-                    }
-                }
-                GC.Collect();
-                Monitor.Exit(_lock);
             }
-            _sessions = null;
-            List<Site> sts = ServerControl.Sites;
-            foreach (Site s in sts)
+            List<Site> sites = ServerControl.Sites;
+            foreach (Site s in sites)
             {
                 if (s.SessionStateType == SiteSessionTypes.FileSystem)
                 {
@@ -90,11 +43,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                     if (di.Exists)
                     {
                         foreach (FileInfo fi in di.GetFiles("*.xml"))
-                            fi.Delete();
+                        {
+                            if (SessionState.GetExpiryFromFile(fi.FullName).Ticks < DateTime.Now.Ticks)
+                                fi.Delete();
+                        }
                     }
                 }
             }
             GC.Collect();
+            Monitor.Exit(_lock);
         }
 
         private static string GenerateSessionID()

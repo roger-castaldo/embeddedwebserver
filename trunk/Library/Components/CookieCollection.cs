@@ -71,6 +71,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     if (str.Length > 0)
                     {
+                        if (_values.ContainsKey(str.Trim().Split('=')[0]))
+                            _values.Remove(str.Trim().Split('=')[0]);
                         _values.Add(str.Trim().Split('=')[0], str.Trim().Split('=')[1]);
                     }
                 }

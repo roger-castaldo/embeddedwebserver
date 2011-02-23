@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Cache
+namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
     internal class CachedItemContainer
     {
