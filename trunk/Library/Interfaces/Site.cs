@@ -56,7 +56,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
-            new EmbeddedResourceHandler()
+            new EmbeddedResourceHandler(),
+            new FileHandler()
         };
 
         public virtual List<IRequestHandler> Handlers
