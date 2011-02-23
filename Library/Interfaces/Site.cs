@@ -5,12 +5,15 @@ using System.Net;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using Org.Reddragonit.EmbeddedWebServer.BasicHandlers;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
+using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
-    public abstract class Site
+    public abstract class Site : IBackgroundOperationContainer
     {
 
+        #region virtual
         public virtual int Port
         {
             get { return 80; }
@@ -79,12 +82,58 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
+        public virtual int CacheItemExpiryMinutes
+        {
+            get { return 60; }
+        }
+
         public virtual void Start()
         {
         }
 
         public virtual void Stop()
         {
+        }
+        #endregion
+
+        private object _lock = new object();
+        private Dictionary<string, CachedItemContainer> _cache;
+
+        [BackgroundOperationCall(-1, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
+        public static void CleanCaches()
+        {
+            List<Site> sites = ServerControl.Sites;
+            foreach (Site site in sites)
+            {
+                Monitor.Enter(site._lock);
+                string[] keys = new string[site._cache.Count];
+                site._cache.Keys.CopyTo(keys,0);
+                foreach (string str in keys)
+                {
+                    if (DateTime.Now.Subtract(site._cache[str].LastAccess).TotalMinutes <= site.CacheItemExpiryMinutes)
+                        site._cache.Remove(str);
+                }
+                Monitor.Exit(site._lock);
+            }
+            GC.Collect();
+        }
+
+        public object this[string cachedItemName]
+        {
+            get
+            {
+                object ret = null;
+                Monitor.Enter(_lock);
+                if (_cache.ContainsKey(cachedItemName))
+                    ret = _cache[cachedItemName].Value;
+                Monitor.Exit(_lock);
+                return ret;
+            }
+            set
+            {
+                Monitor.Enter(_lock);
+                Monitor.Exit(_lock);
+            }
         }
 
         public void ProcessRequest(HttpConnection conn)
@@ -117,6 +166,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             conn.SendResponse();
         }
 
-        public Site() { }
+        public Site() {
+            _cache = new Dictionary<string, CachedItemContainer>();
+        }
     }
 }

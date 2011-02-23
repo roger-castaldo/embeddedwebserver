@@ -13,6 +13,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private static object _lock=new object();
         private static List<PortListener> _listeners;
         private static bool _started = false;
+        private static BackgroundOperationRunner _backgroundRunner;
 
         public static List<Site> Sites
         {
@@ -68,7 +69,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 }
                 foreach (PortListener pt in _listeners)
                     pt.Start();
-                SessionManager.Start();
+                _backgroundRunner = new BackgroundOperationRunner();
+                _backgroundRunner.Start();
                 _started = true;
             }
             Monitor.Exit(_lock);
@@ -91,7 +93,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     {
                     }
                 }
-                SessionManager.Stop();
+                _backgroundRunner.Stop();
                 _listeners = null;
                 _started = false;
             }
