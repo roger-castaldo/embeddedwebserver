@@ -5,6 +5,8 @@ using System.Reflection;
 using System.IO;
 using System.Threading;
 using System.Xml.Serialization;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
+using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {

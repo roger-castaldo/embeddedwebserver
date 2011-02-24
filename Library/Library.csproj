@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{140F88D6-E0EE-4021-9167-A6455F32ADC1}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -51,6 +51,8 @@
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />
+    <Compile Include="Diagnostics\Enums.cs" />
+    <Compile Include="Diagnostics\Logger.cs" />
     <Compile Include="Interfaces\EmbeddedService.cs" />
     <Compile Include="Interfaces\Enums.cs" />
     <Compile Include="Interfaces\IBackgroundOperationContainer.cs" />

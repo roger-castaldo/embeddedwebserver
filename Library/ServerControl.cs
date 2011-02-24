@@ -5,6 +5,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
@@ -97,6 +98,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 _listeners = null;
                 _started = false;
             }
+            Logger.CleanupRemainingMessages();
             Monitor.Exit(_lock);
         }
     }
