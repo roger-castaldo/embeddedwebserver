@@ -5,7 +5,6 @@ using System.Net.Sockets;
 using System.IO;
 using System.Collections;
 using System.Threading;
-using System.Web;
 using System.Collections.Specialized;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
