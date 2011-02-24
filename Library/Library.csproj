@@ -33,7 +33,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +48,7 @@
     <Compile Include="Components\Enums.cs" />
     <Compile Include="Components\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
+    <Compile Include="Components\HttpUtility.cs" />
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />
     <Compile Include="Diagnostics\Enums.cs" />
