@@ -10,20 +10,29 @@ using System.Collections;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
-    public abstract class EmbeddedService
+    /*
+     * This is the abstract implementation of the embedded service class.
+     * All embedded web services must inherit this class in order 
+     * to be loaded as an embedded web service.  The only
+     * function that can be overriden is the one to determine 
+     * valid security access to a given function call.
+     */
+    public class EmbeddedService
     {
-
+        //returns if calling the specified function is allowed
         protected virtual bool IsValidAccess(string functionName)
         {
             return true;
         }
 
+        //houses the current http connection being used for the current request
         private HttpConnection _conn;
         public HttpConnection Connection
         {
             get { return _conn; }
         }
 
+        //houses the current site being used for the current request
         private Site _site;
         public Site WebSite
         {
@@ -34,6 +43,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         {
         }
 
+        //returns the base url to access the service
         public string URL
         {
             get
@@ -59,6 +69,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
+        /*
+         * This function is the main portion of the class.  It parses out the parameters,
+         * locates the apprporiate function and then proceeds to invoke it, all assuming
+         * that the security check passes.
+         */
         public void Invoke(HttpConnection conn,Site website)
         {
             string functionName = conn.URL.AbsolutePath.Substring(conn.URL.AbsolutePath.LastIndexOf("/") + 1);
@@ -169,6 +184,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 
         }
 
+        //this function is used to convert a submitted value parameter to a given
+        //object
         private object ConvertObjectToType(object obj, Type expectedType)
         {
             if (expectedType.Equals(typeof(bool)) && (obj == null))

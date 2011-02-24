@@ -4,7 +4,10 @@
  * Date: 23/04/2009
  * Time: 10:26 PM
  * 
- * To change this template use Tools | Options | Coding | Edit Standard Headers.
+ * This class is designed to minify CSS code.  It does this by first
+ * stripping out comments, then using a complexe set of regular rexpressions it 
+ * replaces unnecessary portions of a css file to provide a faster transfer 
+ * by transfer a smaller amount of data.
  */
 using System;
 using System.Collections.Generic;

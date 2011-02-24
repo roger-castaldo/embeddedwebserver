@@ -8,6 +8,23 @@ namespace Tester
 {
     public class TestSite : Site
     {
+
+        public override Org.Reddragonit.EmbeddedWebServer.Diagnostics.DiagnosticsLevels DiagnosticsLevel
+        {
+            get
+            {
+                return Org.Reddragonit.EmbeddedWebServer.Diagnostics.DiagnosticsLevels.TRACE;
+            }
+        }
+
+        public override Org.Reddragonit.EmbeddedWebServer.Diagnostics.DiagnosticsOutputs DiagnosticsOutput
+        {
+            get
+            {
+                return Org.Reddragonit.EmbeddedWebServer.Diagnostics.DiagnosticsOutputs.CONSOLE;
+            }
+        }
+
         public override int Port
         {
             get

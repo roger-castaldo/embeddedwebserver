@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Attributes
 {
+    /*
+     * Used to tag methods in an embedded service that should be exposed
+     * as methods available in javascript.  The flag useSession will indicate
+     * if loading the session is required when the request is being processed.
+     */
     [AttributeUsage(AttributeTargets.Method)]
     public class WebMethodAttribute : Attribute
     {

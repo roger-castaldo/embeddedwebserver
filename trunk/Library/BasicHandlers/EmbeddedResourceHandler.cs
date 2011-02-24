@@ -12,7 +12,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
     public class EmbeddedResourceHandler : IRequestHandler,IBackgroundOperationContainer
     {
-        private const int THREAD_SLEEP = 60000;
         private const int CACHE_EXPIRY_MINUTES = 60;
 
         private Dictionary<string, CachedItemContainer> _compressedCache;

@@ -7,9 +7,14 @@ using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
+    /*
+     * This class is used to access the application configurations that get 
+     * set for the library.  If there are none set, default values are returned.
+     */
     internal class Settings
     {
 
+        //This is the path for the Messages properties file when overriding messages
         private const string MESSAGES_FILE_PATH_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.MessagesFilePath";
         public static string MessagesFilePath
         {
@@ -21,6 +26,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //This is the default diagnostics level to use that can be overwridden by a site specific value
         private const string DIAGNOSTICS_LEVEL_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.DiagnosticsLevel";
         public static DiagnosticsLevels DiagnosticsLevel
         {
@@ -32,6 +38,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //This is the default output to use when running diagnostics, can be overwritten by a site specific value
         private const string DIAGNOSTICS_OUTPUT_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.DiagnosticsOutput";
         public static DiagnosticsOutputs DiagnosticsOutput
         {
@@ -43,6 +50,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //This is the number of days to stored file system log files before deleting them.
         private const string LOG_AGE_DAYS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.LogAgeDays";
         public static int LogAgeDays
         {
@@ -54,6 +62,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //The file system path to write the log files to.
         private const string LOG_PATH_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.LogPath";
         public static string LogPath
         {
