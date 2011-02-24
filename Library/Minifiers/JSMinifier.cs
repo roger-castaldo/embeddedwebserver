@@ -4,7 +4,9 @@
  * Date: 27/04/2009
  * Time: 11:09 PM
  * 
- * To change this template use Tools | Options | Coding | Edit Standard Headers.
+ * This class is a javascript minifier.  It first strips out comments, then using some 
+ * character parsing and recognition, removes all unnnecessary characters from the javascript
+ * code in order to send smaller amounts of data over the network to speed up site access.
  */
 using System;
 using System.Text;

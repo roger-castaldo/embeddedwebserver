@@ -83,7 +83,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                     xwrite.WriteEndAttribute();
 
                     xwrite.WriteStartElement("Value");
-                    XmlSerializer.FromTypes(new Type[] { _content[str].GetType() })[0].Serialize(xwrite, _content[str]);
+                    xwrite.WriteRaw(Utility.ConvertObjectToXML(_content[str]));
                     xwrite.WriteEndElement();
 
                     xwrite.WriteEndElement();
@@ -110,8 +110,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
             {
                 string name = onode.Attributes["Name"].Value;
                 Type t = Utility.LocateType(onode.Attributes["Type"].Value);
-                object val = XmlSerializer.FromTypes(new Type[]{t})[0].Deserialize(XmlReader.Create(new MemoryStream(System.Text.ASCIIEncoding.ASCII.GetBytes(onode.ChildNodes[2].InnerXml))));
-                _content.Add(name, val);
+                _content.Add(name, Utility.ConvertObjectFromXML(t,onode.InnerXml));
             }
         }
 

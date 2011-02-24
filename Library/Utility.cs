@@ -10,10 +10,15 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
+    /*
+     * This class is a general utility class that contains commonly used methods and 
+     * properties for the other classes within the library.
+     */
     public class Utility
     {
         private static string basePath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.Substring(0, AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.LastIndexOf(Path.DirectorySeparatorChar));
 
+        //Called to locate a directory within the file system, starting with searching the base directory
         public static DirectoryInfo LocateDirectory(string name)
         {
             if (name == "/")
@@ -22,6 +27,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return recurLocateDirectory(name, new DirectoryInfo(basePath));
         }
 
+        //The recursive portion of the above function
         private static DirectoryInfo recurLocateDirectory(string name, DirectoryInfo curDirectory)
         {
             if (curDirectory.Name.ToUpper() == name.ToUpper())
@@ -38,11 +44,13 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return null;
         }
 
+        //Called to locate a file by name using search operations
         public static FileInfo LocateFile(string name)
         {
             return recurLocateFile(name, new DirectoryInfo(basePath));
         }
 
+        //The recursive part of the above operation
         private static FileInfo recurLocateFile(string name, DirectoryInfo directory)
         {
             foreach (FileInfo fi in directory.GetFiles())
@@ -59,6 +67,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return null;
         }
 
+        //Called to locate a type by its name, this scans through all assemblies 
+        //which by default Type.Load does not perform.
         public static Type LocateType(string typeName)
         {
             Type t = Type.GetType(typeName, false, true);
@@ -87,6 +97,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return t;
         }
 
+        //Called to locate all child classes of a given parent type
         public static List<Type> LocateTypeInstances(Type parent)
         {
             List<Type> ret = new List<Type>();
@@ -114,6 +125,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
+        //Called to locate all child classes of a given parent type for a specific assembly
         public static List<Type> LocateTypeInstances(Type parent, Assembly ass)
         {
             List<Type> ret = new List<Type>();
@@ -135,6 +147,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
+        //called to open a stream of a given embedded resource, again searches through all assemblies
         public static Stream LocateEmbededResource(string name)
         {
             Stream ret = typeof(Utility).Assembly.GetManifestResourceStream(name);
@@ -163,6 +176,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
+        //returns a string containing the contents of an embedded resource
         public static string ReadEmbeddedResource(string name)
         {
             Stream s = LocateEmbededResource(name);
@@ -176,6 +190,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
+        //called to parse a java style properties file, such as the messages file
         public static Dictionary<string,string> ParseProperties(string propertiesText)
         {
             Dictionary<string, string> ret = new Dictionary<string, string>();
@@ -214,6 +229,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
+        //Called to compare two strings while handling null values
         public static bool StringsEqual(string str1, string str2)
         {
             if ((str1 == null) && (str2 != null))
@@ -226,6 +242,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return str1.Equals(str2);
         }
 
+        //called to convert an object to an XML string
         public static string ConvertObjectToXML(object obj)
         {
             if (obj == null)
@@ -235,6 +252,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ASCIIEncoding.ASCII.GetString(ms.ToArray());
         }
 
+        //called to convert an objet from and XML string
         public static object ConvertObjectFromXML(Type type, string xmlCode)
         {
             if (xmlCode == null)
@@ -242,6 +260,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return XmlSerializer.FromTypes(new Type[] { type })[0].Deserialize(new MemoryStream(ASCIIEncoding.ASCII.GetBytes(xmlCode)));
         }
 
+        //called to translate a given file extension to a conent-type for the http response
         public static string GetContentTypeForExtension(string fileExtension)
         {
             switch (fileExtension.ToLower())

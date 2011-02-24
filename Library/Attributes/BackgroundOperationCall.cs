@@ -5,6 +5,11 @@ using System.Text.RegularExpressions;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Attributes
 {
+    /*
+     * Attribute used to tag Background Methods and indicate when to run them.
+     * Only should be attached to public static void methods.
+     * Use -1 for any interger value to indicate any minute
+     */
     [AttributeUsage(AttributeTargets.Method)]
     public class BackgroundOperationCall : Attribute
     {

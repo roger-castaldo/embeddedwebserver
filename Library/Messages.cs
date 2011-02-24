@@ -6,6 +6,12 @@ using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
+    /*
+     * This class is used to access the messages used by the system.  These are stored in the 
+     * embedded resource Org.Reddragonit.EmbeddedWebServer.DefaultMessages.properties.  However
+     * using the application configuration you can change these messages by supplying a new file 
+     * and overwriting the required messages in the file.
+     */
     internal class Messages
     {
         private static object _lock = new object();
