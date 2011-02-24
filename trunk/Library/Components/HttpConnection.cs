@@ -11,6 +11,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using System.Net;
 using Procurios.Public;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -73,7 +74,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 throw e;
             }
-            System.Diagnostics.Debug.WriteLine("Total time to load request: "+DateTime.Now.Subtract(start).TotalMilliseconds.ToString()+"ms");
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
 
         #region Request
@@ -170,10 +171,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 int to_read = content_len;
                 while (to_read > 0)
                 {
-                    //Console.WriteLine("starting Read, to_read={0}", to_read);
-
                     int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
-                    //Console.WriteLine("read finished, numread={0}", numread);
                     if (numread == 0)
                     {
                         if (to_read == 0)
@@ -283,14 +281,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             _method = tokens[0].ToUpper();
             _version = tokens[2];
-            //Console.WriteLine("readHeaders()");
             String line;
             _requestHeaders = new HeaderCollection();
             while ((line = streamReadLine(inputStream)) != null)
             {
                 if (line.Equals(""))
                 {
-                    //Console.WriteLine("got headers");
                     break;
                 }
 
@@ -307,7 +303,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
 
                 string value = line.Substring(pos, line.Length - pos);
-                //Console.WriteLine("header: {0}:{1}", name, value);
                 _requestHeaders[name] = value;
             }
             _url = new Uri("http://" + _requestHeaders.Host + tokens[1]);
@@ -377,10 +372,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             line += "\n";
             outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
             byte[] buffer = new byte[socket.Client.SendBufferSize];
+            Logger.LogMessage(DiagnosticsLevels.TRACE,"Sending Buffer size: " + socket.Client.SendBufferSize.ToString());
             _outStream.Seek(0, SeekOrigin.Begin);
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Size of data to send: " + _outStream.Length.ToString());
             while (_outStream.Position < _outStream.Length)
             {
                 int len = _outStream.Read(buffer,0,(int)Math.Min(socket.Client.SendBufferSize, (int)(_outStream.Length - _outStream.Position)));
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to send: " + len.ToString());
                 outStream.Write(buffer, 0, len);
             }
             socket.Close();

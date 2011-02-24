@@ -7,6 +7,7 @@ using Org.Reddragonit.EmbeddedWebServer.BasicHandlers;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -115,6 +116,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public bool AddJqueryJavascript
         {
             get { return true; }
+        }
+
+        public virtual DiagnosticsLevels DiagnosticsLevel
+        {
+            get{ return Settings.DiagnosticsLevel; }
+        }
+
+        public virtual DiagnosticsOutputs DiagnosticsOutput
+        {
+            get { return Settings.DiagnosticsOutput; }
         }
 
         protected abstract void _Start();
