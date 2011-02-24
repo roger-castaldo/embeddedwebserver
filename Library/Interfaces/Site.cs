@@ -107,6 +107,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
+        public bool AddJsonJavascript
+        {
+            get { return true; }
+        }
+
+        public bool AddJqueryJavascript
+        {
+            get { return true; }
+        }
+
         protected abstract void _Start();
         protected abstract void _Stop();
         #endregion
