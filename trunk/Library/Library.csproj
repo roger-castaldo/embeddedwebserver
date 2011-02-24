@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{140F88D6-E0EE-4021-9167-A6455F32ADC1}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -71,6 +71,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DefaultMessages.properties" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\jquery.min.js" />
+    <EmbeddedResource Include="resources\json2.min.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

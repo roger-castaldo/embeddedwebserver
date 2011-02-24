@@ -96,34 +96,51 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (clnt != null)
             {
                 HttpConnection con = new HttpConnection(clnt);
-                DateTime start = DateTime.Now;
-                Site useSite = null;
-                foreach (Site s in _sites)
+                if (con.URL.AbsolutePath == "/jquery.js")
                 {
-                    if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
-                    {
-                        useSite = s;
-                        break;
-                    }
+                    con.ResponseStatus = HttpStatusCodes.OK;
+                    con.ResponseHeaders.ContentType = "text/javascript";
+                    con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
+                    con.SendResponse();
                 }
-                if (useSite == null)
+                else if (con.URL.AbsolutePath == "/json.js")
                 {
+                    con.ResponseStatus = HttpStatusCodes.OK;
+                    con.ResponseHeaders.ContentType = "text/javascript";
+                    con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.json2.min.js"));
+                    con.SendResponse();
+                }
+                else
+                {
+                    DateTime start = DateTime.Now;
+                    Site useSite = null;
                     foreach (Site s in _sites)
                     {
-                        if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                        if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
                         {
                             useSite = s;
                             break;
                         }
                     }
+                    if (useSite == null)
+                    {
+                        foreach (Site s in _sites)
+                        {
+                            if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                            {
+                                useSite = s;
+                                break;
+                            }
+                        }
+                    }
+                    if (useSite == null)
+                        useSite = _defaultSite;
+                    System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                    start = DateTime.Now;
+                    Site.SetCurrentSite(useSite);
+                    useSite.ProcessRequest(con);
+                    System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 }
-                if (useSite == null)
-                    useSite = _defaultSite;
-                System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-                start = DateTime.Now;
-                Site.SetCurrentSite(useSite);
-                useSite.ProcessRequest(con);
-                System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }
     }

@@ -10,6 +10,7 @@ using System.Collections.Specialized;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using System.Net;
+using Procurios.Public;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -127,15 +128,32 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _requestCookie; }
         }
 
+        private object _jsonParameter=null;
+        public object JSONParameter
+        {
+            get { return _jsonParameter; }
+        }
+
         private void parseParameters()
         {
             _requestParameters = new Dictionary<string, string>();
             _uploadedFiles = new Dictionary<string, UploadedFile>();
             if (URL.Query != null)
             {
-                NameValueCollection col = HttpUtility.ParseQueryString(URL.Query);
-                foreach (string str in col.Keys){
-                    _requestParameters.Add(str, col[str]);
+                string query = HttpUtility.UrlDecode(URL.Query);
+                if (query.StartsWith("?{")&&query.EndsWith("}"))
+                {
+                    query = query.Substring(1);
+                    if (query != "{}")
+                        _jsonParameter = JSON.JsonDecode(query);
+                }
+                else
+                {
+                    NameValueCollection col = HttpUtility.ParseQueryString(query);
+                    foreach (string str in col.Keys)
+                    {
+                        _requestParameters.Add(str, col[str]);
+                    }
                 }
             }
             if (_requestHeaders.ContentLength != null)
@@ -234,10 +252,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 else if (_requestHeaders.ContentType == "application/x-www-form-urlencoded")
                 {
                     string postData = new StreamReader(ms).ReadToEnd();
-                    NameValueCollection col = HttpUtility.ParseQueryString(postData);
-                    foreach (string str in col.Keys)
+                    string query = HttpUtility.UrlDecode(postData);
+                    if (query.StartsWith("?{") && query.EndsWith("}"))
                     {
-                        _requestParameters.Add(str, col[str]);
+                        query = query.Substring(1);
+                        if (query != "{}")
+                            _jsonParameter = JSON.JsonDecode(query);
+                    }
+                    else
+                    {
+                        NameValueCollection col = HttpUtility.ParseQueryString(postData);
+                        foreach (string str in col.Keys)
+                        {
+                            _requestParameters.Add(str, col[str]);
+                        }
                     }
                 }
                 else

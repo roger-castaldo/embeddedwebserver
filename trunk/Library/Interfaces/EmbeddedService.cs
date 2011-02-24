@@ -78,7 +78,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             {
                 throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.UnableToLocateFunction"],functionName,GetType().FullName));
             }
-            string val = conn.RequestParameters[null];
+            object val = conn.JSONParameter;
             
             MethodInfo mi = null;
             if (val == null)
@@ -102,9 +102,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
             else
             {
-                object obj = JSON.JsonDecode(val);
                 List<string> pars = new List<string>();
-                foreach (string str in ((Hashtable)obj).Keys)
+                foreach (string str in ((Hashtable)val).Keys)
                 {
                     pars.Add(str);
                 }
@@ -143,7 +142,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         if (!pars.Contains(pi.Name))
                         {
                             pars.Add(pi.Name);
-                            ((Hashtable)obj).Add(pi.Name, null);
+                            ((Hashtable)val).Add(pi.Name, null);
                         }
                     }
                     mi = methods[0];
@@ -160,7 +159,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 for (int x = 0; x < funcPars.Length; x++)
                 {
                     ParameterInfo pi = mi.GetParameters()[x];
-                    funcPars[x] = ConvertObjectToType(((Hashtable)obj)[pi.Name], pi.ParameterType);
+                    funcPars[x] = ConvertObjectToType(((Hashtable)val)[pi.Name], pi.ParameterType);
                 }
                 if (mi.ReturnType.Name == "void")
                     mi.Invoke(this, funcPars);

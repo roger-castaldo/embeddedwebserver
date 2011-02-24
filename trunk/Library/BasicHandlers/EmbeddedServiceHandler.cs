@@ -83,6 +83,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     string path = GetPathForType(t);
 
                     StringBuilder sw = new StringBuilder();
+                    if (site.AddJqueryJavascript)
+                    {
+                        sw.AppendLine("if (document.getElementsByName(\"jqueryScriptTag\").length==0){");
+                        sw.AppendLine("var e=window.document.createElement('script');");
+                        sw.AppendLine("e.setAttribute('src','/jquery.js');");
+                        sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
+                    }
+                    if (site.AddJsonJavascript)
+                    {
+                        sw.AppendLine("if (document.getElementsByName(\"jsonScriptTag\").length==0){");
+                        sw.AppendLine("var e=window.document.createElement('script');");
+                        sw.AppendLine("e.setAttribute('src','/json.js');");
+                        sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
+                    }
                     sw.AppendLine("var splitted = '" + t.FullName + "'.split('.');" +
                     "var tmp = splitted[0]; " +
                     "if (window[tmp]==undefined){ " +
