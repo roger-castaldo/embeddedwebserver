@@ -53,13 +53,5 @@ namespace Tester
                     );
             }
         }
-
-        protected override void _Start()
-        {
-        }
-
-        protected override void _Stop()
-        {
-        }
     }
 }

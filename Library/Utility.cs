@@ -22,9 +22,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
         public static DirectoryInfo LocateDirectory(string name)
         {
             if (name == "/")
-                return new DirectoryInfo(basePath);
+                return new DirectoryInfo((Site.CurrentSite!=null ? (Site.CurrentSite.BaseSitePath!=null ? Site.CurrentSite.BaseSitePath : basePath) : basePath));
             else
-                return recurLocateDirectory(name, new DirectoryInfo(basePath));
+                return recurLocateDirectory(name, new DirectoryInfo((Site.CurrentSite != null ? (Site.CurrentSite.BaseSitePath != null ? Site.CurrentSite.BaseSitePath : basePath) : basePath)));
         }
 
         //The recursive portion of the above function
@@ -47,7 +47,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
         //Called to locate a file by name using search operations
         public static FileInfo LocateFile(string name)
         {
-            return recurLocateFile(name, new DirectoryInfo(basePath));
+            return recurLocateFile(name, new DirectoryInfo((Site.CurrentSite != null ? (Site.CurrentSite.BaseSitePath != null ? Site.CurrentSite.BaseSitePath : basePath) : basePath)));
         }
 
         //The recursive part of the above operation

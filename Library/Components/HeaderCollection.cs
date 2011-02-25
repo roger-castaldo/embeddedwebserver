@@ -4,8 +4,13 @@ using System.Text;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * Used to easily access the http headers either supplied to the client
+     * or that were supplied by the client.
+     */
     public class HeaderCollection
     {
+        //holds the headers as name value pairs
         private Dictionary<string, string> _values;
         public string this[string name]
         {
@@ -24,6 +29,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //returns the names of all available headers
         public List<string> Keys
         {
             get
@@ -34,24 +40,28 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //sets/gets the host value in the headers
         public string Host
         {
             get { return this["Host"]; }
             set { this["Host"] = value; }
         }
 
+        //sets/gets the Content length value in the headers
         public string ContentLength
         {
             get { return this["Content-Length"]; }
             set { this["Content-Length"] = value; }
         }
 
+        //sets/gets the Content Type value in the headers
         public string ContentType
         {
             get { return this["Content-Type"]; }
             set { this["Content-Type"] = value; }
         }
 
+        //sets/gets the Date value in the headers
         public string Date
         {
             get { return this["Date"]; }

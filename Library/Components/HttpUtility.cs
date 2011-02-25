@@ -5,13 +5,21 @@ using System.Collections.Specialized;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * This class is a stripped down implementation of the 
+     * HttpUtility class found in the System.Web dll.  This
+     * was done in order to strip more memory from the overall library when
+     * loaded into ram and allow access only to required functions.
+     */
     public class HttpUtility
     {
+        //decodes a url encoded value
         public static string UrlDecode(string url)
         {
             return Uri.UnescapeDataString(url);
         }
 
+        //parses a query string and returns the name value pairs
         public static NameValueCollection ParseQueryString(string query)
         {
             NameValueCollection ret = new NameValueCollection();

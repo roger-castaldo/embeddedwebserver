@@ -4,6 +4,12 @@ using System.Text;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * This is a storage class used in all caches.
+     * It simply contains an object and the last access,
+     * the last access being used to know when to destroy a 
+     * cached object from the queue.
+     */
     internal class CachedItemContainer
     {
         private DateTime _lastAccess;

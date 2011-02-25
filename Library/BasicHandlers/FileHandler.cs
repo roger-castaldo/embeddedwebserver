@@ -7,6 +7,11 @@ using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
+    /*
+     * This is just a generic file handler for a web site.  It will searve up pages contained 
+     * within the given site path for the site, if it is specified.  It translates the extension of 
+     * the file into the content type using a utility function.
+     */
     public class FileHandler : IRequestHandler
     {
         private string TranslateURLPath(string url)

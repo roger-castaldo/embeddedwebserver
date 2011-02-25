@@ -5,6 +5,11 @@ using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * This class houses an uploaded file, specifying the parameter name of the file,
+     * the file name and the content type.  All obtained from the file upload information
+     * in the http stream.  It also contains a MemoryStream of the actual uploaded data.
+     */
     public class UploadedFile
     {
         private string _parameterName;

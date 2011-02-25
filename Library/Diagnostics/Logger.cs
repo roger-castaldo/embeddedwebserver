@@ -8,12 +8,31 @@ using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
 {
+    /*
+     * This class houses all the logging functionality for the server.
+     * For the file logging it queues up the data and then dumps it to the appropriate file
+     * through a background operation that is called every minute.  When the 
+     * logging is shut down by a server shutdown it finishes off this queue.
+     */
     public class Logger : IBackgroundOperationContainer
     {
+        //delegate used to append a message to the log file queue asynchronously
+        private delegate void delAppendMessageToFile(Site site, DiagnosticsLevels logLevel, string Message);
+
+        //number of messages to write to a file with each pass of the background thread.
         private const int MESSAGE_WRITE_COUNT = 20;
+        //object used to lock the message queue that houses file written messages
         private static object _lock = new object();
+        //the queue to hold the messages to be written to a file
         private static Queue<string> _messages = new Queue<string>();
 
+        /*
+         * The background thread function that gets called every minute.
+         * It processes the queue for log messages that get written 
+         * to files.  It will only process 20 messages at most each time 
+         * in order to prevent too much locking time for adding new 
+         * messages.
+         */
         [BackgroundOperationCall(-1, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
         internal static void ProcessMessageQueue()
         {
@@ -44,6 +63,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
+        /*
+         * Called when the server shuts down to process all the remaining messages in 
+         * the file queue before shutting down the server completely.
+         */
         internal static void CleanupRemainingMessages()
         {
             Monitor.Enter(_lock);
@@ -71,8 +94,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
+        /*
+         * Called to log a message.  It checks if to check for site settings
+         * for the log, or just general settings.  Once it has been determined if 
+         * logging should occur, it then determines the type and either prints it
+         * to the appropriate output, or it appends the message to the given queue asynchronously.
+         */
         public static void LogMessage(DiagnosticsLevels logLevel, string Message)
         {
+            delAppendMessageToFile del = new delAppendMessageToFile(AppendMessageToFile);
             if (Site.CurrentSite != null)
             {
                 if ((int)Site.CurrentSite.DiagnosticsLevel >= (int)logLevel)
@@ -86,7 +116,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            AppendMessageToFile(Site.CurrentSite, logLevel, Message);
+                            del.BeginInvoke(Site.CurrentSite, logLevel, Message,new AsyncCallback(QueueMessageComplete),null);
                             break;
                     }
                 }
@@ -104,12 +134,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             Console.WriteLine(_FormatDiagnosticsMessage(null, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            AppendMessageToFile(null, logLevel, Message);
+                            del.BeginInvoke(null, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                     }
                 }
             }
         }
+
+        //static function designed to catch finishing of async call to queue log message.
+        private static void QueueMessageComplete(IAsyncResult res) { }
 
         private static void AppendMessageToFile(Site site, DiagnosticsLevels logLevel, string Message)
         {
@@ -118,6 +151,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
+        //formats a diagnostics message using the appropriate date time format as well as site and log level information
         private static string _FormatDiagnosticsMessage(Site site, DiagnosticsLevels logLevel, string Message)
         {
             if (site != null)
