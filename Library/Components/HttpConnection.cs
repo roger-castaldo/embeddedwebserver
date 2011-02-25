@@ -81,6 +81,29 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _session = session;
         }
 
+        //houses connection specific variables that can be set along the way 
+        //and are only valid while the connection is being processed
+        private Dictionary<string, object> _contextVariables;
+        public object this[string ConnectionVariableName]
+        {
+            get {
+                if (_contextVariables != null)
+                {
+                    if (_contextVariables.ContainsKey(ConnectionVariableName))
+                        return _contextVariables[ConnectionVariableName];
+                }
+                return null;
+            }
+            set {
+                if (_contextVariables == null)
+                    _contextVariables = new Dictionary<string, object>();
+                if (_contextVariables.ContainsKey(ConnectionVariableName))
+                    _contextVariables.Remove(ConnectionVariableName);
+                if (value != null)
+                    _contextVariables.Add(ConnectionVariableName, value);
+            }
+        }
+
         /*
          * This constructor loads and http connection from a given tcp client.
          * It establishes the required streams and objects, then loads in the 
