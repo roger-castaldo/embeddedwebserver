@@ -40,6 +40,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
             }
         }
 
+        public void Abandon()
+        {
+            _expiry = DateTime.Now.AddDays(-1);
+        }
+
         internal SessionState(string id)
         {
             _id = id;
