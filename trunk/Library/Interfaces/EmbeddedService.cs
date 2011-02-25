@@ -69,20 +69,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
-        /*
-         * This function is the main portion of the class.  It parses out the parameters,
-         * locates the apprporiate function and then proceeds to invoke it, all assuming
-         * that the security check passes.
-         */
-        public void Invoke(HttpConnection conn,Site website)
+        internal const string CONTEXT_PARS_VARIABLE = "EmbeddedServiceParameters";
+        internal const string CONTEXT_METHOD_VARIABLE = "EmbeddedServiceMethod";
+
+        internal void GetMethodForRequest(HttpConnection conn, Site website)
         {
             string functionName = conn.URL.AbsolutePath.Substring(conn.URL.AbsolutePath.LastIndexOf("/") + 1);
-            _conn = conn;
-            _site = website;
-            if (!IsValidAccess(functionName))
-            {
-                throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.InvalidAccess"],this.GetType().FullName, functionName));
-            }
+            MethodInfo mi = null;
             List<MethodInfo> methods = new List<MethodInfo>();
             foreach (MethodInfo m in GetType().GetMethods())
             {
@@ -91,11 +84,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
             if (methods.Count == 0)
             {
-                throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.UnableToLocateFunction"],functionName,GetType().FullName));
+                throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.UnableToLocateFunction"], functionName, GetType().FullName));
             }
             object val = conn.JSONParameter;
-            
-            MethodInfo mi = null;
+
             if (val == null)
             {
                 foreach (MethodInfo m in methods)
@@ -108,12 +100,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 }
                 if (mi == null)
                 {
-                    throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.UnableToLocateFunctionWithParameters"],new object[]{functionName,GetType().FullName,"none"}));
+                    throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.UnableToLocateFunctionWithParameters"], new object[] { functionName, GetType().FullName, "none" }));
                 }
-                if (mi.ReturnType.Name == "void")
-                    mi.Invoke(this, new object[0]);
-                else
-                    conn.ResponseWriter.Write(JSON.JsonEncode(mi.Invoke(this, new object[0])));
+                conn[CONTEXT_PARS_VARIABLE] = new object[0];
             }
             else
             {
@@ -176,12 +165,29 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                     ParameterInfo pi = mi.GetParameters()[x];
                     funcPars[x] = ConvertObjectToType(((Hashtable)val)[pi.Name], pi.ParameterType);
                 }
-                if (mi.ReturnType.Name == "void")
-                    mi.Invoke(this, funcPars);
-                else
-                    conn.ResponseWriter.Write(JSON.JsonEncode(mi.Invoke(this, funcPars)));
+                conn[CONTEXT_PARS_VARIABLE] = funcPars;
             }
+            conn[CONTEXT_METHOD_VARIABLE] = mi;
+        }
 
+        /*
+         * This function is the main portion of the class.  It parses out the parameters,
+         * locates the apprporiate function and then proceeds to invoke it, all assuming
+         * that the security check passes.
+         */
+        public void Invoke(HttpConnection conn,Site website)
+        {
+            _conn = conn;
+            _site = website;
+            MethodInfo mi = (MethodInfo)conn[CONTEXT_METHOD_VARIABLE];
+            if (!IsValidAccess(mi.Name))
+            {
+                throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.InvalidAccess"],this.GetType().FullName, mi.Name));
+            }
+            if (mi.ReturnType.Name == "void")
+                mi.Invoke(this, (object[])conn[CONTEXT_PARS_VARIABLE]);
+            else
+                conn.ResponseWriter.Write(JSON.JsonEncode(mi.Invoke(this, (object[])conn[CONTEXT_PARS_VARIABLE])));
         }
 
         //this function is used to convert a submitted value parameter to a given

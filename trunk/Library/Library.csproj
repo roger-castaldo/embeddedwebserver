@@ -37,7 +37,7 @@
   <ItemGroup>
     <Compile Include="Attributes\BackgroundOperationCall.cs" />
     <Compile Include="Attributes\Enums.cs" />
-    <Compile Include="Attributes\WebMethodAttribute.cs" />
+    <Compile Include="Attributes\WebMethod.cs" />
     <Compile Include="BackgroundOperationRunner.cs" />
     <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
     <Compile Include="BasicHandlers\EmbeddedServiceHandler.cs" />

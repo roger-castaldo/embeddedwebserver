@@ -139,7 +139,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     sw.Append(t.FullName + " = {fullNameSpace:'" + t.Namespace + "'");
                     foreach (MethodInfo mi in t.GetMethods())
                     {
-                        if (mi.GetCustomAttributes(typeof(WebMethodAttribute), true).Length > 0)
+                        if (mi.GetCustomAttributes(typeof(WebMethod), true).Length > 0)
                         {
                             sw.AppendLine(",");
                             GenerateFunctionCall(mi, t, path, sw);
@@ -263,23 +263,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         */
         public bool RequiresSessionForRequest(HttpConnection conn, Site site)
         {
-            if (conn.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js"))
-                return false;
             string type = conn.URL.AbsolutePath.Substring(0, conn.URL.AbsolutePath.LastIndexOf("/"));
             if (_pathMaps.ContainsKey(type))
             {
                 Type t = Utility.LocateType(_pathMaps[type]);
-                string methodName = conn.URL.AbsolutePath.Substring(conn.URL.AbsolutePath.LastIndexOf("/") + 1);
-                foreach (MethodInfo mi in t.GetMethods())
+                EmbeddedService es = (EmbeddedService)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                es.GetMethodForRequest(conn, site);
+                if (conn[EmbeddedService.CONTEXT_METHOD_VARIABLE] != null)
                 {
-                    if (mi.Name == methodName)
-                    {
-                        if (mi.GetCustomAttributes(typeof(WebMethodAttribute), true).Length > 0)
-                        {
-                            if (((WebMethodAttribute)mi.GetCustomAttributes(typeof(WebMethodAttribute), true)[0]).UseSession)
-                                return true;
-                        }
-                    }
+                    return ((WebMethod)((MethodInfo)conn[EmbeddedService.CONTEXT_METHOD_VARIABLE]).GetCustomAttributes(typeof(WebMethod), true)[0]).UseSession;
                 }
             }
             return false;
