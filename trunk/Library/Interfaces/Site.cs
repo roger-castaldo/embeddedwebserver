@@ -8,6 +8,7 @@ using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
+using System.IO;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -315,6 +316,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //in the class creator init the cache object
         public Site() {
             _cache = new Dictionary<string, CachedItemContainer>();
+        }
+
+        public string MapPath(string path)
+        {
+            if (BaseSitePath != null)
+                return BaseSitePath + Path.DirectorySeparatorChar + path.Replace('/', Path.DirectorySeparatorChar);
+            return null;
         }
     }
 }
