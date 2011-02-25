@@ -10,7 +10,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
      * if loading the session is required when the request is being processed.
      */
     [AttributeUsage(AttributeTargets.Method)]
-    public class WebMethodAttribute : Attribute
+    public class WebMethod : Attribute
     {
         private bool _useSession;
         public bool UseSession
@@ -18,12 +18,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
             get { return _useSession; }
         }
 
-        public WebMethodAttribute(bool useSession)
+        public WebMethod(bool useSession)
         {
             _useSession = useSession;
         }
 
-        public WebMethodAttribute() : this(false)
+        public WebMethod() : this(false)
         {
         }
     }
