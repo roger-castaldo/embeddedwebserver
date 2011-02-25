@@ -12,6 +12,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
     public interface IRequestHandler
     {
         //returns whether or not the handler needs to be recreated per request
+        //WARNING: when recreated the Init and DeInit will be called for every request
         bool IsReusable { get; }
         
         //called to see if the handler is valid for the given request

@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    //the available session storage types
     public enum SiteSessionTypes
     {
         None,
@@ -11,6 +12,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         FileSystem
     }
 
+    //response codes written into basic english, including their numbers
     public enum HttpStatusCodes
     {
         OK = 200,

@@ -14,51 +14,85 @@ using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * This class is a wrapper for the http connection established by
+     * the client.  It houses the underlying socket as well as 
+     * the cookie and header information.
+     */
     public class HttpConnection
     {
+        //A thread specific instance of the current connection
+        [ThreadStatic()]
+        private static HttpConnection _currentConnection;
+        public static HttpConnection CurrentConnection
+        {
+            get { return _currentConnection; }
+        }
 
+        //called to set the current connection for the thread
+        internal static void SetCurrentConnection(HttpConnection conn)
+        {
+            _currentConnection = conn;
+        }
+
+        //the basic buffer size to use when reading/writing data
         private const int BUF_SIZE = 4096;
+        //the maximium size of a post data allowed
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
+        //the underlying socket for the connection
         private TcpClient socket;
+
+        //returns the client endpoint information
         public EndPoint Client
         {
             get { return socket.Client.RemoteEndPoint; }
         }
 
+        //returns the local endpoint information
         public EndPoint LocalEndPoint
         {
             get { return socket.Client.LocalEndPoint; }
         }
 
+        //houses the input stream used to read in all supplied client information
         private Stream inputStream;
 
+        //houses the outgoing buffer to write out information
         private Stream _outStream;
 
+        //used to access the response buffer in order to write the response to it
         private StreamWriter _responseWriter;
         public StreamWriter ResponseWriter
         {
             get { return _responseWriter; }
         }
 
+        //houses the http sessions for the connection if loaded
         private SessionState _session;
         public SessionState Session
         {
             get { return _session; }
         }
 
+        //called to set the session for the current connection
         internal void SetSession(SessionState session)
         {
             _session = session;
         }
 
+        /*
+         * This constructor loads and http connection from a given tcp client.
+         * It establishes the required streams and objects, then loads in the 
+         * header information, it avoids loading in post data for efficeincy.
+         * The post data gets loaded later on when the parameters are accessed.
+         */
         public HttpConnection(TcpClient s)
         {
             DateTime start = DateTime.Now;
             this.socket = s;
             inputStream = new BufferedStream(socket.GetStream());
 
-            // we probably shouldn't be using a streamwriter for all output from handlers either
             _outStream = new MemoryStream();
             _responseWriter = new StreamWriter(_outStream);
             _responseHeaders = new HeaderCollection();
@@ -78,30 +112,36 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         #region Request
 
+        //returns the method specified by the request
         private string _method;
         public string Method
         {
             get { return _method; }
         }
 
+        //returns the url that the request is attempting to access
         private Uri _url;
         public Uri URL
         {
             get { return _url; }
         }
 
+        //returns the http version specified in the request
         private string _version;
         public string Version
         {
             get { return _version; }
         }
 
+        //houses the headers specified in the request
         private HeaderCollection _requestHeaders;
         public HeaderCollection RequestHeaders
         {
             get { return _requestHeaders; }
         }
 
+        //houses the parameters specified in the request.  They are loaded at the point
+        //that this property is called the first time to be more efficient
         private Dictionary<string, string> _requestParameters;
         public Dictionary<string, string> RequestParameters
         {
@@ -112,6 +152,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //houses all the uploaded file information from the request.  These are loaded 
+        //at the point that this property is called the first time, or when the 
+        //request parameters are loaded the first time.
         private Dictionary<string, UploadedFile> _uploadedFiles;
         public Dictionary<string, UploadedFile> UploadedFiles
         {
@@ -122,18 +165,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //houses the cookie information specified by the request this is loaded with the headers
         private CookieCollection _requestCookie;
         public CookieCollection RequestCookie
         {
             get { return _requestCookie; }
         }
 
+        //houses the json object specified in the query, typically used by the embedded services
         private object _jsonParameter=null;
         public object JSONParameter
         {
             get { return _jsonParameter; }
         }
 
+        /*
+         * This function parses the parameters that were sent by the client.
+         * It first attempts to parse out a query string, if specified, including any
+         * json objects.  It then attempts to parse any posted data including uploaded
+         * files and again json data, if any.
+         */
         private void parseParameters()
         {
             _requestParameters = new Dictionary<string, string>();
@@ -270,6 +321,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        /*
+         * This function is used to parse the headers/cookie portion
+         * of the request submitted to the client socket.
+         */
         private void parseRequest()
         {
             String request = streamReadLine(inputStream);
@@ -308,6 +363,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
         }
 
+        //an internal function used to read a line from the stream to prevent encoding issues
         private string streamReadLine(Stream inputStream) {
             int next_char;
             string data = "";
@@ -321,6 +377,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             return data;
         }
 
+        //an internal function to peak a line out of the stream to prevent encoding issues
         private string PeakLine(Stream inputStream)
         {
             long start = inputStream.Position;
@@ -331,11 +388,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         #endregion
 
         #region Response
+        //called to override the response buffer stream with an internally created one
         public void UseResponseStream(Stream str)
         {
             _outStream = str;
         }
 
+        //clears all response data and produces a new response buffer
         public void ClearResponse()
         {
             _responseWriter = null;
@@ -343,7 +402,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _responseWriter = new StreamWriter(_outStream);
         }
 
-
+        /*
+         * This function sends the response back to the client.  It flushes the 
+         * writer is necessary.  Then proceeds to build a full response in a string buffer 
+         * including writing out all the headers and cookie information specified.  It then appends
+         * the actual outstream data to the buffer.  Once complete, it reads that buffer 
+         * and sends back the data in chunks of data sized by the client buffer size specification.
+         */
         public void SendResponse()
         {
             ResponseWriter.Flush();
@@ -363,6 +428,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 line+=str + ": " + _responseHeaders[str]+"\n";
             if (_responseCookie != null)
             {
+                if (Site.CurrentSite != null)
+                    _responseCookie.Renew(Site.CurrentSite.CookieExpireMinutes);
                 foreach (string str in _responseCookie.Keys)
                 {
                     line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r")+"\n";
@@ -383,6 +450,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             socket.Close();
         }
 
+        //houses the headers used in the response
         private HeaderCollection _responseHeaders;
         public HeaderCollection ResponseHeaders
         {
@@ -390,6 +458,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             set { _responseHeaders = value; }
         }
 
+        //houses the response status
         private HttpStatusCodes _responseStatus;
         public HttpStatusCodes ResponseStatus
         {
@@ -397,6 +466,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             set { _responseStatus = value; }
         }
 
+        //houses the response cookies
         private CookieCollection _responseCookie;
         public CookieCollection ResponseCookie
         {

@@ -10,11 +10,19 @@ using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
+    /*
+     * This handler is implemented in order to respond to requests using virtual files
+     * that are specified by the site in question, and are embedded resources contained
+     * within a dll.
+     */
     public class EmbeddedResourceHandler : IRequestHandler,IBackgroundOperationContainer
     {
+        //the amount of minutes to cache any compressed items before removing them for efficiency
         private const int CACHE_EXPIRY_MINUTES = 60;
 
+        //houses compressed css and js code from embedded resources
         private Dictionary<string, CachedItemContainer> _compressedCache;
+        //a lock object used to control access to the compressed files cache
         private object _lock;
 
         public EmbeddedResourceHandler()
@@ -23,6 +31,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             _compressedCache = new Dictionary<string, CachedItemContainer>();
         }
 
+        /*
+         * A background thread operation designed to run through every instance 
+         * of this type of handler and clean up the cached compressed information
+         * by checking for expiry times.  This will run every minute.
+         */
         [BackgroundOperationCall(-1, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
         public static void CleanupCache()
         {
@@ -54,11 +67,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 
         #region IRequestHandler Members
 
+        //this handler is reusable as nothing is done abnormally
         bool IRequestHandler.IsReusable
         {
             get { return true; }
         }
 
+        //Checks through the list of embedded files from the site definition to 
+        //see if any of the files available match the requested url
         bool IRequestHandler.CanProcessRequest(HttpConnection conn, Site site)
         {
             if (site.EmbeddedFiles != null)
@@ -72,6 +88,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             return false;
         }
 
+        /*
+         * This function processes a given request for an embedded file.
+         * It finds the file from the list, sets the response type appropriately.
+         * If its uncompresssed css or js, checks the cache, if not compresses it,
+         * and caches it.  It then writes the given file out to the response stream.
+         */
         void IRequestHandler.ProcessRequest(HttpConnection conn,Site site)
         {
             sEmbeddedFile? file = null;
@@ -179,14 +201,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             }
         }
 
+        //nothing to do here
         void IRequestHandler.Init()
         {
         }
 
+        //nothing to do here
         void IRequestHandler.DeInit()
         {
         }
 
+        //always returns false as sessions are never necessary
         bool IRequestHandler.RequiresSessionForRequest(HttpConnection conn, Site site)
         {
             return false;

@@ -8,15 +8,24 @@ using Org.Reddragonit.EmbeddedWebServer.Sessions;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    /*
+     * This class is an implemented socket that contains the sites it listens for 
+     * on the given tcp listener.  It is where the http connections are created 
+     * and responses are started.
+     */
     internal class PortListener
     {
+        //the tcp connection listener for the given sites
         private TcpListener _listener;
+
+        //the sites that the listener listens for
         private List<Site> _sites;
         public List<Site> Sites
         {
             get { return _sites; }
         }
 
+        //returns the default site for this tcp listener
         private Site _defaultSite
         {
             get
@@ -30,6 +39,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //adds a site to listen for
         public void AttachSite(Site site)
         {
             if ((site.IPToListenTo == IPAddress.Any)||((IP!=IPAddress.Any)&&(site.IPToListenTo!=_ip)))
@@ -37,18 +47,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _sites.Add(site);
         }
 
+        //the port the tcplistener is bound to
         private int _port;
         public int Port
         {
             get { return _port; }
         }
 
+        //the ip address the tcplistener is bound on
         private IPAddress _ip;
         public IPAddress IP
         {
             get { return _ip; }
         }
 
+        //creates a new instance of a tcp port listener for a given site
         public PortListener(Site site)
         {
             _sites = new List<Site>();
@@ -57,6 +70,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _ip = site.IPToListenTo;
         }
 
+        //starts the listener by starting each site,
+        //then binding the tcplistener to wait for incoming connections
         public void Start()
         {
             foreach (Site site in _sites)
@@ -66,6 +81,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
         }
 
+        //stops the tcplistener from accepting connections and stops all sites contained within
         public void Stop()
         {
             try
@@ -78,6 +94,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 site.Stop();
         }
 
+        /*
+         * This function is the asynchronously called function from the being accept on 
+         * the tcp listener.  It accepts the tcp client, starts listening again, 
+         * and then proceeds to process the client itself by producing an HTTPConnection 
+         * from the given tcp client, and then searches through the sites to find the appropriate 
+         * site for the given client request.  If no site is found, it simply assumes the default site.
+         * Then the site's process request function is called to handle the reuqest from there.  It also 
+         * checks that the given site allows for the method specified, if not returns an invalid request 
+         * response.
+         */
         private void RecieveClient(IAsyncResult res)
         {
             TcpClient clnt = null;
@@ -96,6 +122,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (clnt != null)
             {
                 HttpConnection con = new HttpConnection(clnt);
+                HttpConnection.SetCurrentConnection(con);
                 if (con.URL.AbsolutePath == "/jquery.js")
                 {
                     con.ResponseStatus = HttpStatusCodes.OK;
@@ -136,10 +163,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     if (useSite == null)
                         useSite = _defaultSite;
                     System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-                    start = DateTime.Now;
-                    Site.SetCurrentSite(useSite);
-                    useSite.ProcessRequest(con);
-                    System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                    if ((!useSite.AllowGET && con.Method.ToUpper() == "GET") ||
+                        (!useSite.AllowPOST && con.Method.ToUpper() == "POST"))
+                    {
+                        con.ResponseStatus = HttpStatusCodes.Method_Not_Allowed;
+                        con.SendResponse();
+                    }
+                    else
+                    {
+                        start = DateTime.Now;
+                        Site.SetCurrentSite(useSite);
+                        useSite.ProcessRequest(con);
+                        System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                    }
                 }
             }
         }
