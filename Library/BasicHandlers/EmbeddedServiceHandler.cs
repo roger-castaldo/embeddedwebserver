@@ -27,8 +27,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         private object _lock = new object();
         //houses the cached generated javascript files
         private Dictionary<string, CachedItemContainer> _generatedJS;
+
+        private const string SESSION_ID = "Org.Reddragonit.EmbeddedWebServer.BasicHandlers.EmbeddedServiceHandler._pathMaps";
         //houses the paths mapped to type string for the embedded services handle by this handler
-        private Dictionary<string, string> _pathMaps;
+        private Dictionary<string, string> _pathMaps
+        {
+            get
+            {
+                if (Site.CurrentSite[SESSION_ID] == null)
+                    return null;
+                return (Dictionary<string, string>)Site.CurrentSite[SESSION_ID];
+            }
+            set
+            {
+                Site.CurrentSite[SESSION_ID] = value;
+            }
+        }
 
         /*
          * This background threaded operation gets called every hour on the hour to clean out
@@ -227,6 +241,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         //returns true if the requested url is for an embedded service or to generate javascript
         public bool CanProcessRequest(HttpConnection conn, Site site)
         {
+            Monitor.Enter(_lock);
+            if (_pathMaps == null)
+                Init();
+            Monitor.Exit(_lock);
             return _pathMaps.ContainsKey(conn.URL.AbsolutePath.Substring(0,conn.URL.AbsolutePath.LastIndexOf("/")))||(conn.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js") && (conn.RequestParameters["TYPE"] != null));
         }
 
@@ -234,6 +252,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         //or perform the given operation
         public void ProcessRequest(HttpConnection conn, Site site)
         {
+            Monitor.Enter(_lock);
+            if (_pathMaps == null)
+                Init();
+            Monitor.Exit(_lock);
             if (conn.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js"))
                 ProcessJSGeneration(conn, site);
             else
@@ -244,11 +266,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         //places them into its path maps list.
         public void Init()
         {
-            _pathMaps = new Dictionary<string, string>();
+            Dictionary<string, string> tmp = new Dictionary<string, string>();
             foreach (Type t in Site.CurrentSite.EmbeddedServiceTypes)
             {
-                _pathMaps.Add(GetPathForType(t), t.FullName);
+                tmp.Add(GetPathForType(t), t.FullName);
             }
+            _pathMaps = tmp;
         }
 
         public void DeInit()
@@ -263,6 +286,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         */
         public bool RequiresSessionForRequest(HttpConnection conn, Site site)
         {
+            Monitor.Enter(_lock);
+            if (_pathMaps == null)
+                Init();
+            Monitor.Exit(_lock);
             string type = conn.URL.AbsolutePath.Substring(0, conn.URL.AbsolutePath.LastIndexOf("/"));
             if (_pathMaps.ContainsKey(type))
             {
