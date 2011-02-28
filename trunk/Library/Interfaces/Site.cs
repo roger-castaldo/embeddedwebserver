@@ -245,6 +245,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
+        public List<string> CachedItemKeys
+        {
+            get{
+                Monitor.Enter(_lock);
+                string[] tmp = new string[_cache.Count];
+                _cache.Keys.CopyTo(tmp, 0);
+                Monitor.Exit(_lock);
+                return new List<string>(tmp);
+            }
+        }
+
         /*
          * This function is called by the port listener once the appropriate site has
          * been located to process the given request.  It scans through all 
