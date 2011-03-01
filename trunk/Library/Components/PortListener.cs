@@ -140,43 +140,51 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 else
                 {
                     DateTime start = DateTime.Now;
-                    Site useSite = null;
+                    bool Processed = false;
                     foreach (Site s in _sites)
                     {
                         if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
                         {
-                            useSite = s;
+                            ProcessRequest(con, s, start);
+                            Processed = true;
                             break;
                         }
                     }
-                    if (useSite == null)
+                    if (!Processed)
                     {
                         foreach (Site s in _sites)
                         {
                             if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
                             {
-                                useSite = s;
+                                ProcessRequest(con, s, start);
+                                Processed = true;
                                 break;
                             }
                         }
                     }
-                    if (useSite == null)
-                        useSite = _defaultSite;
-                    System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-                    if ((!useSite.AllowGET && con.Method.ToUpper() == "GET") ||
-                        (!useSite.AllowPOST && con.Method.ToUpper() == "POST"))
-                    {
-                        con.ResponseStatus = HttpStatusCodes.Method_Not_Allowed;
-                        con.SendResponse();
-                    }
-                    else
-                    {
-                        start = DateTime.Now;
-                        Site.SetCurrentSite(useSite);
-                        useSite.ProcessRequest(con);
-                        System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-                    }
+                    if (!Processed)
+                        ProcessRequest(con, _defaultSite, start);
                 }
+            }
+        }
+
+        private void ProcessRequest(HttpConnection con, Site useSite, DateTime start)
+        {
+            System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            if ((!useSite.AllowGET && con.Method.ToUpper() == "GET") ||
+                (!useSite.AllowPOST && con.Method.ToUpper() == "POST"))
+            {
+                con.ResponseStatus = HttpStatusCodes.Method_Not_Allowed;
+                con.SendResponse();
+            }
+            else
+            {
+                start = DateTime.Now;
+                if (con.URL.AbsolutePath == "/")
+                    con.UseDefaultPath(useSite);
+                Site.SetCurrentSite(useSite);
+                useSite.ProcessRequest(con);
+                System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }
     }

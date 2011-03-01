@@ -169,7 +169,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                     else
                         return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.IPToListenTo.ToString() + ":" + Site.CurrentSite.Port.ToString() + "|" + Message;
                 }else
-                    return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.IPToListenTo.ToString() + ":" + Site.CurrentSite.Port.ToString() + "|" + Message;
+                    return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + Message;
             }
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|null|" + Message;
         }

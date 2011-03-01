@@ -71,10 +71,12 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 throw new Exception(Messages.Current["Org.Reddragonit.EmbeddedWebServer.ServerControl.Errors.ServerStarted"]);
             else
             {
+                MT19937 _rand = new MT19937(DateTime.Now.Ticks);
                 _listeners = new List<PortListener>();
                 foreach (Type t in Utility.LocateTypeInstances(typeof(Site)))
                 {
                     Site s = (Site)t.GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
+                    s.ID = SessionManager.GenerateSessionID();
                     bool add = true;
                     foreach (PortListener pt in _listeners)
                     {

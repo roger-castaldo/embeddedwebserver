@@ -149,6 +149,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _url; }
         }
 
+        internal void UseDefaultPath(Site site)
+        {
+            _url = new Uri("http://" + _url.Host + site.DefaultPage);
+        }
+
         //returns the http version specified in the request
         private string _version;
         public string Version
@@ -468,9 +473,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 int len = _outStream.Read(buffer,0,(int)Math.Min(socket.Client.SendBufferSize, (int)(_outStream.Length - _outStream.Position)));
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to send: " + len.ToString());
-                outStream.Write(buffer, 0, len);
+                try
+                {
+                    outStream.Write(buffer, 0, len);
+                }
+                catch (Exception e)
+                {
+                    _outStream.Position = _outStream.Length;
+                }
             }
-            socket.Close();
+            try
+            {
+                socket.Close();
+            }
+            catch (Exception e) { }
         }
 
         //houses the headers used in the response

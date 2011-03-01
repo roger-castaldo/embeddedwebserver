@@ -65,7 +65,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
             Monitor.Exit(_lock);
         }
 
-        private static string GenerateSessionID()
+        internal static string GenerateSessionID()
         {
             string ret="";
             while (ret.Length < SESSION_ID_LEN)
