@@ -249,7 +249,10 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return null;
             MemoryStream ms = new MemoryStream();
             XmlSerializer.FromTypes(new Type[] { obj.GetType() })[0].Serialize(ms, obj);
-            return ASCIIEncoding.ASCII.GetString(ms.ToArray());
+            string ret = ASCIIEncoding.ASCII.GetString(ms.ToArray());
+            if (!ret.StartsWith("<"))
+                ret = ret.Substring(ret.IndexOf("<"));
+            return ret;
         }
 
         //called to convert an objet from and XML string
@@ -257,6 +260,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
         {
             if (xmlCode == null)
                 return null;
+            if (!xmlCode.StartsWith("<"))
+                xmlCode = xmlCode.Substring(xmlCode.IndexOf("<"));
             return XmlSerializer.FromTypes(new Type[] { type })[0].Deserialize(new MemoryStream(ASCIIEncoding.ASCII.GetBytes(xmlCode)));
         }
 
