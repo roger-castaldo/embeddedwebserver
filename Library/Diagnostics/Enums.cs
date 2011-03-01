@@ -18,6 +18,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
     {
         DEBUG,
         CONSOLE,
-        FILE
+        FILE,
+        SOCKET
     }
 }

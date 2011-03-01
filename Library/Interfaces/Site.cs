@@ -152,6 +152,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return Settings.DiagnosticsOutput; }
         }
 
+        //indicates the port to bind the logging socket to
+        public virtual IPEndPoint RemoteLoggingServer
+        {
+            get { return new IPEndPoint(IPAddress.Broadcast,8081); }
+        }
+
         //an implemented start that gets called before the handlers are initialized
         protected virtual void PreStart(){}
         //an implemented start that gets called after all the handlers are initialized
