@@ -186,7 +186,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (con.URL.AbsolutePath == "/")
                     con.UseDefaultPath(useSite);
                 Site.SetCurrentSite(useSite);
-                useSite.ProcessRequest(con);
+                try
+                {
+                    useSite.ProcessRequest(con);
+                }
+                catch (Exception e) {
+                    con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                    con.ResponseWriter.WriteLine(e.Message);
+                    con.SendResponse();
+                }
                 System.Diagnostics.Debug.WriteLine("Total time to process request to URL "+con.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }

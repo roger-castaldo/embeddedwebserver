@@ -204,7 +204,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private object _jsonParameter=null;
         public object JSONParameter
         {
-            get { return _jsonParameter; }
+            get {
+                if (_requestParameters == null)
+                    parseParameters();
+                return _jsonParameter; 
+            }
         }
 
         /*

@@ -128,14 +128,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 
         //indicates to add the json javascript with a service javascript request.
         //set true if the pages involved don't reference the json javascript by default
-        public bool AddJsonJavascript
+        public virtual bool AddJsonJavascript
         {
             get { return true; }
         }
 
         //indicates to add the jquery javascript with a service javascript request.
         //set true if the pages involved don't reference the jquery javascript by default
-        public bool AddJqueryJavascript
+        public virtual bool AddJqueryJavascript
         {
             get { return true; }
         }
@@ -315,7 +315,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL "+conn.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
                     if (handler.IsReusable)
                     {
-                        if (handler.RequiresSessionForRequest(conn, this))
+                        if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage==conn.URL.AbsolutePath && SessionStateType!=SiteSessionTypes.None))
                             SessionManager.LoadStateForConnection(conn, this);
                         try
                         {
@@ -327,7 +327,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             conn.ClearResponse();
                             conn.ResponseWriter.Write(e.Message);
                         }
-                        if (handler.RequiresSessionForRequest(conn, this))
+                        if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
                             SessionManager.StoreSessionForConnection(conn, this);
                     }
                     else
