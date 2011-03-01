@@ -175,8 +175,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //Called to start the site up, runs all required initializations
         public void Start()
         {
-            PreStart();
             _currentSite = this;
+            PreStart();
             foreach (IRequestHandler handler in Handlers)
             {
                 handler.Init();
@@ -187,8 +187,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //Called to stop the site, runs all deinits and the internal stop function
         public void Stop()
         {
-            PreStop();
             _currentSite = this;
+            PreStop();
             foreach (IRequestHandler handler in Handlers)
             {
                 handler.DeInit();
