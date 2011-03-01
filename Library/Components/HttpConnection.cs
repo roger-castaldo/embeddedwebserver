@@ -478,8 +478,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Size of data to send: " + _outStream.Length.ToString());
             while (_outStream.Position < _outStream.Length)
             {
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to read from buffer: " + ((int)Math.Min(socket.Client.SendBufferSize, (int)(_outStream.Length - _outStream.Position))).ToString());
-                int len = _outStream.Read(buffer,0,(int)Math.Min(socket.Client.SendBufferSize, (int)(_outStream.Length - _outStream.Position)));
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to read from buffer: " + ((int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position))).ToString());
+                int len = _outStream.Read(buffer, 0, (int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position)));
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to send: " + len.ToString());
                 try
                 {
