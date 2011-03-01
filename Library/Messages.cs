@@ -35,7 +35,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
         {
             _messages = new Dictionary<string, string>();
             _messages = Utility.ParseProperties(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.DefaultMessages.properties"));
-            if (Settings.MessagesFilePath != null)
+            if (Settings.MessagesFilePath != null && Settings.MessagesFilePath!="")
             {
                 StreamReader sr = new StreamReader(new FileStream(Settings.MessagesFilePath, FileMode.Open, FileAccess.Read, FileShare.None));
                 string stmp = sr.ReadToEnd();

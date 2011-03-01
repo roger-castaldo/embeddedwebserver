@@ -158,6 +158,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return new IPEndPoint(IPAddress.Broadcast,8081); }
         }
 
+        //indicates the default path when none is specified in the request
+        public virtual string DefaultPage
+        {
+            get { return "/index.html"; }
+        }
+
         //an implemented start that gets called before the handlers are initialized
         protected virtual void PreStart(){}
         //an implemented start that gets called after all the handlers are initialized
@@ -171,6 +177,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //an implemented function that gets called after the processing of a request
         protected virtual void PostRequest(HttpConnection conn) { }
         #endregion
+
+        private string _id;
+        internal string ID
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
 
         //Called to start the site up, runs all required initializations
         public void Start()
@@ -197,9 +210,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         //used to lock the site cache object for thread safe access
-        private object _lock = new object();
-        //The cache designed to hold 
-        private Dictionary<string, CachedItemContainer> _cache;
+        private static object _lock = new object();
+        //The cache designed to hold site specific data, its static to ensure proper usage between requests
+        private static Dictionary<string,Dictionary<string, CachedItemContainer>> _cache;
 
         /*
          * This function is a background threaded operation that every minute
@@ -214,15 +227,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             List<Site> sites = ServerControl.Sites;
             foreach (Site site in sites)
             {
-                Monitor.Enter(site._lock);
-                string[] keys = new string[site._cache.Count];
-                site._cache.Keys.CopyTo(keys,0);
-                foreach (string str in keys)
+                Monitor.Enter(_lock);
+                if (_cache == null)
+                    _cache = new Dictionary<string, Dictionary<string, CachedItemContainer>>();
+                if (_cache.ContainsKey(site.ID))
                 {
-                    if (DateTime.Now.Subtract(site._cache[str].LastAccess).TotalMinutes <= site.CacheItemExpiryMinutes)
-                        site._cache.Remove(str);
+                    string[] keys = new string[_cache[site.ID].Count];
+                    _cache[site.ID].Keys.CopyTo(keys, 0);
+                    foreach (string str in keys)
+                    {
+                        if (DateTime.Now.Subtract(_cache[site.ID][str].LastAccess).TotalMinutes > site.CacheItemExpiryMinutes)
+                            _cache[site.ID].Remove(str);
+                    }
                 }
-                Monitor.Exit(site._lock);
+                Monitor.Exit(_lock);
             }
             GC.Collect();
         }
@@ -235,18 +253,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             {
                 object ret = null;
                 Monitor.Enter(_lock);
-                if (_cache.ContainsKey(cachedItemName))
-                    ret = _cache[cachedItemName].Value;
+                if (_cache == null)
+                    _cache = new Dictionary<string, Dictionary<string, CachedItemContainer>>();
+                if (!_cache.ContainsKey(ID))
+                    _cache.Add(ID, new Dictionary<string, CachedItemContainer>());
+                if (_cache[ID].ContainsKey(cachedItemName))
+                    ret = _cache[ID][cachedItemName].Value;
                 Monitor.Exit(_lock);
                 return ret;
             }
             set
             {
                 Monitor.Enter(_lock);
-                if (_cache.ContainsKey(cachedItemName))
-                    _cache[cachedItemName].Value = value;
-                else
-                    _cache.Add(cachedItemName, new CachedItemContainer(value));
+                if (_cache == null)
+                    _cache = new Dictionary<string, Dictionary<string, CachedItemContainer>>();
+                if (!_cache.ContainsKey(ID))
+                    _cache.Add(ID, new Dictionary<string, CachedItemContainer>());
+                if (_cache[ID].ContainsKey(cachedItemName))
+                    _cache[ID].Remove(cachedItemName);
+                if (value!=null)
+                    _cache[ID].Add(cachedItemName, new CachedItemContainer(value));
                 Monitor.Exit(_lock);
             }
         }
@@ -255,8 +281,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         {
             get{
                 Monitor.Enter(_lock);
-                string[] tmp = new string[_cache.Count];
-                _cache.Keys.CopyTo(tmp, 0);
+                if (_cache == null)
+                    _cache = new Dictionary<string, Dictionary<string, CachedItemContainer>>();
+                if (!_cache.ContainsKey(ID))
+                    _cache.Add(ID, new Dictionary<string, CachedItemContainer>());
+                string[] tmp = new string[_cache[ID].Count];
+                _cache[ID].Keys.CopyTo(tmp, 0);
                 Monitor.Exit(_lock);
                 return new List<string>(tmp);
             }
@@ -330,9 +360,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             conn.SendResponse();
         }
 
-        //in the class creator init the cache object
         public Site() {
-            _cache = new Dictionary<string, CachedItemContainer>();
         }
 
         public string MapPath(string path)
