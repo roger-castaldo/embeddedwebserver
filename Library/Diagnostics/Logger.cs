@@ -106,7 +106,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
          */
         public static void LogMessage(DiagnosticsLevels logLevel, string Message)
         {
-            delAppendMessageToFile del = new delAppendMessageToFile(AppendMessageToFile);
             if (Site.CurrentSite != null)
             {
                 if ((int)Site.CurrentSite.DiagnosticsLevel >= (int)logLevel)
@@ -120,7 +119,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            del.BeginInvoke(Site.CurrentSite, logLevel, Message,new AsyncCallback(QueueMessageComplete),null);
+                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                         case DiagnosticsOutputs.SOCKET:
                             _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message)), Site.CurrentSite.RemoteLoggingServer);
@@ -141,7 +140,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             Console.WriteLine(_FormatDiagnosticsMessage(null, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            del.BeginInvoke(null, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
+                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(null, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                     }
                 }
@@ -163,9 +162,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         {
             if (site != null)
             {
-                if (site.ServerName != null)
-                    return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.ServerName + "|" + Message;
-                else
+                if (Settings.UseServerNameInLogging)
+                {
+                    if (site.ServerName != null)
+                        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.ServerName + "|" + Message;
+                    else
+                        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.IPToListenTo.ToString() + ":" + Site.CurrentSite.Port.ToString() + "|" + Message;
+                }else
                     return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.IPToListenTo.ToString() + ":" + Site.CurrentSite.Port.ToString() + "|" + Message;
             }
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|null|" + Message;

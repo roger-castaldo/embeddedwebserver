@@ -73,5 +73,17 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return "."+Path.DirectorySeparatorChar+"logs"+Path.DirectorySeparatorChar;
             }
         }
+
+        //Indicates if the server name should be included in logging
+        private const string USE_SERVER_NAME_IN_LOGGING_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.UseServerNameInLogging";
+        public static bool UseServerNameInLogging
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[USE_SERVER_NAME_IN_LOGGING_SETTING_ID] != null)
+                    return bool.Parse(ConfigurationSettings.AppSettings[USE_SERVER_NAME_IN_LOGGING_SETTING_ID]);
+                return true;
+            }
+        }
     }
 }
