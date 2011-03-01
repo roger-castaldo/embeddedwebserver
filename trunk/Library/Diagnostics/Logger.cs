@@ -5,6 +5,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using System.IO;
+using System.Net.Sockets;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
 {
@@ -25,6 +26,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         private static object _lock = new object();
         //the queue to hold the messages to be written to a file
         private static Queue<string> _messages = new Queue<string>();
+
+        //udp socket for remote logging
+        private static Socket _sockLog = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
         /*
          * The background thread function that gets called every minute.
@@ -117,6 +121,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             break;
                         case DiagnosticsOutputs.FILE:
                             del.BeginInvoke(Site.CurrentSite, logLevel, Message,new AsyncCallback(QueueMessageComplete),null);
+                            break;
+                        case DiagnosticsOutputs.SOCKET:
+                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message)), Site.CurrentSite.RemoteLoggingServer);
                             break;
                     }
                 }
