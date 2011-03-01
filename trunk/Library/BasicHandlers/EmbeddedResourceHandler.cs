@@ -135,13 +135,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         {
                             conn.ResponseHeaders.ContentType = "text/css";
                             Monitor.Enter(_lock);
+                            css = CSSMinifier.Minify(css);
                             if (!_compressedCache.ContainsKey(file.DLLPath))
                             {
-                                css = CSSMinifier.Minify(css);
                                 _compressedCache.Add(file.DLLPath, new CachedItemContainer(css));
                             }
                             Monitor.Exit(_lock);
-                            css = _compressedCache[file.DLLPath].Value.ToString();
                             conn.ResponseWriter.Write(css);
                         }
                     }
@@ -164,14 +163,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         else
                         {
                             conn.ResponseHeaders.ContentType = "text/javascript";
+                            js = JSMinifier.Minify(js);
                             Monitor.Enter(_lock);
                             if (!_compressedCache.ContainsKey(file.DLLPath))
                             {
-                                js = JSMinifier.Minify(js);
                                 _compressedCache.Add(file.DLLPath, new CachedItemContainer(js));
                             }
                             Monitor.Exit(_lock);
-                            js = _compressedCache[file.DLLPath].Value.ToString();
                             conn.ResponseWriter.Write(js);
                         }
                     }

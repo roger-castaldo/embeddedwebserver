@@ -197,7 +197,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
                         }
                         if (theA <= '\n')
                         {
-                            throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", theA));
+                            throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0} found at {1}\n", theA,sr.BaseStream.Position));
                         }
                         if (theA == '\\')
                         {
