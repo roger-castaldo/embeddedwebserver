@@ -79,7 +79,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         //returns the list of embedded files available for the site
-        public virtual List<sEmbeddedFile> EmbeddedFiles
+        public virtual Dictionary<string,sEmbeddedFile> EmbeddedFiles
         {
             get { return null; }
         }
@@ -304,6 +304,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public void ProcessRequest(HttpConnection conn)
         {
             PreRequest(conn);
+            DateTime start = DateTime.Now;
             _currentSite = this;
             bool found = false;
             foreach (IRequestHandler handler in Handlers)
@@ -311,6 +312,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 if (handler.CanProcessRequest(conn, this))
                 {
                     found = true;
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL "+conn.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
                     if (handler.IsReusable)
                     {
                         if (handler.RequiresSessionForRequest(conn, this))

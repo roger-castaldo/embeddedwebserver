@@ -141,24 +141,27 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     DateTime start = DateTime.Now;
                     bool Processed = false;
-                    foreach (Site s in _sites)
-                    {
-                        if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
-                        {
-                            ProcessRequest(con, s, start);
-                            Processed = true;
-                            break;
-                        }
-                    }
-                    if (!Processed)
+                    if (_sites.Count > 1)
                     {
                         foreach (Site s in _sites)
                         {
-                            if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                            if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
                             {
                                 ProcessRequest(con, s, start);
                                 Processed = true;
                                 break;
+                            }
+                        }
+                        if (!Processed)
+                        {
+                            foreach (Site s in _sites)
+                            {
+                                if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                                {
+                                    ProcessRequest(con, s, start);
+                                    Processed = true;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -184,7 +187,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     con.UseDefaultPath(useSite);
                 Site.SetCurrentSite(useSite);
                 useSite.ProcessRequest(con);
-                System.Diagnostics.Debug.WriteLine("Total time to process request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                System.Diagnostics.Debug.WriteLine("Total time to process request to URL "+con.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }
     }

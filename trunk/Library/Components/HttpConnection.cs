@@ -440,6 +440,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public void SendResponse()
         {
             ResponseWriter.Flush();
+            DateTime start = DateTime.Now;
             _responseHeaders.ContentLength = _outStream.Length.ToString();
             if (_responseHeaders["Accept-Ranges"] == null)
                 _responseHeaders["Accept-Ranges"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.AcceptRanges"];
@@ -465,6 +466,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             line += "\n";
             outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            start = DateTime.Now;
             byte[] buffer = new byte[socket.Client.SendBufferSize];
             Logger.LogMessage(DiagnosticsLevels.TRACE,"Sending Buffer size: " + socket.Client.SendBufferSize.ToString());
             _outStream.Seek(0, SeekOrigin.Begin);
@@ -487,6 +490,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 socket.Close();
             }
             catch (Exception e) { }
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
 
         //houses the headers used in the response
