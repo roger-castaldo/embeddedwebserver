@@ -10,7 +10,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
      * Only should be attached to public static void methods.
      * Use -1 for any interger value to indicate any minute
      */
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method,AllowMultiple=true)]
     public class BackgroundOperationCall : Attribute
     {
         private Regex _regMatch;

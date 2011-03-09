@@ -105,7 +105,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     if (mi.GetCustomAttributes(typeof(BackgroundOperationCall),false).Length > 0)
                     {
-                        calls.Add(new sCall(t,(BackgroundOperationCall)mi.GetCustomAttributes(typeof(BackgroundOperationCall),false)[0], mi));
+                        foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall),false))
+                            calls.Add(new sCall(t,boc, mi));
                     }
                 }
             }
