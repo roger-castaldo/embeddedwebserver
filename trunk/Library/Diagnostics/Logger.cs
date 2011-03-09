@@ -173,5 +173,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             }
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|null|" + Message;
         }
+
+        //called to log an error message, it traverses inner exceptions
+        public static void LogError(Exception e)
+        {
+            Exception ex = e;
+            while (ex != null)
+            {
+                LogMessage(DiagnosticsLevels.CRITICAL, ex.Message);
+                LogMessage(DiagnosticsLevels.CRITICAL, ex.StackTrace);
+                ex = ex.InnerException;
+            }
+        }
     }
 }
