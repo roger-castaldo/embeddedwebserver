@@ -326,6 +326,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
                             conn.ClearResponse();
                             conn.ResponseWriter.Write(e.Message);
+                            Logger.LogMessage(DiagnosticsLevels.CRITICAL, e.Message);
+                            Logger.LogMessage(DiagnosticsLevels.CRITICAL, e.StackTrace);
                         }
                         if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
                             SessionManager.StoreSessionForConnection(conn, this);
@@ -345,6 +347,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
                             conn.ClearResponse();
                             conn.ResponseWriter.Write(e.Message);
+                            Logger.LogMessage(DiagnosticsLevels.CRITICAL, e.Message);
+                            Logger.LogMessage(DiagnosticsLevels.CRITICAL, e.StackTrace);
                         }
                         if (hndl.RequiresSessionForRequest(conn, this))
                             SessionManager.StoreSessionForConnection(conn, this);
