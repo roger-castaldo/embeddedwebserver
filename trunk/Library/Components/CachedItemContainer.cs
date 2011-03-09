@@ -10,7 +10,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
      * the last access being used to know when to destroy a 
      * cached object from the queue.
      */
-    internal class CachedItemContainer
+    public class CachedItemContainer
     {
         private DateTime _lastAccess;
         public DateTime LastAccess
