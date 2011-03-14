@@ -8,9 +8,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
     public enum DiagnosticsLevels
     {
         NONE = 0,
-        CRITICAL = 1,
-        DEBUG = 2,
-        TRACE = 3
+        SECURITY = 1,
+        CRITICAL = 2,
+        DEBUG = 3,
+        TRACE = 4
     }
 
     //the available logging output types
