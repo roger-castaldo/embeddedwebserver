@@ -37,5 +37,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _lastAccess = DateTime.Now;
             _value = value;
         }
+
+        public override bool Equals(object obj)
+        {
+            return Value.Equals(((CachedItemContainer)obj).Value);
+        }
     }
 }

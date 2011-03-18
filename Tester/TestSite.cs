@@ -41,16 +41,14 @@ namespace Tester
             }
         }
 
-        public override List<sEmbeddedFile> EmbeddedFiles
+        public override Dictionary<string, sEmbeddedFile> EmbeddedFiles
         {
             get
             {
-                return new List<sEmbeddedFile>(
-                    new sEmbeddedFile[]{
-                        new sEmbeddedFile("Tester.resources.accept.png","/resources/images/accept.png",EmbeddedFileTypes.Image,ImageTypes.png),
-                        new sEmbeddedFile("Tester.TestPostPage.html","/index.html",EmbeddedFileTypes.Text,null)
-                    }
-                    );
+                Dictionary<string, sEmbeddedFile> ret = new Dictionary<string, sEmbeddedFile>();
+                ret.Add("/resources/images/accept.png", new sEmbeddedFile("Tester.resources.accept.png", "/resources/images/accept.png", EmbeddedFileTypes.Image, ImageTypes.png));
+                ret.Add("/index.html", new sEmbeddedFile("Tester.TestPostPage.html", "/index.html", EmbeddedFileTypes.Text, null));
+                return ret;
             }
         }
     }

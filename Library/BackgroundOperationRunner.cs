@@ -103,11 +103,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
             {
                 foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
                 {
-                    if (mi.GetCustomAttributes(typeof(BackgroundOperationCall),false).Length > 0)
-                    {
-                        foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall),false))
-                            calls.Add(new sCall(t,boc, mi));
-                    }
+                    foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall), false))
+                        calls.Add(new sCall(t, boc, mi));
                 }
             }
             while (!_exit)
