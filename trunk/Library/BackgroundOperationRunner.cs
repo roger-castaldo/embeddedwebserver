@@ -89,6 +89,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        private delegate void delInvokeRuns(List<sCall> calls);
+
         /*
          * This is the core of the background thread concept.  It loads all instances of 
          * IBackgroundOperationContainer and locates all public static methods that 
@@ -107,24 +109,30 @@ namespace Org.Reddragonit.EmbeddedWebServer
                         calls.Add(new sCall(t, boc, mi));
                 }
             }
+            delInvokeRuns del = new delInvokeRuns(InvokeRuns);
             while (!_exit)
             {
-                DateTime dt = DateTime.Now;
-                foreach (sCall call in calls)
-                {
-                    if (_exit)
-                        break;
-                    if (call.Att.CanRunNow(dt))
-                        ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
-                }
+                del.BeginInvoke(calls, new AsyncCallback(InvokeFinish), null);
                 if (!_exit)
                 {
                     try
                     {
-                        Thread.Sleep(THREAD_SLEEP);
+                        Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
                     }
                     catch (Exception e) { }
                 }
+            }
+        }
+
+        private void InvokeRuns(List<sCall> calls)
+        {
+            DateTime dt = DateTime.Now;
+            foreach (sCall call in calls)
+            {
+                if (_exit)
+                    break;
+                if (call.Att.CanRunNow(dt))
+                    ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
             }
         }
 
