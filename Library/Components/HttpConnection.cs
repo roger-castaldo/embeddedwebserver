@@ -170,8 +170,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         //houses the parameters specified in the request.  They are loaded at the point
         //that this property is called the first time to be more efficient
-        private Dictionary<string, string> _requestParameters;
-        public Dictionary<string, string> RequestParameters
+        private ParameterCollection _requestParameters;
+        public ParameterCollection RequestParameters
         {
             get {
                 if (_requestParameters == null)
@@ -183,8 +183,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //houses all the uploaded file information from the request.  These are loaded 
         //at the point that this property is called the first time, or when the 
         //request parameters are loaded the first time.
-        private Dictionary<string, UploadedFile> _uploadedFiles;
-        public Dictionary<string, UploadedFile> UploadedFiles
+        private UploadedFileCollection _uploadedFiles;
+        public UploadedFileCollection UploadedFiles
         {
             get {
                 if (_uploadedFiles == null)
@@ -219,8 +219,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         private void parseParameters()
         {
-            _requestParameters = new Dictionary<string, string>();
-            _uploadedFiles = new Dictionary<string, UploadedFile>();
+            Dictionary<string,string> requestParameters = new Dictionary<string, string>();
+            Dictionary<string,UploadedFile> uploadedFiles = new Dictionary<string, UploadedFile>();
             if (URL.Query != null)
             {
                 string query = HttpUtility.UrlDecode(URL.Query);
@@ -235,7 +235,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     NameValueCollection col = HttpUtility.ParseQueryString(query);
                     foreach (string str in col.Keys)
                     {
-                        _requestParameters.Add(str, col[str]);
+                        requestParameters.Add(str, col[str]);
                     }
                 }
             }
@@ -307,7 +307,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                     }
                                     br.Flush();
                                     str.Seek(0, SeekOrigin.Begin);
-                                    _uploadedFiles.Add(var, new UploadedFile(var, fileName, contentType, str));
+                                    uploadedFiles.Add(var, new UploadedFile(var, fileName, contentType, str));
                                 }
                                 else
                                 {
@@ -322,7 +322,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                         else
                                             value += streamReadLine(ms);
                                     }
-                                    _requestParameters.Add(var, value.Trim());
+                                    requestParameters.Add(var, value.Trim());
                                 }
                             }
                         }
@@ -344,13 +344,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         NameValueCollection col = HttpUtility.ParseQueryString(postData);
                         foreach (string str in col.Keys)
                         {
-                            _requestParameters.Add(str, col[str]);
+                            requestParameters.Add(str, col[str]);
                         }
                     }
                 }
                 else
                     throw new Exception("Unknown format, content-type: " + _requestHeaders.ContentType + " unable to parse in parameters.");
             }
+            _requestParameters = new ParameterCollection(requestParameters);
+            _uploadedFiles = new UploadedFileCollection(uploadedFiles);
         }
 
         /*
