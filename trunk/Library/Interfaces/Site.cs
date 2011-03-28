@@ -361,7 +361,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 conn.ResponseStatus = HttpStatusCodes.Not_Found;
             }
             PostRequest(conn);
-            conn.SendResponse();
+            if (conn.IsResponseSent)
+                Logger.LogMessage(DiagnosticsLevels.DEBUG, "WARNING:  Response has already been sent before site called to send it.");
+            else
+                conn.SendResponse();
         }
 
         public Site() {
