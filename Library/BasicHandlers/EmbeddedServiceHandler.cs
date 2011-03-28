@@ -215,7 +215,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             sw.AppendLine("\t$.ajax({\n" +
                          "\t\ttype:((usePost == undefined || !usePost) ? \"GET\" : \"POST\"),\n" +
                          "\t\turl: \"" + url + "/" + mi.Name + "\",\n" +
-                         "\t\tdata: function_data,\n" +
+                         "\t\tprocessData: false,\n"+
+                         "\t\tdata: escape(function_data),\n" +
                          "\t\tcontentType: \"application/json; charset=utf-8\",\n" +
                          "\t\tdataType: \"json\",\n" +
                          "\t\tsuccess: OnSuccess,\n" +
