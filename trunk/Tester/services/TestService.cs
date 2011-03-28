@@ -14,5 +14,11 @@ namespace Tester.services
             return "Hello";
         }
 
+        [WebMethod(false)]
+        public string HelloMyName(string myname)
+        {
+            return "Hello " + myname;
+        }
+
     }
 }

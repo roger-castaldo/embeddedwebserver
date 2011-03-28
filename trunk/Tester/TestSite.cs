@@ -51,5 +51,13 @@ namespace Tester
                 return ret;
             }
         }
+
+        protected override void PreRequest(HttpConnection conn)
+        {
+            if (conn.JSONParameter != null)
+            {
+                Console.WriteLine(conn.JSONParameter.GetType().FullName);
+            }
+        }
     }
 }
