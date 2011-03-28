@@ -43,6 +43,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //the underlying socket for the connection
         private TcpClient socket;
 
+        //holds whether or not the response was already send
+        private bool _isResponseSent;
+        public bool IsResponseSent
+        {
+            get { return _isResponseSent; }
+        }
+
         //returns the client endpoint information
         public EndPoint Client
         {
@@ -112,6 +119,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         public HttpConnection(TcpClient s)
         {
+            _isResponseSent = false;
             DateTime start = DateTime.Now;
             this.socket = s;
             inputStream = new BufferedStream(socket.GetStream());
@@ -445,59 +453,63 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         public void SendResponse()
         {
-            ResponseWriter.Flush();
-            DateTime start = DateTime.Now;
-            _responseHeaders.ContentLength = _outStream.Length.ToString();
-            if (_responseHeaders["Accept-Ranges"] == null)
-                _responseHeaders["Accept-Ranges"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.AcceptRanges"];
-            if (_responseHeaders.ContentType == null)
-                _responseHeaders.ContentType = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.ContentType"];
-            if (_responseHeaders["Server"]==null)
-                _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
-            if (_responseHeaders.Date == null)
-                _responseHeaders.Date = DateTime.Now.ToString("r");
-            _responseHeaders["Connection"] = "close";
-            Stream outStream = socket.GetStream();
-            string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n";
-            foreach (string str in _responseHeaders.Keys)
-                line+=str + ": " + _responseHeaders[str]+"\n";
-            if (_responseCookie != null)
+            if (!_isResponseSent)
             {
-                if (Site.CurrentSite != null)
-                    _responseCookie.Renew(Site.CurrentSite.CookieExpireMinutes);
-                foreach (string str in _responseCookie.Keys)
+                _isResponseSent = true;
+                ResponseWriter.Flush();
+                DateTime start = DateTime.Now;
+                _responseHeaders.ContentLength = _outStream.Length.ToString();
+                if (_responseHeaders["Accept-Ranges"] == null)
+                    _responseHeaders["Accept-Ranges"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.AcceptRanges"];
+                if (_responseHeaders.ContentType == null)
+                    _responseHeaders.ContentType = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.ContentType"];
+                if (_responseHeaders["Server"] == null)
+                    _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
+                if (_responseHeaders.Date == null)
+                    _responseHeaders.Date = DateTime.Now.ToString("r");
+                _responseHeaders["Connection"] = "close";
+                Stream outStream = socket.GetStream();
+                string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n";
+                foreach (string str in _responseHeaders.Keys)
+                    line += str + ": " + _responseHeaders[str] + "\n";
+                if (_responseCookie != null)
                 {
-                    line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r")+"\n";
+                    if (Site.CurrentSite != null)
+                        _responseCookie.Renew(Site.CurrentSite.CookieExpireMinutes);
+                    foreach (string str in _responseCookie.Keys)
+                    {
+                        line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\n";
+                    }
                 }
-            }
-            line += "\n";
-            outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-            start = DateTime.Now;
-            byte[] buffer = new byte[socket.Client.SendBufferSize];
-            Logger.LogMessage(DiagnosticsLevels.TRACE,"Sending Buffer size: " + socket.Client.SendBufferSize.ToString());
-            _outStream.Seek(0, SeekOrigin.Begin);
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Size of data to send: " + _outStream.Length.ToString());
-            while (_outStream.Position < _outStream.Length)
-            {
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to read from buffer: " + ((int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position))).ToString());
-                int len = _outStream.Read(buffer, 0, (int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position)));
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to send: " + len.ToString());
+                line += "\n";
+                outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                start = DateTime.Now;
+                byte[] buffer = new byte[socket.Client.SendBufferSize];
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Sending Buffer size: " + socket.Client.SendBufferSize.ToString());
+                _outStream.Seek(0, SeekOrigin.Begin);
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Size of data to send: " + _outStream.Length.ToString());
+                while (_outStream.Position < _outStream.Length)
+                {
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to read from buffer: " + ((int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position))).ToString());
+                    int len = _outStream.Read(buffer, 0, (int)Math.Min(buffer.Length, (int)(_outStream.Length - _outStream.Position)));
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Length of data chunk to send: " + len.ToString());
+                    try
+                    {
+                        outStream.Write(buffer, 0, len);
+                    }
+                    catch (Exception e)
+                    {
+                        _outStream.Position = _outStream.Length;
+                    }
+                }
                 try
                 {
-                    outStream.Write(buffer, 0, len);
+                    socket.Close();
                 }
-                catch (Exception e)
-                {
-                    _outStream.Position = _outStream.Length;
-                }
+                catch (Exception e) { }
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
-            try
-            {
-                socket.Close();
-            }
-            catch (Exception e) { }
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
 
         //houses the headers used in the response
