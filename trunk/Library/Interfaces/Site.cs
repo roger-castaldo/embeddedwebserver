@@ -304,61 +304,64 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public void ProcessRequest(HttpConnection conn)
         {
             PreRequest(conn);
-            DateTime start = DateTime.Now;
-            _currentSite = this;
-            bool found = false;
-            foreach (IRequestHandler handler in Handlers)
+            if (!conn.IsResponseSent)
             {
-                if (handler.CanProcessRequest(conn, this))
+                DateTime start = DateTime.Now;
+                _currentSite = this;
+                bool found = false;
+                foreach (IRequestHandler handler in Handlers)
                 {
-                    found = true;
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL "+conn.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
-                    if (handler.IsReusable)
+                    if (handler.CanProcessRequest(conn, this))
                     {
-                        if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage==conn.URL.AbsolutePath && SessionStateType!=SiteSessionTypes.None))
-                            SessionManager.LoadStateForConnection(conn, this);
-                        try
+                        found = true;
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + conn.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
+                        if (handler.IsReusable)
                         {
-                            handler.ProcessRequest(conn, this);
+                            if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.LoadStateForConnection(conn, this);
+                            try
+                            {
+                                handler.ProcessRequest(conn, this);
+                            }
+                            catch (Exception e)
+                            {
+                                conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                conn.ClearResponse();
+                                conn.ResponseWriter.Write(e.Message);
+                                Logger.LogError(e);
+                            }
+                            if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.StoreSessionForConnection(conn, this);
                         }
-                        catch (Exception e)
+                        else
                         {
-                            conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                            conn.ClearResponse();
-                            conn.ResponseWriter.Write(e.Message);
-                            Logger.LogError(e);
+                            IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                            hndl.Init();
+                            if (hndl.RequiresSessionForRequest(conn, this))
+                                SessionManager.LoadStateForConnection(conn, this);
+                            try
+                            {
+                                hndl.ProcessRequest(conn, this);
+                            }
+                            catch (Exception e)
+                            {
+                                conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                conn.ClearResponse();
+                                conn.ResponseWriter.Write(e.Message);
+                                Logger.LogError(e);
+                            }
+                            if (hndl.RequiresSessionForRequest(conn, this))
+                                SessionManager.StoreSessionForConnection(conn, this);
+                            hndl.DeInit();
                         }
-                        if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                            SessionManager.StoreSessionForConnection(conn, this);
+                        break;
                     }
-                    else
-                    {
-                        IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                        hndl.Init();
-                        if (hndl.RequiresSessionForRequest(conn, this))
-                            SessionManager.LoadStateForConnection(conn, this);
-                        try
-                        {
-                            hndl.ProcessRequest(conn, this);
-                        }
-                        catch (Exception e)
-                        {
-                            conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                            conn.ClearResponse();
-                            conn.ResponseWriter.Write(e.Message);
-                            Logger.LogError(e);
-                        }
-                        if (hndl.RequiresSessionForRequest(conn, this))
-                            SessionManager.StoreSessionForConnection(conn, this);
-                        hndl.DeInit();
-                    }
-                    break;
                 }
-            }
-            if (!found)
-            {
-                conn.ClearResponse();
-                conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                if (!found)
+                {
+                    conn.ClearResponse();
+                    conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                }
             }
             PostRequest(conn);
             if (conn.IsResponseSent)
