@@ -171,7 +171,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         }
 
         //creates a hashed path to access a given embedded service type
-        private string GetPathForType(Type t)
+        public static string GetPathForType(Type t)
         {
             SHA256Managed hasher = new SHA256Managed();
             string[] split = t.FullName.Split('.');
