@@ -182,7 +182,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             MethodInfo mi = (MethodInfo)conn[CONTEXT_METHOD_VARIABLE];
             if (!IsValidAccess(mi.Name))
             {
-                throw new Exception(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.InvalidAccess"],this.GetType().FullName, mi.Name));
+                conn.ResponseStatus = HttpStatusCodes.Forbidden;
+                conn.ResponseWriter.Write(string.Format(Messages.Current["Org.Reddragonit.EmbeddedWebServer.Interfaces.EmbeddedService.Errors.InvalidAccess"],this.GetType().FullName, mi.Name));
+                return;
             }
             if (mi.ReturnType.Name == "void")
                 mi.Invoke(this, (object[])conn[CONTEXT_PARS_VARIABLE]);
