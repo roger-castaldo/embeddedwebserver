@@ -356,6 +356,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         }
                     }
                 }
+                else if (_requestHeaders.ContentType == "application/json")
+                {
+                    string postData = new StreamReader(ms).ReadToEnd();
+                    string query = HttpUtility.UrlDecode(postData);
+                    if (query.StartsWith("?"))
+                        query = query.Substring(1);
+                    if (query.StartsWith("{") && query.EndsWith("}"))
+                    {
+                        if (query != "{}")
+                            _jsonParameter = JSON.JsonDecode(query);
+                    }
+                }
                 else
                     throw new Exception("Unknown format, content-type: " + _requestHeaders.ContentType + " unable to parse in parameters.");
             }
@@ -401,7 +413,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 string value = line.Substring(pos, line.Length - pos);
                 _requestHeaders[name] = value;
             }
-            _url = new Uri("http://" + _requestHeaders.Host + tokens[1]);
+            _url = new Uri("http://" + _requestHeaders.Host.Replace("//","/") + tokens[1].Replace("//","/"));
             _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
         }
 
