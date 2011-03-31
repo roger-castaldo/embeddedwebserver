@@ -469,19 +469,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     _responseHeaders.Date = DateTime.Now.ToString("r");
                 _responseHeaders["Connection"] = "close";
                 Stream outStream = socket.GetStream();
-                string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\n";
+                string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
-                    line += str + ": " + _responseHeaders[str] + "\n";
+                    line += str + ": " + _responseHeaders[str] + "\r\n";
                 if (_responseCookie != null)
                 {
                     if (Site.CurrentSite != null)
                         _responseCookie.Renew(Site.CurrentSite.CookieExpireMinutes);
                     foreach (string str in _responseCookie.Keys)
                     {
-                        line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\n";
+                        line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\r\n";
                     }
                 }
-                line += "\n";
+                line += "\r\n";
                 outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
@@ -521,7 +521,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         //houses the response status
-        private HttpStatusCodes _responseStatus;
+        private HttpStatusCodes _responseStatus = HttpStatusCodes.OK;
         public HttpStatusCodes ResponseStatus
         {
             get { return _responseStatus; }
