@@ -92,12 +92,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                         Monitor.Enter(_lock);
                         if (_sessions == null)
                             _sessions = new List<SessionState>();
-                        foreach (SessionState session in _sessions)
+                        for (int x = 0; x < _sessions.Count; x++)
                         {
+                            SessionState session = _sessions[x];
                             if (session.ID == conn.RequestCookie.SessionID)
                             {
+                                session.Renew(site.SessionTimeoutMinutes);
                                 conn.SetSession(session);
-                                conn.Session.Renew(site.SessionTimeoutMinutes);
+                                _sessions.RemoveAt(x);
+                                _sessions.Insert(x, session);
                                 break;
                             }
                         }
