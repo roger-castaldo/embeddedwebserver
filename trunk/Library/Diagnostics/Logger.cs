@@ -122,7 +122,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                             new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                         case DiagnosticsOutputs.SOCKET:
-                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message)), Site.CurrentSite.RemoteLoggingServer);
+                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, logLevel, Message)+"\n"), Site.CurrentSite.RemoteLoggingServer);
                             break;
                     }
                 }
