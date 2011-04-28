@@ -7,6 +7,8 @@ using System.Threading;
 using System.Xml.Serialization;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
+using System.Collections;
+using System.Xml;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
@@ -248,11 +250,50 @@ namespace Org.Reddragonit.EmbeddedWebServer
             if (obj == null)
                 return null;
             MemoryStream ms = new MemoryStream();
-            XmlSerializer.FromTypes(new Type[] { obj.GetType() })[0].Serialize(ms, obj);
-            string ret = ASCIIEncoding.ASCII.GetString(ms.ToArray());
+            string ret;
+            if (obj is Hashtable)
+                ret = SerializeHashtable((Hashtable)obj);
+            else
+            {
+                XmlSerializer.FromTypes(new Type[] { obj.GetType() })[0].Serialize(ms, obj);
+                ret = ASCIIEncoding.ASCII.GetString(ms.ToArray());
+            }
             if (!ret.StartsWith("<"))
                 ret = ret.Substring(ret.IndexOf("<"));
             return ret;
+        }
+
+        //implemented to serialize hash tables since it is not implemented in C#
+        private static string SerializeHashtable(Hashtable ht)
+        {
+            MemoryStream ms = new MemoryStream();
+            XmlWriter xw = XmlWriter.Create(ms);
+            xw.WriteStartDocument();
+            xw.WriteStartElement("hashtable");
+            IDictionaryEnumerator ienum = ht.GetEnumerator();
+            string tmp;
+            while (ienum.MoveNext())
+            {
+                xw.WriteStartElement("item");
+                xw.WriteStartElement("key");
+                xw.WriteStartAttribute("objecttype");
+                xw.WriteValue(ienum.Key.GetType().FullName);
+                xw.WriteEndAttribute();
+                tmp = ConvertObjectToXML(ienum.Key);
+                xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                xw.WriteEndElement();
+                xw.WriteStartElement("value");
+                xw.WriteStartAttribute("objecttype");
+                xw.WriteValue(ienum.Value.GetType().FullName);
+                xw.WriteEndAttribute();
+                tmp = ConvertObjectToXML(ienum.Value);
+                xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                xw.WriteEndElement();
+                xw.WriteEndElement();
+            }
+            xw.WriteEndElement();
+            xw.Flush();
+            return ASCIIEncoding.ASCII.GetString(ms.ToArray());
         }
 
         //called to convert an objet from and XML string
@@ -262,7 +303,32 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return null;
             if (!xmlCode.StartsWith("<"))
                 xmlCode = xmlCode.Substring(xmlCode.IndexOf("<"));
+            if (type.FullName == typeof(Hashtable).FullName)
+                return DeSerializeHashtable(xmlCode);
             return XmlSerializer.FromTypes(new Type[] { type })[0].Deserialize(new MemoryStream(ASCIIEncoding.ASCII.GetBytes(xmlCode)));
+        }
+
+        //implemented to deserialize hash tables since it is not implemented in C#
+        private static Hashtable DeSerializeHashtable(string xmlCode)
+        {
+            Hashtable ret = new Hashtable();
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xmlCode);
+            foreach (XmlNode node in doc.ChildNodes[1].ChildNodes)
+            {
+                object key = null;
+                if (node.ChildNodes[0].Name == "hashtable")
+                    key = DeSerializeHashtable("<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[0].InnerXml);
+                else
+                    key = ConvertObjectFromXML(LocateType(node.ChildNodes[0].Attributes[0].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[0].InnerXml);
+                object val = null;
+                if (node.ChildNodes[1].Name == "hashtable")
+                    val = DeSerializeHashtable("<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                else
+                    val = ConvertObjectFromXML(LocateType(node.ChildNodes[1].Attributes[0].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                ret.Add(key, val);
+            }
+            return ret;
         }
 
         //called to translate a given file extension to a conent-type for the http response
