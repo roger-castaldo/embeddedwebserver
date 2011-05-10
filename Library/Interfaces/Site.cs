@@ -176,6 +176,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         protected virtual void PreRequest(HttpConnection conn) { }
         //an implemented function that gets called after the processing of a request
         protected virtual void PostRequest(HttpConnection conn) { }
+        //an implemented function that gets called when an error occurs while processing the request
+        //returns true if this completes the request, else default response information gets sent
+        protected virtual bool RequestError(HttpConnection conn, Exception error) {
+            return false;
+        }
         #endregion
 
         private string _id;
@@ -325,10 +330,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             catch (Exception e)
                             {
-                                conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                conn.ClearResponse();
-                                conn.ResponseWriter.Write(e.Message);
                                 Logger.LogError(e);
+                                if (!RequestError(conn,e))
+                                {
+                                    conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    conn.ClearResponse();
+                                    conn.ResponseWriter.Write(e.Message);
+                                }
                             }
                             if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
                                 SessionManager.StoreSessionForConnection(conn, this);
@@ -345,10 +353,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             catch (Exception e)
                             {
-                                conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                conn.ClearResponse();
-                                conn.ResponseWriter.Write(e.Message);
                                 Logger.LogError(e);
+                                if (!RequestError(conn, e))
+                                {
+                                    conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    conn.ClearResponse();
+                                    conn.ResponseWriter.Write(e.Message);
+                                }
                             }
                             if (hndl.RequiresSessionForRequest(conn, this))
                                 SessionManager.StoreSessionForConnection(conn, this);
