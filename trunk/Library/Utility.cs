@@ -270,26 +270,29 @@ namespace Org.Reddragonit.EmbeddedWebServer
             XmlWriter xw = XmlWriter.Create(ms);
             xw.WriteStartDocument();
             xw.WriteStartElement("hashtable");
-            IDictionaryEnumerator ienum = ht.GetEnumerator();
-            string tmp;
-            while (ienum.MoveNext())
+            if (ht != null)
             {
-                xw.WriteStartElement("item");
-                xw.WriteStartElement("key");
-                xw.WriteStartAttribute("objecttype");
-                xw.WriteValue(ienum.Key.GetType().FullName);
-                xw.WriteEndAttribute();
-                tmp = ConvertObjectToXML(ienum.Key);
-                xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
-                xw.WriteEndElement();
-                xw.WriteStartElement("value");
-                xw.WriteStartAttribute("objecttype");
-                xw.WriteValue(ienum.Value.GetType().FullName);
-                xw.WriteEndAttribute();
-                tmp = ConvertObjectToXML(ienum.Value);
-                xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
-                xw.WriteEndElement();
-                xw.WriteEndElement();
+                IDictionaryEnumerator ienum = ht.GetEnumerator();
+                string tmp;
+                while (ienum.MoveNext())
+                {
+                    xw.WriteStartElement("item");
+                    xw.WriteStartElement("key");
+                    xw.WriteStartAttribute("objecttype");
+                    xw.WriteValue(ienum.Key.GetType().FullName);
+                    xw.WriteEndAttribute();
+                    tmp = ConvertObjectToXML(ienum.Key);
+                    xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                    xw.WriteEndElement();
+                    xw.WriteStartElement("value");
+                    xw.WriteStartAttribute("objecttype");
+                    xw.WriteValue(ienum.Value.GetType().FullName);
+                    xw.WriteEndAttribute();
+                    tmp = ConvertObjectToXML(ienum.Value);
+                    xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                    xw.WriteEndElement();
+                    xw.WriteEndElement();
+                }
             }
             xw.WriteEndElement();
             xw.Flush();
