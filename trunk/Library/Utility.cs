@@ -285,11 +285,23 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
                     xw.WriteEndElement();
                     xw.WriteStartElement("value");
-                    xw.WriteStartAttribute("objecttype");
-                    xw.WriteValue(ienum.Value.GetType().FullName);
-                    xw.WriteEndAttribute();
-                    tmp = ConvertObjectToXML(ienum.Value);
-                    xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                    if (ienum.Value == null)
+                    {
+                        xw.WriteStartAttribute("IsNull");
+                        xw.WriteValue(true);
+                        xw.WriteEndAttribute();
+                    }
+                    else
+                    {
+                        xw.WriteStartAttribute("IsNull");
+                        xw.WriteValue(false);
+                        xw.WriteEndAttribute();
+                        xw.WriteStartAttribute("objecttype");
+                        xw.WriteValue(ienum.Value.GetType().FullName);
+                        xw.WriteEndAttribute();
+                        tmp = ConvertObjectToXML(ienum.Value);
+                        xw.WriteRaw(tmp.Substring(tmp.IndexOf(">") + 1));
+                    }
                     xw.WriteEndElement();
                     xw.WriteEndElement();
                 }
@@ -325,10 +337,23 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 else
                     key = ConvertObjectFromXML(LocateType(node.ChildNodes[0].Attributes[0].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[0].InnerXml);
                 object val = null;
-                if (node.ChildNodes[1].Name == "hashtable")
-                    val = DeSerializeHashtable("<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                if (node.ChildNodes[1].Attributes["IsNull"] != null)
+                {
+                    if (!bool.Parse(node.ChildNodes[1].Attributes["IsNull"].Value))
+                    {
+                        if (node.ChildNodes[1].Name == "hashtable")
+                            val = DeSerializeHashtable("<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                        else
+                            val = ConvertObjectFromXML(LocateType(node.ChildNodes[1].Attributes["objecttype"].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                    }
+                }
                 else
-                    val = ConvertObjectFromXML(LocateType(node.ChildNodes[1].Attributes[0].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                {
+                    if (node.ChildNodes[1].Name == "hashtable")
+                        val = DeSerializeHashtable("<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                    else
+                        val = ConvertObjectFromXML(LocateType(node.ChildNodes[1].Attributes["objecttype"].Value), "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" + node.ChildNodes[1].InnerXml);
+                }
                 ret.Add(key, val);
             }
             return ret;
