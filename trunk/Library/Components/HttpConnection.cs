@@ -339,7 +339,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 else if (_requestHeaders.ContentType == "application/x-www-form-urlencoded")
                 {
-                    string postData = new StreamReader(ms).ReadToEnd();
+                    string postData = "";
+                    if (_requestHeaders.CharSet != null)
+                        postData = new StreamReader(ms, Encoding.GetEncoding(_requestHeaders.CharSet)).ReadToEnd();
+                    else
+                        postData = new StreamReader(ms).ReadToEnd();
                     string query = HttpUtility.UrlDecode(postData);
                     if (query.StartsWith("?{") && query.EndsWith("}"))
                     {
@@ -356,9 +360,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         }
                     }
                 }
-                else if (_requestHeaders.ContentType == "application/json")
+                else if (_requestHeaders.ContentType.StartsWith("application/json"))
                 {
-                    string postData = new StreamReader(ms).ReadToEnd();
+                    string postData = "";
+                    if (_requestHeaders.CharSet!=null)
+                        postData = new StreamReader(ms, Encoding.GetEncoding(_requestHeaders.CharSet)).ReadToEnd();
+                    else
+                        postData = new StreamReader(ms).ReadToEnd();
                     string query = HttpUtility.UrlDecode(postData);
                     if (query.StartsWith("?"))
                         query = query.Substring(1);
@@ -409,8 +417,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     pos++; // strip any spaces
                 }
-
                 string value = line.Substring(pos, line.Length - pos);
+                if (name == "Content-Type")
+                {
+                    if (value.Contains(";"))
+                    {
+                        string[] tmp = value.Split(';');
+                        value = tmp[0];
+                        for (int x = 1; x < tmp.Length; x++)
+                        {
+                            if (tmp[x].ToLower().StartsWith("charset"))
+                            {
+                                _requestHeaders.CharSet = tmp[x].Substring(tmp[x].IndexOf("=") + 1);
+                            }
+                        }
+                    }
+                }
                 _requestHeaders[name] = value;
             }
             _url = new Uri("http://" + _requestHeaders.Host.Replace("//","/") + tokens[1].Replace("//","/"));

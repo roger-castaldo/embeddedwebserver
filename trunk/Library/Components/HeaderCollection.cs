@@ -61,6 +61,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             set { this["Content-Type"] = value; }
         }
 
+        private string _charset=null;
+        public string CharSet
+        {
+            get { return _charset; }
+            set { _charset = value; }
+        }
+
         //sets/gets the Date value in the headers
         public string Date
         {
