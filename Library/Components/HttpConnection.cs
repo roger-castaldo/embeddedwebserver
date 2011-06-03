@@ -534,6 +534,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     }
                     catch (Exception e)
                     {
+                        Logger.LogError(e);
                         _outStream.Position = _outStream.Length;
                     }
                 }
@@ -541,7 +542,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     socket.Close();
                 }
-                catch (Exception e) { }
+                catch (Exception e) {
+                    Logger.LogError(e);
+                }
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }

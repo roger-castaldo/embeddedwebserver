@@ -7,6 +7,7 @@ using Org.Reddragonit.EmbeddedWebServer.BasicHandlers;
 using System.Reflection;
 using Procurios.Public;
 using System.Collections;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -213,6 +214,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
             catch (Exception e)
             {
+                Logger.LogError(e);
             }
             if (expectedType.IsArray || (obj is ArrayList))
             {
