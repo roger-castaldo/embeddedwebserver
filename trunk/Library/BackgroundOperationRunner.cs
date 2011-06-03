@@ -5,6 +5,7 @@ using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using System.Reflection;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
@@ -79,13 +80,16 @@ namespace Org.Reddragonit.EmbeddedWebServer
             {
                 _runner.Interrupt();
             }
-            catch (Exception e) { }
+            catch (Exception e) {
+                Logger.LogError(e);
+            }
             try
             {
                 _runner.Join();
             }
             catch (Exception e)
             {
+                Logger.LogError(e);
             }
         }
 
@@ -119,7 +123,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     {
                         Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
                     }
-                    catch (Exception e) { }
+                    catch (Exception e) {
+                        Logger.LogError(e);
+                    }
                 }
             }
         }

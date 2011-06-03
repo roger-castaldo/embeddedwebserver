@@ -118,6 +118,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     }
                     catch (Exception e)
                     {
+                        Logger.LogError(e);
                     }
                 }
                 _backgroundRunner.Stop();

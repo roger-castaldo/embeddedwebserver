@@ -5,6 +5,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using System.Net;
 using System.Net.Sockets;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -88,7 +89,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 _listener.EndAcceptTcpClient(null);
             }
-            catch (Exception e) { }
+            catch (Exception e) {
+                Logger.LogError(e);
+            }
             _listener.Stop();
             foreach (Site site in _sites)
                 site.Stop();
@@ -112,13 +115,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 clnt = _listener.EndAcceptTcpClient(res);
             }
             catch (Exception e) {
+                Logger.LogError(e);
                 clnt = null;
             }
             try
             {
                 _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
             }
-            catch (Exception e) { }
+            catch (Exception e) {
+                Logger.LogError(e);
+            }
             if (clnt != null)
             {
                 HttpConnection con = new HttpConnection(clnt);

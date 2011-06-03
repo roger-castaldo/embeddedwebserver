@@ -42,5 +42,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             return Value.Equals(((CachedItemContainer)obj).Value);
         }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
     }
 }
