@@ -107,7 +107,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             List<sCall> calls = new List<sCall>();
             foreach (Type t in Utility.LocateTypeInstances(typeof(IBackgroundOperationContainer)))
             {
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
+                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 {
                     foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall), false))
                         calls.Add(new sCall(t, boc, mi));
@@ -138,7 +138,15 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 if (_exit)
                     break;
                 if (call.Att.CanRunNow(dt))
-                    ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
+                {
+                    try
+                    {
+                        ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
+                    }
+                    catch (Exception e) {
+                        Logger.LogError(e);
+                    }
+                }
             }
         }
 
