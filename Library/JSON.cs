@@ -525,7 +525,12 @@ namespace Procurios.Public
             } else if (value.GetType().IsEnum) {
 				SerializeString(value.ToString(),builder);
             }
-            else if (value is DateTime){
+            else if (value is IDictionary)
+            {
+                SerializeObject((IDictionary)value, builder);
+            }
+            else if (value is DateTime)
+            {
                 SerializeString(((DateTime)value).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
             }
             else if (value.GetType().IsArray || (value is IEnumerable))
