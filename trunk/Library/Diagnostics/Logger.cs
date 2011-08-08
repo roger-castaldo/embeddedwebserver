@@ -54,9 +54,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                         cur += Path.DirectorySeparatorChar;
                     }
                 }
-                if (!new FileInfo(Settings.LogPath + Path.DirectorySeparatorChar + DateTime.Now.ToString("yyyy-MM-dd") + ".txt").Exists)
-                    new FileInfo(Settings.LogPath + Path.DirectorySeparatorChar + DateTime.Now.ToString("yyyy-MM-dd") + ".txt").Create();
-                StreamWriter sw = new StreamWriter(new FileStream(Settings.LogPath + Path.DirectorySeparatorChar + DateTime.Now.ToString("yyyy-MM-dd") + ".txt", FileMode.Append, FileAccess.Write, FileShare.Read));
+                FileInfo fi = new FileInfo(Settings.LogPath + Path.DirectorySeparatorChar + DateTime.Now.ToString("yyyy-MM-dd") + ".txt");
+                StreamWriter sw = new StreamWriter(fi.Open(FileMode.Append, FileAccess.Write, FileShare.Read));
                 for (int x = 0; x < MESSAGE_WRITE_COUNT; x++)
                 {
                     if (_messages.Count == 0)
