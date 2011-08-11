@@ -510,9 +510,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     if (Site.CurrentSite != null)
                         _responseCookie.Renew(Site.CurrentSite.CookieExpireMinutes);
+                    bool setIt = false;
+                    if (RequestCookie == null)
+                        setIt = true;
+                    else if (RequestCookie.Expiry.Subtract(DateTime.Now).TotalMinutes < 5)
+                        setIt = true;
                     foreach (string str in _responseCookie.Keys)
                     {
-                        line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\r\n";
+                        if ((setIt)
+                            ||((RequestCookie!=null)&&(RequestCookie[str]==null))
+                            ||((RequestCookie != null) && (RequestCookie[str] != null) && (RequestCookie[str]!=_responseCookie[str]))
+                            )
+                            line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\r\n";
                     }
                 }
                 line += "\r\n";

@@ -62,6 +62,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                         break;
                     sw.WriteLine(_messages.Dequeue());
                 }
+                sw.Flush();
+                sw.Close();
             }
             Monitor.Exit(_lock);
         }
