@@ -135,7 +135,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         {
                             conn.ResponseHeaders.ContentType = "text/css";
                             Monitor.Enter(_lock);
-                            css = CSSMinifier.Minify(css);
+                            if (site.CompressCSS)
+                                css = CSSMinifier.Minify(css);
                             if (!_compressedCache.ContainsKey(file.DLLPath))
                             {
                                 _compressedCache.Add(file.DLLPath, new CachedItemContainer(css));
@@ -163,7 +164,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         else
                         {
                             conn.ResponseHeaders.ContentType = "text/javascript";
-                            js = JSMinifier.Minify(js);
+                            if (site.CompressJS)
+                                js = JSMinifier.Minify(js);
                             Monitor.Enter(_lock);
                             if (!_compressedCache.ContainsKey(file.DLLPath))
                             {
