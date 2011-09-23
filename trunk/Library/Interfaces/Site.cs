@@ -60,6 +60,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return true; }
         }
 
+        //indiciates if the site should compress JS files
+        public virtual bool CompressJS
+        {
+            get { return true; }
+        }
+
+        //indiciates if the site should compress CSS files
+        public virtual bool CompressCSS
+        {
+            get { return true; }
+        }
+
         //indicates the type of session storage that the site uses, defaults to no sessions
         public virtual SiteSessionTypes SessionStateType
         {
