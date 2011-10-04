@@ -521,7 +521,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             ||((RequestCookie!=null)&&(RequestCookie[str]==null))
                             ||((RequestCookie != null) && (RequestCookie[str] != null) && (RequestCookie[str]!=_responseCookie[str]))
                             )
-                            line += "Set-Cookie: " + str + "=" + _responseCookie[str] + "; Expires=" + _responseCookie.Expiry.ToString("r") + "\r\n";
+                            line += "Set-Cookie: " + str + "=" + _responseCookie[str] + ";  Path=/; Expires=" + _responseCookie.Expiry.ToString("r") + ";\r\n";
                     }
                 }
                 line += "\r\n";

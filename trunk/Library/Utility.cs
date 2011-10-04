@@ -16,7 +16,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
      * This class is a general utility class that contains commonly used methods and 
      * properties for the other classes within the library.
      */
-    public class Utility
+    internal class Utility
     {
         private static string basePath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.Substring(0, AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.LastIndexOf(Path.DirectorySeparatorChar));
 
