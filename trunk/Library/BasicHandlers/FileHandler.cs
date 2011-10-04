@@ -36,7 +36,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         void IRequestHandler.ProcessRequest(HttpConnection conn, Site site)
         {
             FileInfo fi = new FileInfo(site.BaseSitePath + Path.DirectorySeparatorChar.ToString() + TranslateURLPath(conn.URL.AbsolutePath));
-            conn.ResponseHeaders.ContentType = Utility.GetContentTypeForExtension(fi.Extension);
+            conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(fi.Extension);
             BinaryReader br = new BinaryReader(new FileStream(fi.FullName,
                 FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
             while (br.BaseStream.Position < br.BaseStream.Length)
