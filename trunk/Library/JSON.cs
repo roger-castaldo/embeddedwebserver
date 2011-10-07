@@ -6,6 +6,7 @@ using System.Runtime.Remoting.Proxies;
 using System.Text;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Org.Reddragonit.EmbeddedWebServer.Components;
 
 namespace Procurios.Public
 {
@@ -525,13 +526,14 @@ namespace Procurios.Public
             } else if (value.GetType().IsEnum) {
 				SerializeString(value.ToString(),builder);
             }
-            else if (value is IDictionary)
-            {
-                SerializeObject((IDictionary)value, builder);
-            }
-            else if (value is DateTime)
-            {
-                SerializeString(((DateTime)value).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
+            else if (value is DateTime){
+                if (HttpConnection.CurrentConnection!=null){
+                    if (HttpConnection.CurrentConnection.RequestHeaders.Browser.BrowserFamily==BrowserFamilies.InternetExplorer && (HttpConnection.CurrentConnection.RequestHeaders.Browser.BrowserVersion.Major<=7)){
+                        SerializeString(((DateTime)value).ToString("ddd MMM d H:m:s %K yyyy"), builder);
+                    }else
+                        SerializeString(((DateTime)value).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
+                }else
+                    SerializeString(((DateTime)value).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
             }
             else if (value.GetType().IsArray || (value is IEnumerable))
             {

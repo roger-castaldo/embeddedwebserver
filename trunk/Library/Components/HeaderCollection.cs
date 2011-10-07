@@ -75,6 +75,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             set { this["Date"] = value; }
         }
 
+        public string UserAgent
+        {
+            get { return this["User-Agent"]; }
+        }
+
+        private Browser _browser;
+        public Browser Browser
+        {
+            get
+            {
+                if (UserAgent == null)
+                    return null;
+                if (_browser == null)
+                    _browser = new Browser(UserAgent);
+                return _browser;
+            }
+        }
+
         public HeaderCollection()
         {
             _values = new Dictionary<string, string>();

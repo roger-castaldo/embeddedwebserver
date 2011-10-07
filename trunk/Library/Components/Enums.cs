@@ -34,4 +34,47 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         Service_Unavailable = 503,
         HTTP_Version_Not_Supported = 505
     }
+
+    public enum BrowserOSTypes
+    {
+        Linux,
+        Windows,
+        MAC,
+        Other,
+        Bot,
+        BlackBerry
+    }
+
+    public enum BrowserFamilies
+    {
+        Bot,
+        LotusNotes,
+        Opera,
+        InternetExplorer,
+        Gecko,
+        Camino,
+        Chimera,
+        Firebird,
+        Phoenix,
+        Galeon,
+        Firefox,
+        Netscape,
+        Chrome,
+        Safari,
+        Konqueror,
+        NetFront,
+        BlackBerry,
+        Other
+    }
+
+    public enum BotTypes
+    {
+        Yahoo,
+        Google,
+        MSNBot,
+        WebCrawler,
+        Inktomi,
+        Teoma,
+        Other
+    }
 }
