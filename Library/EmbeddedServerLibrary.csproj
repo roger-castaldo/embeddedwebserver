@@ -43,6 +43,7 @@
     <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
     <Compile Include="BasicHandlers\EmbeddedServiceHandler.cs" />
     <Compile Include="BasicHandlers\FileHandler.cs" />
+    <Compile Include="Components\Browser.cs" />
     <Compile Include="Components\CachedItemContainer.cs" />
     <Compile Include="Components\CookieCollection.cs" />
     <Compile Include="Components\Enums.cs" />
@@ -53,6 +54,7 @@
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />
     <Compile Include="Components\UploadedFileCollection.cs" />
+    <Compile Include="Components\UserAgentTools.cs" />
     <Compile Include="Diagnostics\Enums.cs" />
     <Compile Include="Diagnostics\Logger.cs" />
     <Compile Include="Interfaces\EmbeddedService.cs" />
