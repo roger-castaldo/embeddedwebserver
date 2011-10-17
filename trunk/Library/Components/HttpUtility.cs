@@ -38,6 +38,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //called to translate a given file extension to a conent-type for the http response
         public static string GetContentTypeForExtension(string fileExtension)
         {
+            if (!fileExtension.StartsWith("."))
+                return GetContentTypeForExtension("." + fileExtension);
             switch (fileExtension.ToLower())
             {
                 case ".3dm":
