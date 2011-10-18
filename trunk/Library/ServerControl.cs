@@ -6,6 +6,7 @@ using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
+using System.Net;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
@@ -16,6 +17,27 @@ namespace Org.Reddragonit.EmbeddedWebServer
          * either start or stop the server.
          */
 
+        internal struct sIPPortPair
+        {
+            private IPAddress _address;
+            public IPAddress Address
+            {
+                get { return _address; }
+            }
+
+            private int _port;
+            public int Port
+            {
+                get { return _port; }
+            }
+
+            public sIPPortPair(IPAddress address, int port)
+            {
+                _address = address;
+                _port = port;
+            }
+        }
+
         //used as a single use lock for the lsits below
         private static object _lock=new object();
         //the list of Port Listeners that were created to run on the server
@@ -25,6 +47,22 @@ namespace Org.Reddragonit.EmbeddedWebServer
         //the background operation control that gets started when the servers are started.
         //it runs similarly to the linux cron concept.
         private static BackgroundOperationRunner _backgroundRunner;
+
+        internal static List<sIPPortPair> BoundPairs
+        {
+            get
+            {
+                List<sIPPortPair> ret = new List<sIPPortPair>();
+                Monitor.Enter(_lock);
+                if (_listeners != null)
+                {
+                    foreach (PortListener pl in _listeners)
+                        ret.Add(new sIPPortPair(pl.IP, pl.Port));
+                }
+                Monitor.Exit(_lock);
+                return ret;
+            }
+        }
         
         //Returns a full list of site implementations loaded by the server controller.
         public static List<Site> Sites
