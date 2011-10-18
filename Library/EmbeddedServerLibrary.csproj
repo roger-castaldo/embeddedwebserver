@@ -50,6 +50,7 @@
     <Compile Include="Components\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\HttpUtility.cs" />
+    <Compile Include="Components\KeepAliveRunner.cs" />
     <Compile Include="Components\ParameterCollection.cs" />
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\UploadedFile.cs" />

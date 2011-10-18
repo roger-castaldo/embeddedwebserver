@@ -136,6 +136,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             catch (Exception e)
             {
+                this.ResponseStatus = HttpStatusCodes.Bad_Request;
+                this.SendResponse();
                 throw e;
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
@@ -445,10 +447,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             string data = "";
             while (true) {
                 next_char = inputStream.ReadByte();
-                if (next_char == '\n') { break; }
-                if (next_char == '\r') { continue; }
-                if (next_char == -1) { Thread.Sleep(1); continue; };
-                data += Convert.ToChar(next_char);
+                switch (next_char)
+                {
+                    case '\n':
+                        return data;
+                        break;
+                    case '\r':
+                        break;
+                    case -1:
+                        Thread.Sleep(1);
+                        break;
+                    default:
+                        data += Convert.ToChar(next_char);
+                        break;
+                }
             }            
             return data;
         }
@@ -501,7 +513,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
                 if (_responseHeaders.Date == null)
                     _responseHeaders.Date = DateTime.Now.ToString("r");
-                _responseHeaders["Connection"] = "close";
+                _responseHeaders["Connection"] = "Close";
                 Stream outStream = socket.GetStream();
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
