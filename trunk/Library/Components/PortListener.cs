@@ -41,9 +41,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         //adds a site to listen for
-        public void AttachSite(Site site)
+        public void AttachSite(Site site,sIPPortPair ipp)
         {
-            if ((site.IPToListenTo == IPAddress.Any)||((IP!=IPAddress.Any)&&(site.IPToListenTo!=_ip)))
+            if ((ipp.Address == IPAddress.Any)||((IP!=IPAddress.Any)&&(ipp.Address!=_ip)))
                 _ip = IPAddress.Any;
             _sites.Add(site);
         }
@@ -63,12 +63,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         //creates a new instance of a tcp port listener for a given site
-        public PortListener(Site site)
+        public PortListener(Site site,sIPPortPair ipp)
         {
             _sites = new List<Site>();
             _sites.Add(site);
-            _port = site.Port;
-            _ip = site.IPToListenTo;
+            _port = ipp.Port;
+            _ip = ipp.Address;
         }
 
         //starts the listener by starting each site,
@@ -127,7 +127,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (clnt != null)
             {
-                HttpConnection con = new HttpConnection(clnt);
+                HttpConnection con = new HttpConnection(clnt,new sIPPortPair(_ip,_port));
                 HttpConnection.SetCurrentConnection(con);
                 if (con.URL.AbsolutePath == "/jquery.js")
                 {
@@ -162,11 +162,32 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         {
                             foreach (Site s in _sites)
                             {
-                                if ((s.IPToListenTo != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(s.IPToListenTo, s.Port)))
+                                if (s.Aliases != null)
                                 {
-                                    ProcessRequest(con, s, start);
-                                    Processed = true;
-                                    break;
+                                    foreach (string str in s.Aliases)
+                                    {
+                                        if (str == con.URL.Host)
+                                        {
+                                            ProcessRequest(con, s, start);
+                                            Processed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!Processed)
+                        {
+                            foreach (Site s in _sites)
+                            {
+                                foreach (sIPPortPair ipp in s.ListenOn)
+                                {
+                                    if ((ipp.Address!= IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(ipp.Address, ipp.Port)))
+                                    {
+                                        ProcessRequest(con, s, start);
+                                        Processed = true;
+                                        break;
+                                    }
                                 }
                             }
                         }

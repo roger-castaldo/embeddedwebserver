@@ -92,6 +92,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          */
         void IRequestHandler.ProcessRequest(HttpConnection conn,Site site)
         {
+            conn.ResponseHeaders["Cache-Control"] = "Private";
             sEmbeddedFile file = site.EmbeddedFiles[conn.URL.AbsolutePath];
             Stream str=null;
             switch (file.FileType)

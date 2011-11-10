@@ -61,6 +61,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             set { this["Content-Type"] = value; }
         }
 
+        //sets/gets the Content Type Boundary Value in the headers
+        internal string ContentTypeBoundary
+        {
+            get { return this["Content-Type:Boundary"]; }
+            set { this["Content-Type:Boundary"] = value; }
+        }
+
         private string _charset=null;
         public string CharSet
         {

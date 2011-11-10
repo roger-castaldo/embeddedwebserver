@@ -17,27 +17,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
          * either start or stop the server.
          */
 
-        internal struct sIPPortPair
-        {
-            private IPAddress _address;
-            public IPAddress Address
-            {
-                get { return _address; }
-            }
-
-            private int _port;
-            public int Port
-            {
-                get { return _port; }
-            }
-
-            public sIPPortPair(IPAddress address, int port)
-            {
-                _address = address;
-                _port = port;
-            }
-        }
-
         //used as a single use lock for the lsits below
         private static object _lock=new object();
         //the list of Port Listeners that were created to run on the server
@@ -115,17 +94,20 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     Site s = (Site)t.GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
                     s.ID = SessionManager.GenerateSessionID();
-                    bool add = true;
-                    foreach (PortListener pt in _listeners)
+                    foreach (sIPPortPair ipp in s.ListenOn)
                     {
-                        if (pt.Port == s.Port)
+                        bool add = true;
+                        foreach (PortListener pt in _listeners)
                         {
-                            pt.AttachSite(s);
-                            add = false;
+                            if (pt.Port == ipp.Port)
+                            {
+                                pt.AttachSite(s,ipp);
+                                add = false;
+                            }
                         }
+                        if (add)
+                            _listeners.Add(new PortListener(s,ipp));
                     }
-                    if (add)
-                        _listeners.Add(new PortListener(s));
                 }
                 foreach (PortListener pt in _listeners)
                     pt.Start();

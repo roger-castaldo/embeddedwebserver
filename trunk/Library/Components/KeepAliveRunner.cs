@@ -16,8 +16,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         [BackgroundOperationCall(0, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
         public static void PingTestSockets()
         {
-            List<ServerControl.sIPPortPair> pairs = ServerControl.BoundPairs;
-            foreach (ServerControl.sIPPortPair pair in pairs)
+            List<sIPPortPair> pairs = ServerControl.BoundPairs;
+            foreach (sIPPortPair pair in pairs)
             {
                 TcpClient sock = new TcpClient();
                 try

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Net;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -37,6 +38,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             _fileType = fileType;
             _imageType = imageType;
         }
+    }
 
+    public struct sIPPortPair
+    {
+        private int _port;
+        public int Port
+        {
+            get { return _port; }
+        }
+
+        private IPAddress _address;
+        public IPAddress Address
+        {
+            get { return _address; }
+        }
+
+        public sIPPortPair(IPAddress address, int port)
+        {
+            _address = address;
+            _port = port;
+        }
     }
 }
