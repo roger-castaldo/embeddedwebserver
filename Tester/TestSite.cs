@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Tester
 {
@@ -30,8 +31,15 @@ namespace Tester
         {
             get
             {
-                return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 8080) };
+                return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 8080,false),
+                    new sIPPortPair(IPAddress.Loopback,8081,true)
+                };
             }
+        }
+
+        public override X509Certificate GetCertificateForEndpoint(sIPPortPair pair)
+        {
+            return new X509Certificate(".\\testCert.cer");
         }
 
         public override SiteSessionTypes SessionStateType

@@ -36,7 +36,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 if (_listeners != null)
                 {
                     foreach (PortListener pl in _listeners)
-                        ret.Add(new sIPPortPair(pl.IP, pl.Port));
+                        ret.Add(new sIPPortPair(pl.IP, pl.Port,pl.UseSSL));
                 }
                 Monitor.Exit(_lock);
                 return ret;

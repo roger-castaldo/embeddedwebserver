@@ -19,6 +19,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //the tcp connection listener for the given sites
         private TcpListener _listener;
 
+        //indicate if the connection uses ssl
+        private bool _useSSL;
+        public bool UseSSL
+        {
+            get { return _useSSL; }
+        }
+
         //the sites that the listener listens for
         private List<Site> _sites;
         public List<Site> Sites
@@ -43,6 +50,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //adds a site to listen for
         public void AttachSite(Site site,sIPPortPair ipp)
         {
+            if (UseSSL || ipp.UseSSL)
+                new BoundMultipleSSLException(new sIPPortPair(_ip, _port, false));
             if ((ipp.Address == IPAddress.Any)||((IP!=IPAddress.Any)&&(ipp.Address!=_ip)))
                 _ip = IPAddress.Any;
             _sites.Add(site);
@@ -69,6 +78,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _sites.Add(site);
             _port = ipp.Port;
             _ip = ipp.Address;
+            _useSSL = ipp.UseSSL;
         }
 
         //starts the listener by starting each site,
@@ -127,7 +137,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (clnt != null)
             {
-                HttpConnection con = new HttpConnection(clnt,new sIPPortPair(_ip,_port));
+                HttpConnection con = (UseSSL ? new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),_sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip,_port,UseSSL)))
+                    : new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),null));
                 HttpConnection.SetCurrentConnection(con);
                 if (con.URL.AbsolutePath == "/jquery.js")
                 {

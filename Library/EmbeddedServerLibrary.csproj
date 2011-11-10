@@ -47,6 +47,7 @@
     <Compile Include="Components\CachedItemContainer.cs" />
     <Compile Include="Components\CookieCollection.cs" />
     <Compile Include="Components\Enums.cs" />
+    <Compile Include="Components\Exceptions.cs" />
     <Compile Include="Components\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\HttpUtility.cs" />

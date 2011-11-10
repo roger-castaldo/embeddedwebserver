@@ -54,10 +54,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return _address; }
         }
 
-        public sIPPortPair(IPAddress address, int port)
+        private bool _useSSL;
+        public bool UseSSL
+        {
+            get { return _useSSL; }
+        }
+
+        public sIPPortPair(IPAddress address, int port,bool useSSL)
         {
             _address = address;
             _port = port;
+            _useSSL = useSSL;
         }
     }
 }

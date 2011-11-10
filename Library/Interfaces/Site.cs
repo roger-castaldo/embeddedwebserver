@@ -9,6 +9,7 @@ using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -33,7 +34,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //what IPaddress and port pairs to bind the site to
         public virtual sIPPortPair[] ListenOn
         {
-            get { return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 80) }; }
+            get { return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 80,false) }; }
+        }
+
+        public virtual X509Certificate GetCertificateForEndpoint(sIPPortPair pair)
+        {
+            throw new NotImplementedException();
         }
 
         //The host name that the site represents
