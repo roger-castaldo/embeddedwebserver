@@ -11,6 +11,8 @@ using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using System.Net;
 using Procurios.Public;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -124,13 +126,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        public HttpConnection(TcpClient s,sIPPortPair listener)
+        public HttpConnection(TcpClient s,sIPPortPair listener,X509Certificate cert)
         {
             _isResponseSent = false;
             _listener = listener;
             DateTime start = DateTime.Now;
             this.socket = s;
-            inputStream = new BufferedStream(socket.GetStream());
+            if (listener.UseSSL)
+            {
+                inputStream = new SslStream(socket.GetStream(), true);
+                ((SslStream)inputStream).AuthenticateAsServer(cert);
+            }
+            else
+                inputStream = new BufferedStream(socket.GetStream());
 
             _outStream = new MemoryStream();
             _responseWriter = new StreamWriter(_outStream);
@@ -528,7 +536,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (_responseHeaders.Date == null)
                     _responseHeaders.Date = DateTime.Now.ToString("r");
                 _responseHeaders["Connection"] = "Close";
-                Stream outStream = socket.GetStream();
+                Stream outStream = (_listener.UseSSL ? inputStream : (Stream)socket.GetStream());
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
                     line += str + ": " + _responseHeaders[str] + "\r\n";
