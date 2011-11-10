@@ -88,6 +88,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _session = session;
         }
 
+        //returns the IPPortPair that the connection was made on
+        private sIPPortPair _listener;
+        public sIPPortPair Listener
+        {
+            get { return _listener; }
+        }
+
         //houses connection specific variables that can be set along the way 
         //and are only valid while the connection is being processed
         private Dictionary<string, object> _contextVariables;
@@ -117,9 +124,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        public HttpConnection(TcpClient s)
+        public HttpConnection(TcpClient s,sIPPortPair listener)
         {
             _isResponseSent = false;
+            _listener = listener;
             DateTime start = DateTime.Now;
             this.socket = s;
             inputStream = new BufferedStream(socket.GetStream());
@@ -281,9 +289,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 ms.Seek(0, SeekOrigin.Begin);
                 if (_requestHeaders.ContentType.StartsWith("multipart/form-data"))
                 {
-                    if (_requestHeaders.ContentType.Contains("boundary="))
+                    if (_requestHeaders.ContentType.Contains("boundary=")||
+                        (_requestHeaders.ContentTypeBoundary!=null))
                     {
-                        string boundary = "--"+_requestHeaders.ContentType.Substring(_requestHeaders.ContentType.IndexOf("boundary=") + "boundary=".Length).Replace("-","");
+                        string boundary = (_requestHeaders.ContentTypeBoundary!=null ? _requestHeaders.ContentTypeBoundary : 
+                                "--"+_requestHeaders.ContentType.Substring(_requestHeaders.ContentType.IndexOf("boundary=") + "boundary=".Length).Replace("-",""));
                         string line;
                         string var;
                         string value;
@@ -428,9 +438,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         value = tmp[0];
                         for (int x = 1; x < tmp.Length; x++)
                         {
-                            if (tmp[x].ToLower().StartsWith("charset"))
+                            if (tmp[x].Trim().ToLower().StartsWith("charset"))
                             {
                                 _requestHeaders.CharSet = tmp[x].Substring(tmp[x].IndexOf("=") + 1);
+                            }
+                            else if (tmp[x].Trim().ToLower().StartsWith("boundary"))
+                            {
+                                _requestHeaders.ContentTypeBoundary = tmp[x].Substring(tmp[x].IndexOf("=") + 1);
                             }
                         }
                     }

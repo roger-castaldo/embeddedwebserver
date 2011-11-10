@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
+using System.Net;
 
 namespace Tester
 {
@@ -25,11 +26,11 @@ namespace Tester
             }
         }
 
-        public override int Port
+        public override sIPPortPair[] ListenOn
         {
             get
             {
-                return 8080;
+                return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 8080) };
             }
         }
 

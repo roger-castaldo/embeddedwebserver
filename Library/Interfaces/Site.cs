@@ -30,20 +30,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         #region virtual
-        //what port the site listens on
-        public virtual int Port
+        //what IPaddress and port pairs to bind the site to
+        public virtual sIPPortPair[] ListenOn
         {
-            get { return 80; }
-        }
-
-        //what IP to bind the tcp listener to for the site
-        public virtual IPAddress IPToListenTo
-        {
-            get { return IPAddress.Any; }
+            get { return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 80) }; }
         }
 
         //The host name that the site represents
         public virtual string ServerName
+        {
+            get { return null; }
+        }
+
+        //hose aliases that will work as representation
+        public virtual string[] Aliases
         {
             get { return null; }
         }
