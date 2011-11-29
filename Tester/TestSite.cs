@@ -5,11 +5,17 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace Tester
 {
     public class TestSite : Site
     {
+
+        protected override void PostStart()
+        {
+            DeployPath("/src/", new PhysicalDirectoryFolder(new DirectoryInfo("C:\\var"),null));
+        }
 
         public override Org.Reddragonit.EmbeddedWebServer.Diagnostics.DiagnosticsLevels DiagnosticsLevel
         {

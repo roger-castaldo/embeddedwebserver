@@ -40,6 +40,7 @@
     <Compile Include="Attributes\Enums.cs" />
     <Compile Include="Attributes\WebMethod.cs" />
     <Compile Include="BackgroundOperationRunner.cs" />
+    <Compile Include="BasicHandlers\DirectoryBrowsingHandler.cs" />
     <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
     <Compile Include="BasicHandlers\EmbeddedServiceHandler.cs" />
     <Compile Include="BasicHandlers\FileHandler.cs" />
@@ -57,11 +58,14 @@
     <Compile Include="Components\UploadedFile.cs" />
     <Compile Include="Components\UploadedFileCollection.cs" />
     <Compile Include="Components\UserAgentTools.cs" />
+    <Compile Include="Components\ZipFile.cs" />
     <Compile Include="Diagnostics\Enums.cs" />
     <Compile Include="Diagnostics\Logger.cs" />
     <Compile Include="Interfaces\EmbeddedService.cs" />
     <Compile Include="Interfaces\Enums.cs" />
     <Compile Include="Interfaces\IBackgroundOperationContainer.cs" />
+    <Compile Include="Interfaces\IDirectoryFile.cs" />
+    <Compile Include="Interfaces\IDirectoryFolder.cs" />
     <Compile Include="Interfaces\IRequestHandler.cs" />
     <Compile Include="Interfaces\Site.cs" />
     <Compile Include="Interfaces\Structures.cs" />
@@ -83,6 +87,13 @@
   <ItemGroup>
     <EmbeddedResource Include="resources\jquery.min.js" />
     <EmbeddedResource Include="resources\json2.min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\icons\file.png" />
+    <EmbeddedResource Include="resources\icons\folder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\icons\download.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
