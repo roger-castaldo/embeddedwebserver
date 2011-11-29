@@ -115,10 +115,41 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
+            new DirectoryBrowsingHandler(),
             new EmbeddedServiceHandler(),
             new EmbeddedResourceHandler(),
             new FileHandler()
         };
+
+        public void DeployPath(string url, IDirectoryFolder folder)
+        {
+            lock (Handlers)
+            {
+                foreach (IRequestHandler irh in Handlers)
+                {
+                    if (irh is DirectoryBrowsingHandler)
+                    {
+                        ((DirectoryBrowsingHandler)irh).DeployPath(url, folder);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void RemovePath(string url)
+        {
+            lock (Handlers)
+            {
+                foreach (IRequestHandler irh in Handlers)
+                {
+                    if (irh is DirectoryBrowsingHandler)
+                    {
+                        ((DirectoryBrowsingHandler)irh).RemovePath(url);
+                        break;
+                    }
+                }
+            }
+        }
 
         //returns the list of handlers that the site uses
         public virtual List<IRequestHandler> Handlers

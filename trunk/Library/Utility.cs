@@ -361,5 +361,21 @@ namespace Org.Reddragonit.EmbeddedWebServer
 
         static Utility(){
         }
+
+        internal static string TraceFullDirectoryPath(IDirectoryFolder folder)
+        {
+            string ret = "";
+            while (folder != null)
+            {
+                ret = "/" + folder.Name + ret;
+                folder = folder.Parent;
+            }
+            return ret;
+        }
+
+        internal static string TraceFullFilePath(IDirectoryFile file)
+        {
+            return TraceFullDirectoryPath(file.Folder) + "/" + file.Name;
+        }
     }
 }
