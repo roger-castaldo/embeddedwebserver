@@ -177,7 +177,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         internal void UseDefaultPath(Site site)
         {
-            _url = new Uri("http://" + _url.Host + site.DefaultPage);
+            _url = new Uri("http://" + _url.Host + site.DefaultPage+_url.Query);
         }
 
         //returns the http version specified in the request
@@ -365,7 +365,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     else
                         postData = new StreamReader(ms).ReadToEnd();
                     string query = HttpUtility.UrlDecode(postData);
-                    if (query.StartsWith("?{") && query.EndsWith("}"))
+                    if (query.StartsWith("?"))
+                        query = query.Substring(1);
+                    if (query.StartsWith("{") && query.EndsWith("}"))
                     {
                         query = query.Substring(1);
                         if (query != "{}")
@@ -376,7 +378,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         NameValueCollection col = HttpUtility.ParseQueryString(postData);
                         foreach (string str in col.Keys)
                         {
-                            requestParameters.Add(str, col[str]);
+                            requestParameters.Add(str, HttpUtility.UrlDecode(col[str]));
                         }
                     }
                 }
