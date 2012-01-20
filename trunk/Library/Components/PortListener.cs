@@ -211,7 +211,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         private void ProcessRequest(HttpConnection con, Site useSite, DateTime start)
         {
-            System.Diagnostics.Debug.WriteLine("Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            Logger.LogMessage(DiagnosticsLevels.DEBUG,"Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             if ((!useSite.AllowGET && con.Method.ToUpper() == "GET") ||
                 (!useSite.AllowPOST && con.Method.ToUpper() == "POST"))
             {
@@ -233,7 +233,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     con.ResponseWriter.WriteLine(e.Message);
                     con.SendResponse();
                 }
-                System.Diagnostics.Debug.WriteLine("Total time to process request to URL "+con.URL.AbsolutePath+" = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }
     }
