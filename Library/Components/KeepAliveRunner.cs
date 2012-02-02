@@ -40,6 +40,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     if (pair.UseSSL)
                     {
                         str = new SslStream(str, true, new RemoteCertificateValidationCallback(_ValidateCertificate));
+                        ((SslStream)str).AuthenticateAsClient(pair.Address.ToString());
                     }
                     str.Write(buf, 0, buf.Length);
                     str.Flush();
