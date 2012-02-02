@@ -8,6 +8,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     public class Browser
     {
         private static readonly Regex _REG_VERSION_NUMBER = new Regex("\\d+\\.\\d+(\\.\\d+)*", RegexOptions.Compiled | RegexOptions.ECMAScript);
+        private static readonly Regex _REG_SAFARI_MOBILE = new Regex("Version/\\d+\\.\\d+\\s+Mobile(\\s+Safari)?/", RegexOptions.Compiled | RegexOptions.ECMAScript);
+        private static readonly Regex _REG_IE_MOBILE = new Regex("(Windows CE;|IEMobile \\d+\\.\\d+;)+", RegexOptions.ECMAScript | RegexOptions.Compiled);
+        private static readonly Regex _REG_HP_MOBILE = new Regex("(hp-tablet;|Linux;)+", RegexOptions.Compiled | RegexOptions.ECMAScript);
 
         private BrowserOSTypes _osType;
         public BrowserOSTypes OSType
@@ -49,6 +52,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public BotTypes? BotType
         {
             get { return _botType; }
+        }
+
+        private bool _isMobile=false;
+        public bool IsMobile
+        {
+            get { return _isMobile; }
         }
 
         internal Browser(string userAgent)
@@ -173,6 +182,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 else
                     _browserVersion = null;
                 _name= tmp[1];
+                switch (_browserFamily)
+                {
+                    case BrowserFamilies.BlackBerry:
+                        _isMobile = true;
+                        break;
+                    case BrowserFamilies.Safari:
+                        _isMobile = _REG_SAFARI_MOBILE.Matches(userAgent).Count > 0
+                            || _REG_HP_MOBILE.Matches(userAgent).Count>=2;
+                        break;
+                    case BrowserFamilies.InternetExplorer:
+                        _isMobile = _REG_IE_MOBILE.Matches(userAgent).Count >= 2;
+                        break;
+                    case BrowserFamilies.Firefox:
+                        _isMobile = (_osName != null ? _osName : "").ToUpper() == "ANDROID";
+                        break;
+                    case BrowserFamilies.Opera:
+                        _isMobile = userAgent.StartsWith("HTC-ST7377");
+                        break;
+                }
+                _isMobile |= userAgent.Contains("SymbianOS");
             }
         }
 

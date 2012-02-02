@@ -8,6 +8,8 @@ using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.Net;
 using System.IO;
 using System.Threading;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -22,7 +24,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 TcpClient sock = new TcpClient();
                 try
                 {
-                    NetworkStream str;
+                    Stream str;
                     byte[] buf;
                     if (!pair.Address.Equals(IPAddress.Any))
                     {
@@ -35,12 +37,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         buf = System.Text.UTF8Encoding.UTF8.GetBytes("GET / HTTP/1.1\r\nHost: " + IPAddress.Loopback.ToString() + ":" + pair.Port.ToString() + "\r\nConnection: Keep-alive\r\n\r\n");
                     }
                     str = sock.GetStream();
+                    if (pair.UseSSL)
+                    {
+                        str = new SslStream(str, true, new RemoteCertificateValidationCallback(_ValidateCertificate));
+                    }
                     str.Write(buf, 0, buf.Length);
                     str.Flush();
                     while (str.ReadByte() == -1)
                     {
                         Thread.Sleep(1);
                     }
+                    str.Close();
                     sock.Close();
                 }
                 catch (Exception e)
@@ -55,5 +62,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        private static bool _ValidateCertificate(Object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
     }
 }
