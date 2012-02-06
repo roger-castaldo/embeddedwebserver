@@ -60,11 +60,30 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return _useSSL; }
         }
 
+        private long _idleSeonds;
+        public long IdleSeconds
+        {
+            get { return _idleSeonds; }
+        }
+        
+        private long _totalRunSeconds;
+        public long TotalRunSeconds
+        {
+            get { return _totalRunSeconds; }
+        }
+
         public sIPPortPair(IPAddress address, int port,bool useSSL)
+            : this(address,port,useSSL,null,null)
+        {
+        }
+
+        public sIPPortPair(IPAddress address, int port, bool useSSL, long? idleSeconds, long? totalRunSeconds)
         {
             _address = address;
             _port = port;
             _useSSL = useSSL;
+            _idleSeonds = (idleSeconds.HasValue ? idleSeconds.Value : (long)(60 * 60));
+            _totalRunSeconds = (totalRunSeconds.HasValue ? totalRunSeconds.Value : (long)(24 * 60 * 60));
         }
     }
 }

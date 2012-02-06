@@ -18,6 +18,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     {
         //the tcp connection listener for the given sites
         private TcpListener _listener;
+        //maximum idle time between requests in seconds
+        private long _idleSeonds = long.MaxValue;
+        //maximum time before refreshing listener in seconds
+        private long _totalRunSeconds = long.MaxValue;
+        //last connection request occured
+        private DateTime _lastConnectionRequest;
+        //last connection refreshing
+        private DateTime _lastConnectionRefresh;
 
         //indicate if the connection uses ssl
         private bool _useSSL;
@@ -79,6 +87,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _port = ipp.Port;
             _ip = ipp.Address;
             _useSSL = ipp.UseSSL;
+            _idleSeonds = (long)Math.Min(_idleSeonds, ipp.IdleSeconds);
+            _totalRunSeconds = (long)Math.Min(_totalRunSeconds, ipp.TotalRunSeconds);
         }
 
         //starts the listener by starting each site,
@@ -89,6 +99,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 site.Start();
             _listener = new TcpListener(_ip, _port);
             _listener.Start();
+            _lastConnectionRefresh = DateTime.Now;
+            _lastConnectionRequest = DateTime.Now;
             _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
         }
 
@@ -120,6 +132,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void RecieveClient(IAsyncResult res)
         {
             TcpClient clnt = null;
+            lock (_listener)
+            {
+                _lastConnectionRequest = DateTime.Now;
+            }
             try
             {
                 clnt = _listener.EndAcceptTcpClient(res);
@@ -140,47 +156,65 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 HttpConnection con = (UseSSL ? new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),_sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip,_port,UseSSL)))
                     : new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),null));
                 HttpConnection.SetCurrentConnection(con);
-                if (con.URL.AbsolutePath == "/jquery.js")
+                if (!con.IsResponseSent)
                 {
-                    con.ResponseStatus = HttpStatusCodes.OK;
-                    con.ResponseHeaders.ContentType = "text/javascript";
-                    if (!con.RequestHeaders.Browser.IsMobile)
-                        con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
-                    else
-                        con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.mobile.min.js"));
-                    con.SendResponse();
-                }
-                else if (con.URL.AbsolutePath == "/json.js")
-                {
-                    con.ResponseStatus = HttpStatusCodes.OK;
-                    con.ResponseHeaders.ContentType = "text/javascript";
-                    con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.json2.min.js"));
-                    con.SendResponse();
-                }
-                else
-                {
-                    DateTime start = DateTime.Now;
-                    bool Processed = false;
-                    if (_sites.Count > 1)
+                    if (con.URL.AbsolutePath == "/jquery.js")
                     {
-                        foreach (Site s in _sites)
-                        {
-                            if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
-                            {
-                                ProcessRequest(con, s, start);
-                                Processed = true;
-                                break;
-                            }
-                        }
-                        if (!Processed)
+                        con.ResponseStatus = HttpStatusCodes.OK;
+                        con.ResponseHeaders.ContentType = "text/javascript";
+                        if (!con.RequestHeaders.Browser.IsMobile)
+                            con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
+                        else
+                            con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.mobile.min.js"));
+                        con.SendResponse();
+                    }
+                    else if (con.URL.AbsolutePath == "/json.js")
+                    {
+                        con.ResponseStatus = HttpStatusCodes.OK;
+                        con.ResponseHeaders.ContentType = "text/javascript";
+                        con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.json2.min.js"));
+                        con.SendResponse();
+                    }
+                    else
+                    {
+                        DateTime start = DateTime.Now;
+                        bool Processed = false;
+                        if (_sites.Count > 1)
                         {
                             foreach (Site s in _sites)
                             {
-                                if (s.Aliases != null)
+                                if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
                                 {
-                                    foreach (string str in s.Aliases)
+                                    ProcessRequest(con, s, start);
+                                    Processed = true;
+                                    break;
+                                }
+                            }
+                            if (!Processed)
+                            {
+                                foreach (Site s in _sites)
+                                {
+                                    if (s.Aliases != null)
                                     {
-                                        if (str == con.URL.Host)
+                                        foreach (string str in s.Aliases)
+                                        {
+                                            if (str == con.URL.Host)
+                                            {
+                                                ProcessRequest(con, s, start);
+                                                Processed = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (!Processed)
+                            {
+                                foreach (Site s in _sites)
+                                {
+                                    foreach (sIPPortPair ipp in s.ListenOn)
+                                    {
+                                        if ((ipp.Address != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(ipp.Address, ipp.Port)))
                                         {
                                             ProcessRequest(con, s, start);
                                             Processed = true;
@@ -191,23 +225,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             }
                         }
                         if (!Processed)
-                        {
-                            foreach (Site s in _sites)
-                            {
-                                foreach (sIPPortPair ipp in s.ListenOn)
-                                {
-                                    if ((ipp.Address!= IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(ipp.Address, ipp.Port)))
-                                    {
-                                        ProcessRequest(con, s, start);
-                                        Processed = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                            ProcessRequest(con, _defaultSite, start);
                     }
-                    if (!Processed)
-                        ProcessRequest(con, _defaultSite, start);
                 }
             }
         }
@@ -237,6 +256,28 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     con.SendResponse();
                 }
                 Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            }
+        }
+
+        internal void CheckRefresh()
+        {
+            lock (_listener)
+            {
+                if (
+                        (DateTime.Now.Subtract(_lastConnectionRequest).TotalSeconds>_idleSeonds)||
+                        (DateTime.Now.Subtract(_lastConnectionRefresh).TotalSeconds > _totalRunSeconds)
+                    )
+                try
+                {
+                    _listener.EndAcceptTcpClient(null);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
+                }
+                _lastConnectionRefresh = DateTime.Now;
+                _lastConnectionRequest = DateTime.Now;
+                _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
             }
         }
     }

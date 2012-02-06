@@ -154,7 +154,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 this.ResponseStatus = HttpStatusCodes.Bad_Request;
                 this.SendResponse();
-                throw e;
+                Logger.LogError(e);
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
@@ -514,6 +514,42 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _responseWriter = new StreamWriter(_outStream);
         }
 
+        private string CookieDateFormat
+        {
+            get
+            {
+                string ret = "r";
+                if (RequestHeaders.Browser != null)
+                {
+                    switch (RequestHeaders.Browser.BrowserFamily)
+                    {
+                        case BrowserFamilies.Chrome:
+                            ret = "ddd, dd-MMM-yyyy HH:mm:ss 'GMT'";
+                            break;
+                    }
+                }
+                return ret;
+            }
+        }
+
+        private string CookieFormat
+        {
+            get
+            {
+                string ret = "Set-Cookie: {0}={1}; Path={2}; Expires={3};\r\n";
+                if (RequestHeaders.Browser != null)
+                {
+                    switch (RequestHeaders.Browser.BrowserFamily)
+                    {
+                        case BrowserFamilies.Chrome:
+                            ret = "Set-Cookie: {0}={1}; path={2}; expires={3};\r\n";
+                            break;
+                    }
+                }
+                return ret;
+            }
+        }
+
         /*
          * This function sends the response back to the client.  It flushes the 
          * writer is necessary.  Then proceeds to build a full response in a string buffer 
@@ -536,7 +572,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (_responseHeaders["Server"] == null)
                     _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
                 if (_responseHeaders.Date == null)
-                    _responseHeaders.Date = DateTime.Now.ToString("r");
+                    _responseHeaders.Date = DateTime.Now.ToString(CookieDateFormat);
                 _responseHeaders["Connection"] = "Close";
                 Stream outStream = (_listener.UseSSL ? inputStream : (Stream)socket.GetStream());
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
@@ -557,12 +593,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             ||((RequestCookie!=null)&&(RequestCookie[str]==null))
                             ||((RequestCookie != null) && (RequestCookie[str] != null) && (RequestCookie[str]!=_responseCookie[str]))
                             )
-                            line += "Set-Cookie: " + str + "=" + _responseCookie[str] + ";  Path=/; Expires=" + _responseCookie.Expiry.ToString("r") + ";\r\n";
+                            line += string.Format(CookieFormat, new object[] { str, _responseCookie[str], "/", _responseCookie.Expiry.ToUniversalTime().ToString(CookieDateFormat) });
                     }
                 }
                 line += "\r\n";
                 outStream.Write(System.Text.ASCIIEncoding.ASCII.GetBytes(line), 0, line.Length);
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                if (this.URL!=null)
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
                 byte[] buffer = new byte[socket.Client.SendBufferSize];
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Sending Buffer size: " + socket.Client.SendBufferSize.ToString());
@@ -590,7 +627,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 catch (Exception e) {
                     Logger.LogError(e);
                 }
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                if (this.URL != null)
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + this.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
         }
 

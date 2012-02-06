@@ -128,6 +128,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         sw.AppendLine("if (document.getElementsByName(\"jqueryScriptTag\").length==0){");
                         sw.AppendLine("var e=window.document.createElement('script');");
                         sw.AppendLine("e.setAttribute('src','/jquery.js');");
+                        sw.AppendLine("e.setAttribute('name','jqueryScriptTag');");
                         sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
                     }
                     if (site.AddJsonJavascript)
@@ -135,6 +136,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         sw.AppendLine("if (document.getElementsByName(\"jsonScriptTag\").length==0){");
                         sw.AppendLine("var e=window.document.createElement('script');");
                         sw.AppendLine("e.setAttribute('src','/json.js');");
+                        sw.AppendLine("e.setAttribute('name','jsonScriptTag');");
                         sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
                     }
                     sw.AppendLine("var splitted = '" + t.FullName + "'.split('.');" +
