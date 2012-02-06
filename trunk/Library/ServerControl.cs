@@ -7,10 +7,11 @@ using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.Net;
+using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
-    public class ServerControl
+    public class ServerControl : IBackgroundOperationContainer
     {
         /*
          * This is the main exposed class.  It is used to control the web server itself by calling to
@@ -146,6 +147,18 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 _started = false;
             }
             Logger.CleanupRemainingMessages();
+            Monitor.Exit(_lock);
+        }
+
+        [BackgroundOperationCall(-1, -1, -1, -1, BackgroundOperationDaysOfWeek.All)]
+        public static void PingTestSockets()
+        {
+            Monitor.Enter(_lock);
+            if (_listeners != null)
+            {
+                foreach (PortListener pt in _listeners)
+                    pt.CheckRefresh();
+            }
             Monitor.Exit(_lock);
         }
     }
