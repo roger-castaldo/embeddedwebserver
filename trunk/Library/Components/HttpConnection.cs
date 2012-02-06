@@ -519,13 +519,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get
             {
                 string ret = "r";
-                if (RequestHeaders.Browser != null)
+                if (RequestHeaders != null)
                 {
-                    switch (RequestHeaders.Browser.BrowserFamily)
+                    if (RequestHeaders.Browser != null)
                     {
-                        case BrowserFamilies.Chrome:
-                            ret = "ddd, dd-MMM-yyyy HH:mm:ss 'GMT'";
-                            break;
+                        switch (RequestHeaders.Browser.BrowserFamily)
+                        {
+                            case BrowserFamilies.Chrome:
+                                ret = "ddd, dd-MMM-yyyy HH:mm:ss 'GMT'";
+                                break;
+                        }
                     }
                 }
                 return ret;
@@ -537,13 +540,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get
             {
                 string ret = "Set-Cookie: {0}={1}; Path={2}; Expires={3};\r\n";
-                if (RequestHeaders.Browser != null)
+                if (RequestHeaders != null)
                 {
-                    switch (RequestHeaders.Browser.BrowserFamily)
+                    if (RequestHeaders.Browser != null)
                     {
-                        case BrowserFamilies.Chrome:
-                            ret = "Set-Cookie: {0}={1}; path={2}; expires={3};\r\n";
-                            break;
+                        switch (RequestHeaders.Browser.BrowserFamily)
+                        {
+                            case BrowserFamilies.Chrome:
+                                ret = "Set-Cookie: {0}={1}; path={2}; expires={3};\r\n";
+                                break;
+                        }
                     }
                 }
                 return ret;
