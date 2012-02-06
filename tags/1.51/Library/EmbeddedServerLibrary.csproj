@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{140F88D6-E0EE-4021-9167-A6455F32ADC1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Org.Reddragonit.EmbeddedWebServer</RootNamespace>
+    <AssemblyName>EmbeddedWebServer</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Attributes\BackgroundOperationCall.cs" />
+    <Compile Include="Attributes\Enums.cs" />
+    <Compile Include="Attributes\WebMethod.cs" />
+    <Compile Include="BackgroundOperationRunner.cs" />
+    <Compile Include="BasicHandlers\DirectoryBrowsingHandler.cs" />
+    <Compile Include="BasicHandlers\EmbeddedResourceHandler.cs" />
+    <Compile Include="BasicHandlers\EmbeddedServiceHandler.cs" />
+    <Compile Include="BasicHandlers\FileHandler.cs" />
+    <Compile Include="Components\Browser.cs" />
+    <Compile Include="Components\CachedItemContainer.cs" />
+    <Compile Include="Components\CookieCollection.cs" />
+    <Compile Include="Components\Enums.cs" />
+    <Compile Include="Components\Exceptions.cs" />
+    <Compile Include="Components\HeaderCollection.cs" />
+    <Compile Include="Components\HttpConnection.cs" />
+    <Compile Include="Components\HttpUtility.cs" />
+    <Compile Include="Components\KeepAliveRunner.cs" />
+    <Compile Include="Components\ParameterCollection.cs" />
+    <Compile Include="Components\PortListener.cs" />
+    <Compile Include="Components\UploadedFile.cs" />
+    <Compile Include="Components\UploadedFileCollection.cs" />
+    <Compile Include="Components\UserAgentTools.cs" />
+    <Compile Include="Components\ZipFile.cs" />
+    <Compile Include="Diagnostics\Enums.cs" />
+    <Compile Include="Diagnostics\Logger.cs" />
+    <Compile Include="Interfaces\EmbeddedService.cs" />
+    <Compile Include="Interfaces\Enums.cs" />
+    <Compile Include="Interfaces\IBackgroundOperationContainer.cs" />
+    <Compile Include="Interfaces\IDirectoryFile.cs" />
+    <Compile Include="Interfaces\IDirectoryFolder.cs" />
+    <Compile Include="Interfaces\IRequestHandler.cs" />
+    <Compile Include="Interfaces\Site.cs" />
+    <Compile Include="Interfaces\Structures.cs" />
+    <Compile Include="JSON.cs" />
+    <Compile Include="Messages.cs" />
+    <Compile Include="Minifiers\CSSMinifier.cs" />
+    <Compile Include="Minifiers\JSMinifier.cs" />
+    <Compile Include="MT19937.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerControl.cs" />
+    <Compile Include="Sessions\SessionManager.cs" />
+    <Compile Include="Sessions\SessionState.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="Utility.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DefaultMessages.properties" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\jquery.min.js" />
+    <EmbeddedResource Include="resources\json2.min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\icons\file.png" />
+    <EmbeddedResource Include="resources\icons\folder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\icons\download.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\jquery.mobile.min.js" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
