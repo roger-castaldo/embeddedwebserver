@@ -379,6 +379,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                                                                 {
                                                                                     res = getArray("BlackBerry", "BlackBerry", "BlackBerry" + getVersionNumber(userAgent, pos + 10));
                                                                                 }
+                                                                                else if ((pos = userAgent.IndexOf("RIM Tablet OS ")) > -1)
+                                                                                {
+                                                                                    res = getArray("BlackBerry", "PlayBook", "TabletOS" + getVersionNumber(userAgent, pos + 10));
+                                                                                }
                                                                                 else
                                                                                     if ((pos = userAgent.IndexOf("SymbianOS")) > -1)
                                                                                     {
