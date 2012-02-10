@@ -201,7 +201,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         _isMobile = userAgent.StartsWith("HTC-ST7377");
                         break;
                 }
-                _isMobile |= userAgent.Contains("SymbianOS");
+                _isMobile |= userAgent.Contains("SymbianOS") | (OSType == BrowserOSTypes.BlackBerry);
             }
         }
 
