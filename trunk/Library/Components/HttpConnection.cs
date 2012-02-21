@@ -580,7 +580,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (_responseHeaders.Date == null)
                     _responseHeaders.Date = DateTime.Now.ToString(CookieDateFormat);
                 _responseHeaders["Connection"] = "Close";
-                Stream outStream = (_listener.UseSSL ? inputStream : (Stream)socket.GetStream());
+                Stream outStream;
+                try
+                {
+                    outStream= (_listener.UseSSL ? inputStream : (Stream)socket.GetStream());
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
+                    return;
+                }
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
                     line += str + ": " + _responseHeaders[str] + "\r\n";
