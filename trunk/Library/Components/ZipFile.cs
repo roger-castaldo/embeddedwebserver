@@ -7,6 +7,96 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
+    public class sZippedFolder
+    {
+        private string _name;
+        public string Name
+        {
+            get { return _name; }
+        }
+
+        private List<sZippedFolder> _folders;
+        public List<sZippedFolder> Folders
+        {
+            get { return _folders; }
+        }
+
+        private List<ZipFile.sZippedFile> _files;
+        public List<ZipFile.sZippedFile> Files
+        {
+            get { return _files; }
+        }
+
+        internal void AddFile(ZipFile.sHeader header, byte[] data)
+        {
+            string prefix = header.Prefix;
+            if (prefix != null)
+            {
+                if ((prefix == _name) || (prefix == ""))
+                    _files.Add(new ZipFile.sZippedFile(header, data));
+                else
+                {
+                    AddFolder(prefix.Substring(prefix.LastIndexOf('/')), prefix.Substring(0, prefix.LastIndexOf('/')));
+                    string[] split = prefix.Trim('/').Split('/');
+                    sZippedFolder fold = this;
+                    int x = 0;
+                    if (split[x] == _name)
+                        x++;
+                    while (x < split.Length)
+                    {
+                        List<sZippedFolder> folds = fold.Folders;
+                        foreach (sZippedFolder szf in folds)
+                        {
+                            if (szf.Name == split[x])
+                            {
+                                fold = szf;
+                                break;
+                            }
+                        }
+                        x++;
+                    }
+                    fold.AddFile(header, data);
+                }
+            }
+            _files.Add(new ZipFile.sZippedFile(header, data));
+        }
+
+        internal sZippedFolder(string name)
+        {
+            _name = name;
+            _folders = new List<sZippedFolder>();
+            _files = new List<ZipFile.sZippedFile>();
+        }
+
+        internal void AddFolder(string name, string prefix)
+        {
+            if ((prefix == _name) || (prefix == ""))
+                _folders.Add(new sZippedFolder(name));
+            else
+            {
+                string[] split = prefix.Split('/');
+                prefix = prefix.Substring(prefix.IndexOf(split[0]));
+                prefix = prefix.TrimStart('/');
+                bool add = true;
+                for (int x = 0; x < _folders.Count; x++)
+                {
+                    if (_folders[x].Name == split[0])
+                    {
+                        add = false;
+                        _folders[x].AddFolder(name, prefix);
+                        x = _folders.Count;
+                    }
+                }
+                if (add)
+                {
+                    sZippedFolder fold = new sZippedFolder(split[0]);
+                    fold.AddFolder(name, prefix);
+                    _folders.Add(fold);
+                }
+            }
+        }
+    }
+
     public class ZipFile
     {
         internal static readonly DateTime TheEpoch = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -69,71 +159,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 _header = header;
                 _data = data;
-            }
-        }
-
-        public struct sZippedFolder{
-            private string _name;
-            public string Name
-            {
-                get { return _name; }
-            }
-
-            private List<sZippedFolder> _folders;
-            public List<sZippedFolder> Folders
-            {
-                get { return _folders; }
-            }
-
-            private List<sZippedFile> _files;
-            public List<sZippedFile> Files
-            {
-                get { return _files; }
-            }
-
-            internal void AddFile(sHeader header, byte[] data)
-            {
-                string prefix = header.Prefix;
-                if (prefix != null)
-                {
-
-                }
-                _files.Add(new sZippedFile(header, data));
-            }
-
-            internal sZippedFolder(string name)
-            {
-                _name = name;
-                _folders = new List<sZippedFolder>();
-                _files = new List<sZippedFile>();
-            }
-
-            internal void AddFolder(string name,string prefix)
-            {
-                if ((prefix == _name)||(prefix==""))
-                    _folders.Add(new sZippedFolder(name));
-                else
-                {
-                    string[] split = prefix.Split('/');
-                    prefix = prefix.Substring(prefix.IndexOf(split[0]));
-                    prefix = prefix.TrimStart('/');
-                    bool add = true;
-                    for (int x = 0; x < _folders.Count; x++)
-                    {
-                        if (_folders[x].Name == split[0])
-                        {
-                            add = false;
-                            _folders[x].AddFolder(name, prefix);
-                            x = _folders.Count;
-                        }
-                    }
-                    if (add)
-                    {
-                        sZippedFolder fold = new sZippedFolder(split[0]);
-                        fold.AddFolder(name, prefix);
-                        _folders.Add(fold);
-                    }
-                }
             }
         }
 
