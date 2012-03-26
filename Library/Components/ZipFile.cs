@@ -11,12 +11,138 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     {
         internal static readonly DateTime TheEpoch = new DateTime(1970, 1, 1, 0, 0, 0);
 
-        private enum FileTypes { 
+        public struct sZippedFile
+        {
+            private sHeader _header;
+            private byte[] _data;
+            public byte[] Data
+            {
+                get { return _data; }
+            }
+
+            public string Name
+            {
+                get { return _header.Name; }
+            }
+
+            public int Mode
+            {
+                get { return _header.Mode; }
+            }
+
+            public int UID
+            {
+                get { return _header.UID; }
+            }
+
+            public int GID
+            {
+                get { return _header.GID; }
+            }
+
+            public long Size
+            {
+                get { return _header.Size; }
+            }
+
+            public DateTime ModifyTime
+            {
+                get { return _header.ModifyTime; }
+            }
+
+            public short Version
+            {
+                get { return _header.Version; }
+            }
+
+            public string UName
+            {
+                get { return _header.UName; }
+            }
+
+            public string GName
+            {
+                get { return _header.GName; }
+            }
+
+            internal sZippedFile(sHeader header, byte[] data)
+            {
+                _header = header;
+                _data = data;
+            }
+        }
+
+        public struct sZippedFolder{
+            private string _name;
+            public string Name
+            {
+                get { return _name; }
+            }
+
+            private List<sZippedFolder> _folders;
+            public List<sZippedFolder> Folders
+            {
+                get { return _folders; }
+            }
+
+            private List<sZippedFile> _files;
+            public List<sZippedFile> Files
+            {
+                get { return _files; }
+            }
+
+            internal void AddFile(sHeader header, byte[] data)
+            {
+                string prefix = header.Prefix;
+                if (prefix != null)
+                {
+
+                }
+                _files.Add(new sZippedFile(header, data));
+            }
+
+            internal sZippedFolder(string name)
+            {
+                _name = name;
+                _folders = new List<sZippedFolder>();
+                _files = new List<sZippedFile>();
+            }
+
+            internal void AddFolder(string name,string prefix)
+            {
+                if ((prefix == _name)||(prefix==""))
+                    _folders.Add(new sZippedFolder(name));
+                else
+                {
+                    string[] split = prefix.Split('/');
+                    prefix = prefix.Substring(prefix.IndexOf(split[0]));
+                    prefix = prefix.TrimStart('/');
+                    bool add = true;
+                    for (int x = 0; x < _folders.Count; x++)
+                    {
+                        if (_folders[x].Name == split[0])
+                        {
+                            add = false;
+                            _folders[x].AddFolder(name, prefix);
+                            x = _folders.Count;
+                        }
+                    }
+                    if (add)
+                    {
+                        sZippedFolder fold = new sZippedFolder(split[0]);
+                        fold.AddFolder(name, prefix);
+                        _folders.Add(fold);
+                    }
+                }
+            }
+        }
+
+        internal enum FileTypes { 
             File='0',
             Directory='5'
         }
 
-        private struct sHeader
+        internal struct sHeader
         {
 
             private string _name;
@@ -38,7 +164,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
 
             private int _gid;
-            public int gid
+            public int GID
             {
                 get { return _gid; }
             }
@@ -87,6 +213,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 get { return _prefix; }
             }
 
+            public sHeader(string fileName, byte[] data)
+                : this(DateTime.Now, fileName, "", '/')
+            {
+                _size = data.Length;
+                _type = FileTypes.File;
+            }
+
             public sHeader(DirectoryInfo dir,string basePath):this(dir.LastWriteTime,dir.FullName,basePath,Path.DirectorySeparatorChar)
             {
                 _size = 0;
@@ -123,6 +256,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _uName = "root";
                 _gName = "root";
                 _modifyTime = modifyTime;
+                name = name.Replace(Path.DirectorySeparatorChar, dirChar);
+                basePath = basePath.Replace(Path.DirectorySeparatorChar, dirChar);
                 name = (name.EndsWith(dirChar.ToString()) ? name.Substring(0, name.Length - 1) : name);
                 name = name.Substring(basePath.Length);
                 _prefix = "";
@@ -138,6 +273,27 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     throw new Exception("Unable to compress when file/directory name is longer than 100 characters.");
                 if (_prefix.Length > 155)
                     throw new Exception("Unable to compress when the path for a file/directory is longer than 100 characters.");
+            }
+
+            internal sHeader(byte[] headerData)
+            {
+                _name = ASCIIEncoding.ASCII.GetString(headerData, 0, 100).TrimEnd('\0');
+                _mode = 0;
+                _uid = 0;
+                _gid = 0;
+                _size = 0;
+                _modifyTime = TheEpoch;
+                _type = (FileTypes)headerData[156];
+                _linkName = ASCIIEncoding.ASCII.GetString(headerData, 157, 100).TrimEnd('\0');
+                _version = BitConverter.ToInt16(headerData, 263);
+                _uName = ASCIIEncoding.ASCII.GetString(headerData, 265, 32).TrimEnd('\0');
+                _gName = ASCIIEncoding.ASCII.GetString(headerData, 297, 32).TrimEnd('\0');
+                _prefix = ASCIIEncoding.ASCII.GetString(headerData, 345, 155).TrimEnd('\0');
+                _mode = StringToInt(ASCIIEncoding.ASCII.GetString(headerData, 100, 8));
+                _uid = StringToInt(ASCIIEncoding.ASCII.GetString(headerData, 108, 8));
+                _gid = StringToInt(ASCIIEncoding.ASCII.GetString(headerData, 116, 8));
+                _size = StringToLong(ASCIIEncoding.ASCII.GetString(headerData, 124, 12));
+                _modifyTime = TheEpoch.AddSeconds(StringToLong(ASCIIEncoding.ASCII.GetString(headerData, 136, 12)));
             }
 
             public byte[] Bytes
@@ -178,9 +334,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 return AddChars(Convert.ToString(val, 8), 7, '0', true);
             }
 
+            private int StringToInt(string val)
+            {
+                return Convert.ToInt32(val.TrimStart('0'), 8);
+            }
+
             private string LongToString(long val)
             {
                 return AddChars(Convert.ToString(val, 8), 11, '0', true);
+            }
+
+            private long StringToLong(string val)
+            {
+                return Convert.ToInt64(val.TrimStart('0'), 11);
             }
 
             private string AddChars(string str, int num, char ch, bool isLeading)
@@ -201,8 +367,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private const byte _FILE_ID_TAG = 48;
         private const byte _DIRECTORY_ID_TAG = 53;
 
-        private MemoryStream _ms;
+        private Stream _strm;
         private BinaryWriter _bw;
+        private BinaryReader _br;
+
+        private sZippedFolder _base;
+        public List<sZippedFolder> Folders
+        {
+            get { return _base.Folders; }
+        }
+
+        public List<sZippedFile> Files
+        {
+            get { return _base.Files; }
+        }
 
         public string Extension
         {
@@ -221,18 +399,51 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         public ZipFile(string name)
+            : this(new MemoryStream(),false)
         {
             _name = name;
-            _ms = new MemoryStream();
-            _bw = new BinaryWriter(new GZipStream(_ms, CompressionMode.Compress,true));
+        }
+
+        public ZipFile(Stream strm, bool read)
+        {
+            _strm = strm;
+            if (read)
+                _bw = new BinaryWriter(new GZipStream(_strm, CompressionMode.Compress, true));
+            else
+            {
+                _br = new BinaryReader(new GZipStream(_strm, CompressionMode.Decompress, true));
+                _base = new sZippedFolder("");
+                while (_br.BaseStream.Position < _br.BaseStream.Length)
+                {
+                    sHeader head = new sHeader(_br.ReadBytes(512));
+                    switch (head.Type)
+                    {
+                        case FileTypes.Directory:
+                            _base.AddFolder(head.Name, head.Prefix);
+                            break;
+                        case FileTypes.File:
+                            _base.AddFile(head, _br.ReadBytes((int)head.Size));
+                            break;
+                    }
+                }
+            }
         }
 
         public Stream ToStream()
         {
             _bw.Flush();
             _bw.Close();
-            _ms.Position = 0;
-            return _ms;
+            Stream bstream = ((GZipStream)_strm).BaseStream;
+            ((MemoryStream)bstream).Position = 0;
+            return bstream;
+        }
+
+        public void Close()
+        {
+            if (_bw != null)
+                _bw.Close();
+            else
+                _br.Close();
         }
 
         public void AddDirectory(DirectoryInfo di,string basePath)
@@ -287,6 +498,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 else
                     _bw.Write(data);
             }
+        }
+
+        public void AddFile(string name, byte[] data)
+        {
+            _bw.Write(new sHeader(name, data).Bytes);
+            _bw.Write(data);
         }
     }
 }

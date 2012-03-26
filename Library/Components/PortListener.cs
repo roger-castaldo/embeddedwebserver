@@ -98,6 +98,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             foreach (Site site in _sites)
                 site.Start();
             _listener = new TcpListener(_ip, _port);
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Creating port listener on " + _ip.ToString() + ":" + _port.ToString());
             _listener.Start();
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
