@@ -154,8 +154,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (clnt != null)
             {
-                HttpConnection con = (UseSSL ? new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),_sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip,_port,UseSSL)))
-                    : new HttpConnection(clnt,new sIPPortPair(_ip,_port,UseSSL),null));
+                HttpConnection con = null;
+                try
+                {
+                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)))
+                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null));
+                }
+                catch (Exception e) {
+                    Logger.LogError(e);
+                    return;
+                }
                 HttpConnection.SetCurrentConnection(con);
                 if (!con.IsResponseSent)
                 {
