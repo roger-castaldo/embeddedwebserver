@@ -120,26 +120,115 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        //used to buffer incoming data
+        private StringBuilder _sbuffer;
+        //used to house the data returned on an async read from the input stream
+        private byte[] _buffer;
+        private const int _BUFFER_SIZE = 512;
+
+        //event triggered when header is complete
+        private ManualResetEvent _mreHeader;
+        private ManualResetEvent _mreContent;
+        private ManualResetEvent _mreHeaderParsed;
+        private bool _headerRecieved;
+        private bool _requestComplete;
+        private string _header;
+        private string _content;
+
+        private void _AsyncRead(IAsyncResult ar)
+        {
+            int len = 0;
+            try
+            {
+                len = inputStream.EndRead(ar);
+            }
+            catch (Exception e)
+            {
+                len = 0;
+            }
+            if (len > 0)
+            {
+                _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, len));
+                if (_sbuffer.ToString().Contains("\r\n\r\n")
+                    ||(_headerRecieved && !_requestComplete))
+                {
+                    if (!_headerRecieved)
+                    {
+                        _headerRecieved = true;
+                        _header = _sbuffer.ToString().Substring(0, _sbuffer.ToString().IndexOf("\r\n\r\n"));
+                        _sbuffer.Replace(_header + "\r\n\r\n", "");
+                        _mreHeader.Set();
+                        _mreHeaderParsed.WaitOne();
+                        if (_requestHeaders.ContentLength != null)
+                        {
+                            if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
+                            {
+                                _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                                _requestComplete = true;
+                                _mreContent.Set();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (_requestHeaders.ContentLength != null)
+                        {
+                            if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
+                            {
+                                _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                                _requestComplete = true;
+                                _mreContent.Set();
+                            }
+                        }
+                        else if (_sbuffer.ToString().Contains("\r\n\r\n"))
+                        {
+                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                            _requestComplete = true;
+                            _mreContent.Set();
+                        }
+                    }
+                }
+            }
+            if (!_headerRecieved || !_requestComplete)
+            {
+                _buffer = new byte[_BUFFER_SIZE];
+                try
+                {
+                    inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
+                }
+                catch (Exception e)
+                {
+                }
+            }
+        }
+
         /*
          * This constructor loads and http connection from a given tcp client.
          * It establishes the required streams and objects, then loads in the 
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        public HttpConnection(TcpClient s,sIPPortPair listener,X509Certificate cert)
+        public HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert)
         {
             _isResponseSent = false;
             _listener = listener;
             DateTime start = DateTime.Now;
             this.socket = s;
+            _sbuffer = new StringBuilder();
+            _buffer = new byte[_BUFFER_SIZE];
+            _headerRecieved = false;
+            _requestComplete = false;
+            _mreHeader = new ManualResetEvent(false);
+            _mreContent = new ManualResetEvent(false);
+            _mreHeaderParsed = new ManualResetEvent(false);
             if (listener.UseSSL)
             {
                 inputStream = new SslStream(socket.GetStream(), true);
                 ((SslStream)inputStream).AuthenticateAsServer(cert);
             }
             else
-                inputStream = new BufferedStream(socket.GetStream());
-
+                inputStream = socket.GetStream();
+            inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
             _outStream = new MemoryStream();
             _responseWriter = new StreamWriter(_outStream);
             _responseHeaders = new HeaderCollection();
@@ -267,34 +356,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (_requestHeaders.ContentLength != null)
             {
-                MemoryStream ms = new MemoryStream();
-                int content_len = Convert.ToInt32(_requestHeaders.ContentLength);
-                if (content_len > MAX_POST_SIZE)
-                {
-                    throw new Exception(
-                        String.Format("POST Content-Length({0}) too big for this simple server",
-                          content_len));
-                }
-                byte[] buf = new byte[BUF_SIZE];
-                int to_read = content_len;
-                while (to_read > 0)
-                {
-                    int numread = this.inputStream.Read(buf, 0, Math.Min(BUF_SIZE, to_read));
-                    if (numread == 0)
-                    {
-                        if (to_read == 0)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            throw new Exception("client disconnected during post");
-                        }
-                    }
-                    to_read -= numread;
-                    ms.Write(buf, 0, numread);
-                }
-                ms.Seek(0, SeekOrigin.Begin);
+                _mreContent.WaitOne();
                 if (_requestHeaders.ContentType.StartsWith("multipart/form-data"))
                 {
                     if (_requestHeaders.ContentType.Contains("boundary=")||
@@ -306,32 +368,32 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         string var;
                         string value;
                         string fileName;
-                        while ((line = streamReadLine(ms)) != null)
+                        while ((line = streamReadLine(ref _content)) != null)
                         {
                             if (line.EndsWith(boundary + "--"))
                                 break;
                             else if (line.EndsWith(boundary))
                             {
-                                line = streamReadLine(ms);
+                                line = streamReadLine(ref _content);
                                 if (line.Contains("filename="))
                                 {
                                     var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
                                     var = var.Substring(0, var.IndexOf("\";"));
                                     fileName = line.Substring(line.IndexOf("filename=\"") + "filename=\"".Length);
                                     fileName = fileName.Substring(0, fileName.Length - 1);
-                                    string contentType = streamReadLine(ms);
+                                    string contentType = streamReadLine(ref _content);
                                     contentType = contentType.Substring(contentType.IndexOf(":")+1);
                                     contentType=contentType.Trim();
-                                    streamReadLine(ms);
+                                    streamReadLine(ref _content);
                                     MemoryStream str = new MemoryStream();
                                     BinaryWriter br = new BinaryWriter(str);
-                                    while ((line = PeakLine(ms)) != null)
+                                    while ((line = PeakLine(_content)) != null)
                                     {
                                         if (line.EndsWith(boundary) || line.EndsWith(boundary + "--"))
                                             break;
                                         else
                                             br.Write(line.ToCharArray());
-                                        streamReadLine(ms);
+                                        streamReadLine(ref _content);
                                     }
                                     br.Flush();
                                     str.Seek(0, SeekOrigin.Begin);
@@ -341,14 +403,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                 {
                                     var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
                                     var = var.Substring(0, var.Length-1);
-                                    streamReadLine(ms);
+                                    streamReadLine(ref _content);
                                     value = "";
-                                    while ((line = PeakLine(ms)) != null)
+                                    while ((line = PeakLine(_content)) != null)
                                     {
                                         if (line.EndsWith(boundary)||line.EndsWith(boundary+"--"))
                                             break;
                                         else
-                                            value += streamReadLine(ms);
+                                            value += streamReadLine(ref _content);
                                     }
                                     requestParameters.Add(var, value.Trim());
                                 }
@@ -359,12 +421,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 else if (_requestHeaders.ContentType == "application/x-www-form-urlencoded")
                 {
-                    string postData = "";
                     if (_requestHeaders.CharSet != null)
-                        postData = new StreamReader(ms, Encoding.GetEncoding(_requestHeaders.CharSet)).ReadToEnd();
-                    else
-                        postData = new StreamReader(ms).ReadToEnd();
-                    string query = HttpUtility.UrlDecode(postData);
+                        _content = Encoding.GetEncoding(_requestHeaders.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
+                    string query = HttpUtility.UrlDecode(_content);
                     if (query.StartsWith("?"))
                         query = query.Substring(1);
                     if (query.StartsWith("{") && query.EndsWith("}"))
@@ -375,7 +434,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     }
                     else
                     {
-                        NameValueCollection col = HttpUtility.ParseQueryString(postData);
+                        NameValueCollection col = HttpUtility.ParseQueryString(_content);
                         foreach (string str in col.Keys)
                         {
                             requestParameters.Add(str, HttpUtility.UrlDecode(col[str]));
@@ -384,12 +443,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 else if (_requestHeaders.ContentType.StartsWith("application/json"))
                 {
-                    string postData = "";
-                    if (_requestHeaders.CharSet!=null)
-                        postData = new StreamReader(ms, Encoding.GetEncoding(_requestHeaders.CharSet)).ReadToEnd();
-                    else
-                        postData = new StreamReader(ms).ReadToEnd();
-                    string query = HttpUtility.UrlDecode(postData);
+                    if (_requestHeaders.CharSet != null)
+                        _content = Encoding.GetEncoding(_requestHeaders.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
+                    string query = HttpUtility.UrlDecode(_content);
                     if (query.StartsWith("?"))
                         query = query.Substring(1);
                     if (query.StartsWith("{") && query.EndsWith("}"))
@@ -411,7 +467,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         private void parseRequest()
         {
-            String request = streamReadLine(inputStream);
+            _mreHeader.WaitOne();
+            string request = streamReadLine(ref _header);
             string[] tokens = request.Split(' ');
             if (tokens.Length != 3)
             {
@@ -421,7 +478,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _version = tokens[2];
             String line;
             _requestHeaders = new HeaderCollection();
-            while ((line = streamReadLine(inputStream)) != null)
+            while ((line = streamReadLine(ref _header)) != null)
             {
                 if (line.Equals(""))
                 {
@@ -463,38 +520,38 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             _url = new Uri("http://" + _requestHeaders.Host.Replace("//","/") + tokens[1].Replace("//","/"));
             _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
+            _mreHeaderParsed.Set();
         }
 
-        //an internal function used to read a line from the stream to prevent encoding issues
-        private string streamReadLine(Stream inputStream) {
-            int next_char;
-            string data = "";
-            while (true) {
-                next_char = inputStream.ReadByte();
-                switch (next_char)
-                {
-                    case '\n':
-                        return data;
-                        break;
-                    case '\r':
-                        break;
-                    case -1:
-                        Thread.Sleep(1);
-                        break;
-                    default:
-                        data += Convert.ToChar(next_char);
-                        break;
-                }
-            }            
-            return data;
-        }
-
-        //an internal function to peak a line out of the stream to prevent encoding issues
-        private string PeakLine(Stream inputStream)
+        private string streamReadLine(ref string stream)
         {
-            long start = inputStream.Position;
-            string ret = streamReadLine(inputStream);
-            inputStream.Seek(start, SeekOrigin.Begin);
+            string ret = null;
+            if (stream.Length > 0)
+            {
+                if (stream.Contains("\r\n"))
+                {
+                    ret = stream.Substring(0, stream.IndexOf("\r\n"));
+                    stream = stream.Substring(stream.IndexOf("\r\n") + 2);
+                }
+                else
+                {
+                    ret = stream;
+                    stream = "";
+                }
+            }
+            return ret;
+        }
+
+        private string PeakLine(string stream)
+        {
+            string ret = null;
+            if (stream.Length > 0)
+            {
+                if (stream.Contains("\r\n"))
+                    ret = stream.Substring(0, stream.IndexOf("\r\n"));
+                else
+                    ret = stream;
+            }
             return ret;
         }
         #endregion
@@ -569,6 +626,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 _isResponseSent = true;
                 ResponseWriter.Flush();
+                try
+                {
+                    inputStream.EndRead(null);
+                }
+                catch (Exception e)
+                {
+                }
                 DateTime start = DateTime.Now;
                 _responseHeaders.ContentLength = _outStream.Length.ToString();
                 if (_responseHeaders["Accept-Ranges"] == null)
