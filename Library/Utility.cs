@@ -377,5 +377,13 @@ namespace Org.Reddragonit.EmbeddedWebServer
         {
             return TraceFullDirectoryPath(file.Folder) + "/" + file.Name;
         }
+
+        internal static bool IsLinux
+        {
+            get
+            {
+                return Environment.OSVersion.Platform == PlatformID.Unix;
+            }
+        }
     }
 }
