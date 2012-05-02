@@ -168,6 +168,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                 _mreContent.Set();
                             }
                         }
+                        else if (_sbuffer.ToString() == "{}")
+                        {
+                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                            _requestComplete = true;
+                            _mreContent.Set();
+                        }
                     }
                     else
                     {
@@ -202,6 +208,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
+        private DateTime _requestStart;
+        public DateTime RequestStart
+        {
+            get { return _requestStart; }
+        }
+
         /*
          * This constructor loads and http connection from a given tcp client.
          * It establishes the required streams and objects, then loads in the 
@@ -212,7 +224,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             _isResponseSent = false;
             _listener = listener;
-            DateTime start = DateTime.Now;
+            _requestStart = DateTime.Now;
             this.socket = s;
             _sbuffer = new StringBuilder();
             _buffer = new byte[_BUFFER_SIZE];
@@ -245,7 +257,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 this.SendResponse();
                 Logger.LogError(e);
             }
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms");
         }
 
         #region Request
