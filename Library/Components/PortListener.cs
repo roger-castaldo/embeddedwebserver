@@ -26,6 +26,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private DateTime _lastConnectionRequest;
         //last connection refreshing
         private DateTime _lastConnectionRefresh;
+        //backlog amount
+        private int _backLog = 1000;
 
         //indicate if the connection uses ssl
         private bool _useSSL;
@@ -89,6 +91,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _useSSL = ipp.UseSSL;
             _idleSeonds = (long)Math.Min(_idleSeonds, ipp.IdleSeconds);
             _totalRunSeconds = (long)Math.Min(_totalRunSeconds, ipp.TotalRunSeconds);
+            _backLog = (int)Math.Min(_backLog, ipp.BackLog);
         }
 
         //starts the listener by starting each site,
@@ -99,7 +102,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 site.Start();
             _listener = new TcpListener(_ip, _port);
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Creating port listener on " + _ip.ToString() + ":" + _port.ToString());
-            _listener.Start();
+            _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
             _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
