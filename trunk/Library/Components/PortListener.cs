@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
+using System.Threading;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -28,6 +29,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private DateTime _lastConnectionRefresh;
         //backlog amount
         private int _backLog = 1000;
+
+        private Thread _pollingThread = null;
+        private bool _abort = false;
+        private const int _THREAD_SLEEP_MS = 100;
 
         //indicate if the connection uses ssl
         private bool _useSSL;
@@ -105,12 +110,40 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
-            _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+            //patch to handle running on linux as it appears that async times out
+            if (Utility.IsLinux)
+            {
+                _pollingThread = new Thread(new ThreadStart(_startPoller));
+                _pollingThread.Start();
+            }
+            else
+                _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+        }
+
+        private void _startPoller()
+        {
+            while (_abort)
+            {
+                try
+                {
+                    while (_listener.Pending() && !_abort)
+                    {
+                        _LoadClient(_listener.AcceptTcpClient());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
+                }
+                if (!_abort)
+                    Thread.Sleep(_THREAD_SLEEP_MS);
+            }
         }
 
         //stops the tcplistener from accepting connections and stops all sites contained within
         public void Stop()
         {
+            _abort = true;
             try
             {
                 _listener.EndAcceptTcpClient(null);
@@ -155,6 +188,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (Exception e) {
                 Logger.LogError(e);
             }
+            _LoadClient(clnt);
+        }
+
+        private void _LoadClient(TcpClient clnt)
+        {
             if (clnt != null)
             {
                 HttpConnection con = null;
@@ -163,7 +201,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)))
                         : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null));
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     Logger.LogError(e);
                     return;
                 }
