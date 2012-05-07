@@ -128,7 +128,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     while (_listener.Pending() && !_abort)
                     {
-                        _LoadClient(_listener.AcceptTcpClient());
+                        new Thread(new ParameterizedThreadStart(_LoadClient)).Start(_listener.AcceptTcpClient());
                     }
                 }
                 catch (Exception e)
@@ -191,8 +191,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _LoadClient(clnt);
         }
 
-        private void _LoadClient(TcpClient clnt)
+        private void _LoadClient(object obj)
         {
+            TcpClient clnt = null;
+            if (obj != null)
+                clnt = (TcpClient)obj;
             if (clnt != null)
             {
                 HttpConnection con = null;
