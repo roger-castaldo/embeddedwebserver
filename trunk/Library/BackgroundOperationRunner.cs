@@ -68,6 +68,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
         public void Start()
         {
             _exit = false;
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
             _runner = new Thread(new ThreadStart(RunThread));
             _runner.Start();
         }
@@ -133,6 +134,8 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private void InvokeRuns(List<sCall> calls)
         {
             DateTime dt = DateTime.Now;
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking to see which operations need to run at " + dt.ToLongDateString() + " " + dt.ToLongTimeString());
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking against background call list of size " + calls.Count.ToString());
             foreach (sCall call in calls)
             {
                 if (_exit)

@@ -168,7 +168,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         {
             StackFrame sf = st.GetFrame(1);
             string sfs = string.Format(_STACK_FRAME_FORMAT, new object[]{
-                (sf.GetFileName()=="" ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber()+")"),
+                (sf.GetFileName()=="" ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber().ToString()+")"),
                 sf.GetMethod().Name
             });
             if (site != null)
