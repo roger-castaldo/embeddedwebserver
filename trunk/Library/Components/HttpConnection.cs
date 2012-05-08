@@ -149,14 +149,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (len > 0)
             {
                 _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, len));
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Appended chunk of data of length " + len.ToString() + " to the socket buffer [id:" + _id.ToString() + "]");
                 if (_sbuffer.ToString().Contains("\r\n\r\n")
                     ||(_headerRecieved && !_requestComplete))
                 {
                     if (!_headerRecieved)
                     {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Header recieved for connection [id:" + _id.ToString() + "]");
                         _headerRecieved = true;
                         _header = _sbuffer.ToString().Substring(0, _sbuffer.ToString().IndexOf("\r\n\r\n"));
                         _sbuffer.Replace(_header + "\r\n\r\n", "");
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Connection header received: [id:" + _id.ToString() + "]" + _header);
                         _mreHeader.Set();
                         _mreHeaderParsed.WaitOne();
                         if (_requestHeaders.ContentLength != null)
@@ -214,14 +217,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _requestStart; }
         }
 
+        private long _id;
+
         /*
          * This constructor loads and http connection from a given tcp client.
          * It establishes the required streams and objects, then loads in the 
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        public HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert)
+        public HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert,long id)
         {
+            _id = id;
             _isResponseSent = false;
             _listener = listener;
             _requestStart = DateTime.Now;
@@ -249,6 +255,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _responseCookie = new CookieCollection();
             try
             {
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Parsing incoming http request [id:" + _id.ToString() + "]");
                 parseRequest();
             }
             catch (Exception e)
@@ -257,7 +264,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 this.SendResponse();
                 Logger.LogError(e);
             }
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms");
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
         }
 
         #region Request
@@ -479,6 +486,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         private void parseRequest()
         {
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Waiting for request data to come in from socket");
             _mreHeader.WaitOne();
             string request = streamReadLine(ref _header);
             string[] tokens = request.Split(' ');

@@ -141,6 +141,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     try
                     {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation " + call.Method.Name + " in class " + call.type.FullName);
                         ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
                     }
                     catch (Exception e) {
