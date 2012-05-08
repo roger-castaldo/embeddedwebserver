@@ -165,11 +165,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         //formats a diagnostics message using the appropriate date time format as well as site and log level information
         private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
-            StackFrame sf = new StackFrame(2, true);
-            string sfs = (sf.GetMethod()==null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
-                (sf.GetFileLineNumber()==0 ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber().ToString()+")"),
-                sf.GetMethod().Name
-            }));
+            string sfs = "UNKNOWN";
+            try
+            {
+                StackFrame sf = new StackFrame(2, true);
+                sfs = (sf.GetMethod() == null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
+                    sf.GetMethod().DeclaringType.FullName,
+                    sf.GetMethod().Name
+                }));
+            }
+            catch (Exception e) { }
             if (site != null)
             {
                 if (Settings.UseServerNameInLogging)
