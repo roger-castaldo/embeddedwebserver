@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Attributes
 {
@@ -17,6 +18,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
 
         public bool CanRunNow(DateTime date)
         {
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking if background op can run now with regex " + _regMatch.ToString());
             return _regMatch.IsMatch(date.ToString("mm HH dd MM ddd"));
         }
 
