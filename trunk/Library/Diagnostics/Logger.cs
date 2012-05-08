@@ -20,7 +20,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
     public class Logger : IBackgroundOperationContainer
     {
         //delegate used to append a message to the log file queue asynchronously
-        private delegate void delAppendMessageToFile(StackTrace st,Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message);
+        private delegate void delAppendMessageToFile(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message);
 
         //number of messages to write to a file with each pass of the background thread.
         private const int MESSAGE_WRITE_COUNT = 20;
@@ -109,7 +109,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
          */
         public static void LogMessage(DiagnosticsLevels logLevel, string Message)
         {
-            StackTrace st = new StackTrace(true);
             if (Site.CurrentSite != null)
             {
                 if ((int)Site.CurrentSite.DiagnosticsLevel >= (int)logLevel)
@@ -117,16 +116,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                     switch (Site.CurrentSite.DiagnosticsOutput)
                     {
                         case DiagnosticsOutputs.DEBUG:
-                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(st,Site.CurrentSite,HttpConnection.CurrentConnection, logLevel, Message));
+                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite,HttpConnection.CurrentConnection, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.CONSOLE:
-                            Console.WriteLine(_FormatDiagnosticsMessage(st, Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
+                            Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(st, Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
+                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                         case DiagnosticsOutputs.SOCKET:
-                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(st, Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
+                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
                             break;
                     }
                 }
@@ -138,13 +137,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                     switch (Settings.DiagnosticsOutput)
                     {
                         case DiagnosticsOutputs.DEBUG:
-                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(st, null, HttpConnection.CurrentConnection, logLevel, Message));
+                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(null, HttpConnection.CurrentConnection, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.CONSOLE:
-                            Console.WriteLine(_FormatDiagnosticsMessage(st, null, HttpConnection.CurrentConnection, logLevel, Message));
+                            Console.WriteLine(_FormatDiagnosticsMessage(null, HttpConnection.CurrentConnection, logLevel, Message));
                             break;
                         case DiagnosticsOutputs.FILE:
-                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(st, null, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
+                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(null, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                             break;
                     }
                 }
@@ -154,19 +153,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         //static function designed to catch finishing of async call to queue log message.
         private static void QueueMessageComplete(IAsyncResult res) { }
 
-        private static void AppendMessageToFile(StackTrace st,Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
+        private static void AppendMessageToFile(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
             Monitor.Enter(_lock);
-            _messages.Enqueue(_FormatDiagnosticsMessage(st,site,conn, logLevel, Message));
+            _messages.Enqueue(_FormatDiagnosticsMessage(site,conn, logLevel, Message));
             Monitor.Exit(_lock);
         }
 
         private const string _STACK_FRAME_FORMAT = "{0}:[{1}]";
 
         //formats a diagnostics message using the appropriate date time format as well as site and log level information
-        private static string _FormatDiagnosticsMessage(StackTrace st,Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
+        private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
-            StackFrame sf = st.GetFrame(1);
+            StackFrame sf = new StackFrame(2, true);
             string sfs = (sf.GetMethod()==null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
                 (sf.GetFileLineNumber()==0 ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber().ToString()+")"),
                 sf.GetMethod().Name
