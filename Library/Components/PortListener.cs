@@ -33,6 +33,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private Thread _pollingThread = null;
         private bool _abort = false;
         private const int _THREAD_SLEEP_MS = 100;
+        private MT19937 _rand;
 
         //indicate if the connection uses ssl
         private bool _useSSL;
@@ -89,6 +90,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //creates a new instance of a tcp port listener for a given site
         public PortListener(Site site,sIPPortPair ipp)
         {
+            _rand = new MT19937(DateTime.Now.Ticks);
             _sites = new List<Site>();
             _sites.Add(site);
             _port = ipp.Port;
@@ -128,7 +130,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     while (_listener.Pending() && !_abort)
                     {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "New http tcp client connection request recieved");
                         new Thread(new ParameterizedThreadStart(_LoadClient)).Start(_listener.AcceptTcpClient());
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "New http tcp client connection request processed");
                     }
                 }
                 catch (Exception e)
@@ -198,17 +202,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 clnt = (TcpClient)obj;
             if (clnt != null)
             {
+                long id = _rand.NextLong();
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "New tcp client recieved, generating http connection [id:"+id.ToString()+"]");
                 HttpConnection con = null;
                 try
                 {
-                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)))
-                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null));
+                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)),id)
+                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null,id));
                 }
                 catch (Exception e)
                 {
                     Logger.LogError(e);
                     return;
                 }
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Setting current Http Connection [id:" + id.ToString() + "]");
                 HttpConnection.SetCurrentConnection(con);
                 if (!con.IsResponseSent)
                 {
