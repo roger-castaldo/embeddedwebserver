@@ -161,15 +161,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
-        private const string _STACK_FRAME_FORMAT = "{0} ({1}):[{2}]";
+        private const string _STACK_FRAME_FORMAT = "{0}:[{1}]";
 
         //formats a diagnostics message using the appropriate date time format as well as site and log level information
         private static string _FormatDiagnosticsMessage(StackTrace st,Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
             StackFrame sf = st.GetFrame(1);
             string sfs = string.Format(_STACK_FRAME_FORMAT, new object[]{
-                sf.GetFileName(),
-                sf.GetFileLineNumber(),
+                (sf.GetFileName()=="" ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber()+")"),
                 sf.GetMethod().Name
             });
             if (site != null)
