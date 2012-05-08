@@ -167,10 +167,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         private static string _FormatDiagnosticsMessage(StackTrace st,Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
             StackFrame sf = st.GetFrame(1);
-            string sfs = string.Format(_STACK_FRAME_FORMAT, new object[]{
-                (sf.GetFileName()=="" ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber().ToString()+")"),
+            string sfs = (sf.GetMethod()==null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
+                (sf.GetFileLineNumber()==0 ? sf.GetMethod().DeclaringType.FullName : sf.GetFileName()+" ("+sf.GetFileLineNumber().ToString()+")"),
                 sf.GetMethod().Name
-            });
+            }));
             if (site != null)
             {
                 if (Settings.UseServerNameInLogging)

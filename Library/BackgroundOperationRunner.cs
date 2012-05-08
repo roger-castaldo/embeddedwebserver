@@ -70,7 +70,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
             _exit = false;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
             _runner = new Thread(new ThreadStart(RunThread));
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller's thread");
             _runner.Start();
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread started");
         }
 
         //Called to stop the background thread
@@ -105,19 +107,30 @@ namespace Org.Reddragonit.EmbeddedWebServer
          */
         private void RunThread()
         {
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread start reached");
             List<sCall> calls = new List<sCall>();
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Constructing list of background operation calls");
             foreach (Type t in Utility.LocateTypeInstances(typeof(IBackgroundOperationContainer)))
             {
                 foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 {
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking method " + mi.Name + " from type " + t.FullName + " for background tags");
                     foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall), false))
                         calls.Add(new sCall(t, boc, mi));
                 }
             }
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background caller ready with " + calls.Count.ToString() + " calls available");
             delInvokeRuns del = new delInvokeRuns(InvokeRuns);
             while (!_exit)
             {
-                del.BeginInvoke(calls, new AsyncCallback(InvokeFinish), null);
+                try
+                {
+                    del.BeginInvoke(calls, new AsyncCallback(InvokeFinish), null);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
+                }
                 if (!_exit)
                 {
                     try
