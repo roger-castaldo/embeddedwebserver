@@ -167,9 +167,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         {
             string sfs = "UNKNOWN";
             if (HttpConnection.CurrentConnection != null)
-            {
                 sfs = "HttpConnection[" + HttpConnection.CurrentConnection.ID.ToString() + "]";
-            }
+            else if (BackgroundOperationRun.Current != null)
+                sfs = "BackgroundRunThread[" + BackgroundOperationRun.Current.ID.ToString() + "]["+BackgroundOperationRun.Current.Call.type.FullName+"."+BackgroundOperationRun.Current.Call.Method.Name+"]";
             else
             {
                 try

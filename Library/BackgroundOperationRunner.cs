@@ -10,6 +10,38 @@ using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 namespace Org.Reddragonit.EmbeddedWebServer
 {
     /*
+         * Structure designed to store the background call information, including the referenced type,
+         * and the method to be called.
+         */
+    internal struct sCall
+    {
+        private BackgroundOperationCall _att;
+        public BackgroundOperationCall Att
+        {
+            get { return _att; }
+        }
+
+        private Type _type;
+        public Type type
+        {
+            get { return _type; }
+        }
+
+        private MethodInfo _method;
+        public MethodInfo Method
+        {
+            get { return _method; }
+        }
+
+        public sCall(Type t, BackgroundOperationCall att, MethodInfo method)
+        {
+            _att = att;
+            _method = method;
+            _type = t;
+        }
+    }
+
+    /*
      * This class runs a background thread that is similar to cron in linux.
      * It scans for implementations of IBackgroundOperationContainer and any methods contained therein 
      * tagged with a BackgroundOperationCall Attribute.  Using the BackgroundOperationCall Attribute 
@@ -19,50 +51,20 @@ namespace Org.Reddragonit.EmbeddedWebServer
      */
     internal class BackgroundOperationRunner
     {
-        /*
-         * Structure designed to store the background call information, including the referenced type,
-         * and the method to be called.
-         */
-        private struct sCall
-        {
-            private BackgroundOperationCall _att;
-            public BackgroundOperationCall Att
-            {
-                get { return _att; }
-            }
-
-            private Type _type;
-            public Type type
-            {
-                get { return _type; }
-            }
-
-            private MethodInfo _method;
-            public MethodInfo Method
-            {
-                get { return _method; }
-            }
-
-            public sCall(Type t,BackgroundOperationCall att, MethodInfo method)
-            {
-                _att = att;
-                _method = method;
-                _type = t;
-            }
-        }
 
         //milliseconds that the background thread sleeps in between runs
         private const int THREAD_SLEEP = 60000;
-
-        //delegate used to invoke the required background operation asynchronously.
-        private delegate void InvokeMethod();
 
         //background thread to processs required method
         private Thread _runner;
         //flag to tell the background thread to finish up
         private bool _exit;
+        //used to generate ids
+        private MT19937 _rand;
 
-        public BackgroundOperationRunner() { }
+        public BackgroundOperationRunner() {
+            _rand = new MT19937(DateTime.Now.Ticks);
+        }
 
         //Called to start the background thread
         public void Start()
@@ -120,12 +122,27 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 }
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Background caller ready with " + calls.Count.ToString() + " calls available");
-            delInvokeRuns del = new delInvokeRuns(InvokeRuns);
             while (!_exit)
             {
                 try
                 {
-                    del.BeginInvoke(calls, new AsyncCallback(InvokeFinish), null);
+                    DateTime _start = DateTime.Now;
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking to see which operations need to run at " + _start.ToLongDateString() + " " + _start.ToLongTimeString());
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking against background call list of size " + calls.Count.ToString());
+                    foreach (sCall sc in calls)
+                    {
+                        if (sc.Att.CanRunNow(_start))
+                        {
+                            try
+                            {
+                                new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start();
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError(e);
+                            }
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
@@ -143,32 +160,62 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 }
             }
         }
+    }
 
-        private void InvokeRuns(List<sCall> calls)
+    /*
+     * This class is used to actually process all the background calls to run, it was created for
+     * simplifying some code ie removing delegates as well as to allow for some more detailed logging 
+     * capabilities.
+     * 
+     */
+    internal class BackgroundOperationRun
+    {
+        [ThreadStatic()]
+        private static BackgroundOperationRun _current;
+        public static BackgroundOperationRun Current
         {
-            DateTime dt = DateTime.Now;
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking to see which operations need to run at " + dt.ToLongDateString() + " " + dt.ToLongTimeString());
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking against background call list of size " + calls.Count.ToString());
-            foreach (sCall call in calls)
-            {
-                if (_exit)
-                    break;
-                if (call.Att.CanRunNow(dt))
-                {
-                    try
-                    {
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation " + call.Method.Name + " in class " + call.type.FullName);
-                        ((InvokeMethod)InvokeMethod.CreateDelegate(typeof(InvokeMethod), call.Method)).BeginInvoke(new AsyncCallback(InvokeFinish), null);
-                    }
-                    catch (Exception e) {
-                        Logger.LogError(e);
-                    }
-                }
-            }
+            get { return _current; }
         }
 
-        private void InvokeFinish(IAsyncResult res)
+        private long _id;
+        public long ID
         {
+            get { return _id; }
+        }
+
+        private sCall _call;
+        public sCall Call
+        {
+            get { return _call; }
+        }
+        private DateTime _start;
+        private Thread _runner;
+
+        public BackgroundOperationRun(sCall call,DateTime start,long id)
+        {
+            _call = call;
+            _id = id;
+            _start = start;
+            _runner = new Thread(new ThreadStart(_Start));
+        }
+
+        public void Start()
+        {
+            _runner.Start();
+        }
+
+        private void _Start()
+        {
+            _current = this;
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation");
+            try
+            {
+                _call.Method.Invoke(null, new object[] { });
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
         }
     }
 }
