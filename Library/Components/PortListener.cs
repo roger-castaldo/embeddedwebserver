@@ -216,7 +216,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     return;
                 }
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Setting current Http Connection [id:" + id.ToString() + "]");
-                HttpConnection.SetCurrentConnection(con);
                 if (!con.IsResponseSent)
                 {
                     if (con.URL.AbsolutePath == "/jquery.js")

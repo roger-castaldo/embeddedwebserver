@@ -166,15 +166,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
             string sfs = "UNKNOWN";
-            try
+            if (HttpConnection.CurrentConnection != null)
             {
-                StackFrame sf = new StackFrame(2, true);
-                sfs = (sf.GetMethod() == null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
+                sfs = "HttpConnection[" + HttpConnection.CurrentConnection.ID.ToString() + "]";
+            }
+            else
+            {
+                try
+                {
+                    StackFrame sf = new StackFrame(2, true);
+                    sfs = (sf.GetMethod() == null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
                     sf.GetMethod().DeclaringType.FullName,
                     sf.GetMethod().Name
                 }));
+                }
+                catch (Exception e) { }
             }
-            catch (Exception e) { }
             if (site != null)
             {
                 if (Settings.UseServerNameInLogging)

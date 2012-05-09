@@ -31,12 +31,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _currentConnection; }
         }
 
-        //called to set the current connection for the thread
-        internal static void SetCurrentConnection(HttpConnection conn)
-        {
-            _currentConnection = conn;
-        }
-
         //the basic buffer size to use when reading/writing data
         private const int BUF_SIZE = 4096;
         //the maximium size of a post data allowed
@@ -148,8 +142,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (len > 0)
             {
-                _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, len));
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Appended chunk of data of length " + len.ToString() + " to the socket buffer [id:" + _id.ToString() + "]");
+                _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, len));
                 if (_sbuffer.ToString().Contains("\r\n\r\n")
                     ||(_headerRecieved && !_requestComplete))
                 {
@@ -218,6 +212,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         private long _id;
+        public long ID
+        {
+            get { return _id; }
+        }
 
         /*
          * This constructor loads and http connection from a given tcp client.
@@ -228,6 +226,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert,long id)
         {
             _id = id;
+            _currentConnection = this;
             _isResponseSent = false;
             _listener = listener;
             _requestStart = DateTime.Now;
