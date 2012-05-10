@@ -271,7 +271,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 this.ResponseHeaders.ContentType="text/html";
                 this.ResponseWriter.WriteLine(e.Message);
                 this.SendResponse();
-                Logger.LogMessage(DiagnosticsLevels.TRACE,"Response sent back due to error in request.";
+                Logger.LogMessage(DiagnosticsLevels.TRACE,"Response sent back due to error in request.");
                 Logger.LogError(e);
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
