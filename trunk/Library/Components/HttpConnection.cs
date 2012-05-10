@@ -33,6 +33,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         //the basic buffer size to use when reading/writing data
         private const int BUF_SIZE = 4096;
+        //the maximum time to wait for a header
+        private const int MAX_HEADER_WAIT_TIME = 10000; //ms
         //the maximium size of a post data allowed
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -131,6 +133,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         private void _AsyncRead(IAsyncResult ar)
         {
+            _currentConnection = this;
             int len = 0;
             try
             {
@@ -486,7 +489,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void parseRequest()
         {
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Waiting for request data to come in from socket");
-            _mreHeader.WaitOne();
+            _mreHeader.WaitOne(MAX_HEADER_WAIT_TIME);
             string request = streamReadLine(ref _header);
             string[] tokens = request.Split(' ');
             if (tokens.Length != 3)

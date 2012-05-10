@@ -115,7 +115,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             //patch to handle running on linux as it appears that async times out
             if (Utility.IsLinux)
             {
+                _abort = false;
                 _pollingThread = new Thread(new ThreadStart(_startPoller));
+                _pollingThread.Name = "HttpPortRequestPollingThread";
                 _pollingThread.Start();
             }
             else
@@ -124,7 +126,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         private void _startPoller()
         {
-            while (_abort)
+            while (!_abort)
             {
                 try
                 {
