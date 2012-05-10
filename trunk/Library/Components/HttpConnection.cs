@@ -268,6 +268,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (Exception e)
             {
                 this.ResponseStatus = HttpStatusCodes.Bad_Request;
+                this.ResponseWriter.WriteLine(e.Message);
                 this.SendResponse();
                 Logger.LogError(e);
             }
@@ -525,8 +526,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             {
                                 _headerRecieved = true;
                                 _header = _sbuffer.ToString().Trim();
-                            }else
-                                throw new Exception("No valid HTTP Header was recieved.");
+                            }
+                            else
+                                throw new Exception("No valid HTTP Header was recieved.{"+_sbuffer.ToString()+"}");
                         }
                         else
                         {
@@ -537,6 +539,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             catch (Exception exc) { }
                         }
                     }
+                    else
+                        throw new Exception("No valid HTTP Header was recieved.");
                 }
                 catch (Exception ex)
                 {
