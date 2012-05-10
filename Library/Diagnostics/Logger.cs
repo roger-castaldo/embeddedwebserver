@@ -32,6 +32,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         //udp socket for remote logging
         private static Socket _sockLog = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
+        private static DiagnosticsLevels? _overrideLevel;
+        public static void OverrideDiagnosticsLevel(DiagnosticsLevels newLevel){
+            _overrideLevel = newLevel;
+        }
+
+        public static void ClearOverrideDiagnosticsLevel() {
+            _overrideLevel = null;
+        }
+
+        private static DiagnosticsOutputs? _overrideOutput;
+        public static void OverrideOutputLevel(DiagnosticsOutputs newOutput)
+        {
+            _overrideOutput = newOutput;
+        }
+
+        public static void ClearOverrideOutput()
+        {
+            _overrideOutput = null;
+        }
+
         /*
          * The background thread function that gets called every minute.
          * It processes the queue for log messages that get written 
@@ -109,43 +129,36 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
          */
         public static void LogMessage(DiagnosticsLevels logLevel, string Message)
         {
-            if (Site.CurrentSite != null)
-            {
-                if ((int)Site.CurrentSite.DiagnosticsLevel >= (int)logLevel)
-                {
-                    switch (Site.CurrentSite.DiagnosticsOutput)
-                    {
-                        case DiagnosticsOutputs.DEBUG:
-                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite,HttpConnection.CurrentConnection, logLevel, Message));
-                            break;
-                        case DiagnosticsOutputs.CONSOLE:
-                            Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
-                            break;
-                        case DiagnosticsOutputs.FILE:
-                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
-                            break;
-                        case DiagnosticsOutputs.SOCKET:
-                            _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
-                            break;
-                    }
-                }
-            }
+            DiagnosticsLevels lvl = DiagnosticsLevels.NONE;
+            DiagnosticsOutputs opt = DiagnosticsOutputs.DEBUG;
+            if (_overrideLevel.HasValue)
+                lvl = _overrideLevel.Value;
+            else if (Site.CurrentSite != null)
+                lvl = Site.CurrentSite.DiagnosticsLevel;
             else
+                lvl = Settings.DiagnosticsLevel;
+            if (_overrideOutput.HasValue)
+                opt = _overrideOutput.Value;
+            else if (Site.CurrentSite != null)
+                opt = Site.CurrentSite.DiagnosticsOutput;
+            else
+                opt = Settings.DiagnosticsOutput;
+            if ((int)lvl >= (int)logLevel)
             {
-                if ((int)Settings.DiagnosticsLevel >= (int)logLevel)
+                switch (opt)
                 {
-                    switch (Settings.DiagnosticsOutput)
-                    {
-                        case DiagnosticsOutputs.DEBUG:
-                            System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(null, HttpConnection.CurrentConnection, logLevel, Message));
-                            break;
-                        case DiagnosticsOutputs.CONSOLE:
-                            Console.WriteLine(_FormatDiagnosticsMessage(null, HttpConnection.CurrentConnection, logLevel, Message));
-                            break;
-                        case DiagnosticsOutputs.FILE:
-                            new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(null, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
-                            break;
-                    }
+                    case DiagnosticsOutputs.DEBUG:
+                        System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
+                        break;
+                    case DiagnosticsOutputs.CONSOLE:
+                        Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
+                        break;
+                    case DiagnosticsOutputs.FILE:
+                        new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
+                        break;
+                    case DiagnosticsOutputs.SOCKET:
+                        _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
+                        break;
                 }
             }
         }
@@ -160,13 +173,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
-        private const string _STACK_FRAME_FORMAT = "{0}:[{1}]";
-
         //formats a diagnostics message using the appropriate date time format as well as site and log level information
         private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
         {
             string sfs = "UNKNOWN";
-            if (HttpConnection.CurrentConnection != null)
+            if (conn != null)
                 sfs = "HttpConnection[" + HttpConnection.CurrentConnection.ID.ToString() + "]";
             else if (BackgroundOperationRun.Current != null)
                 sfs = "BackgroundRunThread[" + BackgroundOperationRun.Current.ID.ToString() + "]["+BackgroundOperationRun.Current.Call.type.FullName+"."+BackgroundOperationRun.Current.Call.Method.Name+"]";
@@ -174,11 +185,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             {
                 try
                 {
-                    StackFrame sf = new StackFrame(2, true);
-                    sfs = (sf.GetMethod() == null ? "UNKNOWN" : string.Format(_STACK_FRAME_FORMAT, new object[]{
-                    sf.GetMethod().DeclaringType.FullName,
-                    sf.GetMethod().Name
-                }));
+                    sfs = "Thread[" + Thread.CurrentThread.Name + "]";
                 }
                 catch (Exception e) { }
             }

@@ -72,6 +72,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             _exit = false;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
             _runner = new Thread(new ThreadStart(RunThread));
+            _runner.Name = "BackgroundOperationRunner";
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller's thread");
             _runner.Start();
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread started");
@@ -109,7 +110,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
          */
         private void RunThread()
         {
+            Console.WriteLine("Background Thread Start Called...");
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread start reached");
+            Console.WriteLine("Background thread log message should have appeared.");
             List<sCall> calls = new List<sCall>();
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Constructing list of background operation calls");
             foreach (Type t in Utility.LocateTypeInstances(typeof(IBackgroundOperationContainer)))
@@ -171,7 +174,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
     internal class BackgroundOperationRun
     {
         [ThreadStatic()]
-        private static BackgroundOperationRun _current;
+        private static BackgroundOperationRun _current = null;
         public static BackgroundOperationRun Current
         {
             get { return _current; }
