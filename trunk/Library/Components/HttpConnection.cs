@@ -25,7 +25,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     {
         //A thread specific instance of the current connection
         [ThreadStatic()]
-        private static HttpConnection _currentConnection;
+        private static HttpConnection _currentConnection = null;
         public static HttpConnection CurrentConnection
         {
             get { return _currentConnection; }
@@ -231,7 +231,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        public HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert,long id)
+        internal HttpConnection(TcpClient s, sIPPortPair listener, X509Certificate cert,long id)
         {
             _id = id;
             _currentConnection = this;
@@ -268,8 +268,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (Exception e)
             {
                 this.ResponseStatus = HttpStatusCodes.Bad_Request;
+                this.ResponseHeaders.ContentType="text/html";
                 this.ResponseWriter.WriteLine(e.Message);
                 this.SendResponse();
+                Logger.LogMessage(DiagnosticsLevels.TRACE,"Response sent back due to error in request.";
                 Logger.LogError(e);
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");

@@ -205,21 +205,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (clnt != null)
             {
                 long id = _rand.NextLong();
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "New tcp client recieved, generating http connection [id:"+id.ToString()+"]");
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "New tcp client recieved, generating http connection [id:" + id.ToString() + "]");
                 HttpConnection con = null;
                 try
                 {
-                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)),id)
-                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null,id));
+                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)), id)
+                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null, id));
                 }
                 catch (Exception e)
                 {
                     Logger.LogError(e);
                     return;
                 }
-                Logger.LogMessage(DiagnosticsLevels.TRACE, "Setting current Http Connection [id:" + id.ToString() + "]");
                 if (!con.IsResponseSent)
                 {
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to process connection request.");
                     if (con.URL.AbsolutePath == "/jquery.js")
                     {
                         con.ResponseStatus = HttpStatusCodes.OK;
@@ -290,6 +290,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             ProcessRequest(con, _defaultSite, start);
                     }
                 }
+                else
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Response sent prior to processing, error in request."); 
             }
         }
 
