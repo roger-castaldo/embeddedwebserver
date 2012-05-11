@@ -270,6 +270,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 this.ResponseStatus = HttpStatusCodes.Bad_Request;
                 this.ResponseHeaders.ContentType="text/html";
                 this.ResponseWriter.WriteLine(e.Message);
+                this.ResponseWriter.Flush();
                 this.SendResponse();
                 Logger.LogMessage(DiagnosticsLevels.TRACE,"Response sent back due to error in request.");
                 Logger.LogError(e);
@@ -528,6 +529,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                             {
                                 _headerRecieved = true;
                                 _header = _sbuffer.ToString().Trim();
+                                _sbuffer = new StringBuilder();
                             }
                             else
                                 throw new Exception("No valid HTTP Header was recieved.{"+_sbuffer.ToString()+"}");
@@ -548,6 +550,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     throw ex;
                 }
+                if (_headerRecieved)
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to parse HTTP Header: " + _header);
             }
             string request = streamReadLine(ref _header);
             string[] tokens = request.Split(' ');
