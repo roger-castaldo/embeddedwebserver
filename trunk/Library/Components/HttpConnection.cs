@@ -525,39 +525,39 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         while (b != -1)
                             b = inputStream.ReadByte();
                     }
-                    if (_sbuffer.Length > 0)
-                    {
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Data contained within buffer attempting to process.");
-                        _ProcessSBuffer();
-                        if (!_headerRecieved)
-                        {
-                            Logger.LogMessage(DiagnosticsLevels.TRACE, "Unsure if proper header was recieved, checking for http end code in buffer");
-                            if (_sbuffer.ToString().Contains("\r\n"))
-                            {
-                                Logger.LogMessage(DiagnosticsLevels.TRACE, "Using all buffered data for header.");
-                                _headerRecieved = true;
-                                _header = _sbuffer.ToString().Trim();
-                                _sbuffer = new StringBuilder();
-                            }
-                            else
-                                throw new Exception("No valid HTTP Header was recieved.{" + _sbuffer.ToString() + "}");
-                        }
-                        else
-                        {
-                            try
-                            {
-                                inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
-                            }
-                            catch (Exception exc) { }
-                        }
-                    }
-                    else
-                        throw new Exception("No valid HTTP Header was recieved.");
                 }
                 catch (Exception ex)
                 {
-                    throw ex;
+                    Logger.LogError(ex);
                 }
+                if (_sbuffer.Length > 0)
+                {
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Data contained within buffer attempting to process.");
+                    _ProcessSBuffer();
+                    if (!_headerRecieved)
+                    {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Unsure if proper header was recieved, checking for http end code in buffer");
+                        if (_sbuffer.ToString().Contains("\r\n"))
+                        {
+                            Logger.LogMessage(DiagnosticsLevels.TRACE, "Using all buffered data for header.");
+                            _headerRecieved = true;
+                            _header = _sbuffer.ToString().Trim();
+                            _sbuffer = new StringBuilder();
+                        }
+                        else
+                            throw new Exception("No valid HTTP Header was recieved.{" + _sbuffer.ToString() + "}");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
+                        }
+                        catch (Exception exc) { }
+                    }
+                }
+                else
+                    throw new Exception("No valid HTTP Header was recieved.");
                 if (_headerRecieved)
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to parse HTTP Header: " + _header);
             }
