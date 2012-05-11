@@ -246,6 +246,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _mreHeader = new ManualResetEvent(false);
             _mreContent = new ManualResetEvent(false);
             _mreHeaderParsed = new ManualResetEvent(false);
+            _outStream = new MemoryStream();
+            _responseWriter = new StreamWriter(_outStream);
+            _responseHeaders = new HeaderCollection();
+            _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
+            _responseStatus = HttpStatusCodes.OK;
+            _responseCookie = new CookieCollection();
             if (listener.UseSSL)
             {
                 inputStream = new SslStream(socket.GetStream(), true);
@@ -254,12 +260,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             else
                 inputStream = socket.GetStream();
             inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
-            _outStream = new MemoryStream();
-            _responseWriter = new StreamWriter(_outStream);
-            _responseHeaders = new HeaderCollection();
-            _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
-            _responseStatus = HttpStatusCodes.OK;
-            _responseCookie = new CookieCollection();
             try
             {
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Parsing incoming http request [id:" + _id.ToString() + "]");
@@ -498,16 +498,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void parseRequest()
         {
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Waiting for request data to come in from socket");
-            try
+            if (!_mreHeader.WaitOne(MAX_HEADER_WAIT_TIME))
             {
-                _mreHeader.WaitOne(MAX_HEADER_WAIT_TIME);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Timeout reached waiting on request header, attempting failsafe.");
+                int b = 0;
                 try
                 {
-                    int b = inputStream.ReadByte();
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to obtain any data remaining on the socket buffer.");
+                    b = inputStream.EndRead((IAsyncResult)new object());
+                    if (b > 0)
+                        _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, b));
+                }
+                catch (Exception e) { }
+                try
+                {
+                    b = inputStream.ReadByte();
                     if (b != -1)
                     {
                         try
@@ -522,17 +527,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     }
                     if (_sbuffer.Length > 0)
                     {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Data contained within buffer attempting to process.");
                         _ProcessSBuffer();
                         if (!_headerRecieved)
                         {
+                            Logger.LogMessage(DiagnosticsLevels.TRACE, "Unsure if proper header was recieved, checking for http end code in buffer");
                             if (_sbuffer.ToString().Contains("\r\n"))
                             {
+                                Logger.LogMessage(DiagnosticsLevels.TRACE, "Using all buffered data for header.");
                                 _headerRecieved = true;
                                 _header = _sbuffer.ToString().Trim();
                                 _sbuffer = new StringBuilder();
                             }
                             else
-                                throw new Exception("No valid HTTP Header was recieved.{"+_sbuffer.ToString()+"}");
+                                throw new Exception("No valid HTTP Header was recieved.{" + _sbuffer.ToString() + "}");
                         }
                         else
                         {
@@ -603,7 +611,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 _requestHeaders[name] = value;
             }
-            _url = new Uri("http://" + _requestHeaders.Host.Replace("//","/") + tokens[1].Replace("//","/"));
+            _url = new Uri("http://" + _requestHeaders.Host.Replace("//", "/") + tokens[1].Replace("//", "/"));
             _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
             _mreHeaderParsed.Set();
         }
@@ -784,6 +792,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         _outStream.Position = _outStream.Length;
                     }
                 }
+                outStream.Flush();
                 try
                 {
                     socket.Close();
