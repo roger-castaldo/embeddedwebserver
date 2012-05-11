@@ -30,9 +30,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //backlog amount
         private int _backLog = 1000;
 
-        private Thread _pollingThread = null;
-        private bool _abort = false;
-        private const int _THREAD_SLEEP_MS = 100;
         private MT19937 _rand;
 
         //indicate if the connection uses ssl
@@ -112,44 +109,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
-            //patch to handle running on linux as it appears that async times out
-            if (Utility.IsLinux)
-            {
-                _abort = false;
-                _pollingThread = new Thread(new ThreadStart(_startPoller));
-                _pollingThread.Name = "HttpPortRequestPollingThread";
-                _pollingThread.Start();
-            }
-            else
-                _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
-        }
-
-        private void _startPoller()
-        {
-            while (!_abort)
-            {
-                try
-                {
-                    while (_listener.Pending() && !_abort)
-                    {
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "New http tcp client connection request recieved");
-                        new Thread(new ParameterizedThreadStart(_LoadClient)).Start(_listener.AcceptTcpClient());
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "New http tcp client connection request processed");
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e);
-                }
-                if (!_abort)
-                    Thread.Sleep(_THREAD_SLEEP_MS);
-            }
+            _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
         }
 
         //stops the tcplistener from accepting connections and stops all sites contained within
         public void Stop()
         {
-            _abort = true;
             try
             {
                 _listener.EndAcceptTcpClient(null);
