@@ -513,17 +513,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 try
                 {
                     b = inputStream.ReadByte();
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Peaked for data on the socket, returned byte " + b.ToString());
                     if (b != -1)
                     {
-                        try
-                        {
-                            inputStream.EndRead(null);
-                        }
-                        catch (Exception exc) { }
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Appending byte to buffer from peak.");
                         _sbuffer.Append((char)b);
                         inputStream.ReadTimeout = 1000;
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to read remained of data from stream.");
                         while (b != -1)
+                        {
                             b = inputStream.ReadByte();
+                            _sbuffer.Append((char)b);
+                        }
                     }
                 }
                 catch (Exception ex)
