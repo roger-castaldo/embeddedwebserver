@@ -34,7 +34,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //the basic buffer size to use when reading/writing data
         private const int BUF_SIZE = 4096;
         //the maximum time to wait for a header
-        private const int MAX_HEADER_WAIT_TIME = 10000; //ms
+        private const int MAX_HEADER_WAIT_TIME = 2000; //ms
         //the maximium size of a post data allowed
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -147,7 +147,53 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Appended chunk of data of length " + len.ToString() + " to the socket buffer [id:" + _id.ToString() + "]");
                 _sbuffer.Append(ASCIIEncoding.ASCII.GetString(_buffer, 0, len));
-                _ProcessSBuffer();
+                if (_sbuffer.ToString().Contains("\r\n\r\n")
+                    || (_headerRecieved && !_requestComplete))
+                {
+                    if (!_headerRecieved)
+                    {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Header recieved for connection [id:" + _id.ToString() + "]");
+                        _headerRecieved = true;
+                        _header = _sbuffer.ToString().Substring(0, _sbuffer.ToString().IndexOf("\r\n\r\n"));
+                        _sbuffer.Replace(_header + "\r\n\r\n", "");
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Connection header received: [id:" + _id.ToString() + "]" + _header);
+                        _mreHeader.Set();
+                        _mreHeaderParsed.WaitOne();
+                        if (_requestHeaders.ContentLength != null)
+                        {
+                            if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
+                            {
+                                _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                                _requestComplete = true;
+                                _mreContent.Set();
+                            }
+                        }
+                        else if (_sbuffer.ToString() == "{}")
+                        {
+                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                            _requestComplete = true;
+                            _mreContent.Set();
+                        }
+                    }
+                    else
+                    {
+                        if (_requestHeaders.ContentLength != null)
+                        {
+                            if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
+                            {
+                                _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                                _requestComplete = true;
+                                _mreContent.Set();
+                            }
+                        }
+                        else if (_sbuffer.ToString().Contains("\r\n\r\n"))
+                        {
+                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                            _requestComplete = true;
+                            _mreContent.Set();
+                        }
+                    }
+                }
             }
             if (!_headerRecieved || !_requestComplete)
             {
@@ -158,57 +204,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 catch (Exception e)
                 {
-                }
-            }
-        }
-
-        private void _ProcessSBuffer()
-        {
-            if (_sbuffer.ToString().Contains("\r\n\r\n")
-                    || (_headerRecieved && !_requestComplete))
-            {
-                if (!_headerRecieved)
-                {
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Header recieved for connection [id:" + _id.ToString() + "]");
-                    _headerRecieved = true;
-                    _header = _sbuffer.ToString().Substring(0, _sbuffer.ToString().IndexOf("\r\n\r\n"));
-                    _sbuffer.Replace(_header + "\r\n\r\n", "");
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Connection header received: [id:" + _id.ToString() + "]" + _header);
-                    _mreHeader.Set();
-                    _mreHeaderParsed.WaitOne();
-                    if (_requestHeaders.ContentLength != null)
-                    {
-                        if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
-                        {
-                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
-                            _requestComplete = true;
-                            _mreContent.Set();
-                        }
-                    }
-                    else if (_sbuffer.ToString() == "{}")
-                    {
-                        _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
-                        _requestComplete = true;
-                        _mreContent.Set();
-                    }
-                }
-                else
-                {
-                    if (_requestHeaders.ContentLength != null)
-                    {
-                        if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
-                        {
-                            _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
-                            _requestComplete = true;
-                            _mreContent.Set();
-                        }
-                    }
-                    else if (_sbuffer.ToString().Contains("\r\n\r\n"))
-                    {
-                        _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
-                        _requestComplete = true;
-                        _mreContent.Set();
-                    }
                 }
             }
         }
@@ -497,9 +492,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         private void parseRequest()
         {
+            bool usedBackendProcessing = false;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Waiting for request data to come in from socket");
             if (!_mreHeader.WaitOne(MAX_HEADER_WAIT_TIME))
             {
+                usedBackendProcessing = true;
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "Timeout reached waiting on request header, attempting failsafe.");
                 int b = 0;
                 try
@@ -519,7 +516,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         Logger.LogMessage(DiagnosticsLevels.TRACE, "Appending byte to buffer from peak.");
                         _sbuffer.Append((char)b);
                         inputStream.ReadTimeout = 1000;
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to read remained of data from stream.");
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to read remainder of data from stream.");
                         while (b != -1)
                         {
                             b = inputStream.ReadByte();
@@ -534,7 +531,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (_sbuffer.Length > 0)
                 {
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Data contained within buffer attempting to process.");
-                    _ProcessSBuffer();
+                    if (_sbuffer.ToString().Contains("\r\n\r\n")){
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Header recieved for connection");
+                        _headerRecieved = true;
+                        _header = _sbuffer.ToString().Substring(0, _sbuffer.ToString().IndexOf("\r\n\r\n"));
+                        _sbuffer.Replace(_header + "\r\n\r\n", "");
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Connection header received: "+ _header);
+                    }
                     if (!_headerRecieved)
                     {
                         Logger.LogMessage(DiagnosticsLevels.TRACE, "Unsure if proper header was recieved, checking for http end code in buffer");
@@ -614,7 +617,36 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             _url = new Uri("http://" + _requestHeaders.Host.Replace("//", "/") + tokens[1].Replace("//", "/"));
             _requestCookie = new CookieCollection(_requestHeaders["Cookie"]);
-            _mreHeaderParsed.Set();
+            if (usedBackendProcessing)
+            {
+                if (_requestHeaders.ContentLength != null)
+                {
+                    if (_sbuffer.Length == int.Parse(_requestHeaders.ContentLength))
+                    {
+                        _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                        _requestComplete = true;
+                        _mreContent.Set();
+                    }
+                }
+                else if (_sbuffer.ToString() == "{}")
+                {
+                    _content = _sbuffer.ToString().TrimEnd(new char[] { '\r', '\n' });
+                    _requestComplete = true;
+                    _mreContent.Set();
+                }
+                if (!_headerRecieved || !_requestComplete)
+                {
+                    _buffer = new byte[_BUFFER_SIZE];
+                    try
+                    {
+                        inputStream.BeginRead(_buffer, 0, _BUFFER_SIZE, new AsyncCallback(_AsyncRead), null);
+                    }
+                    catch (Exception e)
+                    {
+                    }
+                }
+            }else
+                _mreHeaderParsed.Set();
         }
 
         private string streamReadLine(ref string stream)
