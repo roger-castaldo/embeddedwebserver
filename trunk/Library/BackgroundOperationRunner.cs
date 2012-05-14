@@ -110,9 +110,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
          */
         private void RunThread()
         {
-            Console.WriteLine("Background Thread Start Called...");
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread start reached");
-            Console.WriteLine("Background thread log message should have appeared.");
             List<sCall> calls = new List<sCall>();
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Constructing list of background operation calls");
             foreach (Type t in Utility.LocateTypeInstances(typeof(IBackgroundOperationContainer)))
