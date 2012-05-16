@@ -72,6 +72,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             _exit = false;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
             _runner = new Thread(new ThreadStart(RunThread));
+            _runner.IsBackground = true;
             _runner.Name = "BackgroundOperationRunner";
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller's thread");
             _runner.Start();
@@ -151,6 +152,16 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 }
                 if (!_exit)
                 {
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory prior to GC: " + GC.GetTotalMemory(false).ToString() + "b");
+                    try
+                    {
+                        GC.Collect();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                    }
+                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory after to GC: " + GC.GetTotalMemory(false).ToString() + "b");
                     try
                     {
                         Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
@@ -198,6 +209,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             _id = id;
             _start = start;
             _runner = new Thread(new ThreadStart(_Start));
+            _runner.IsBackground = true;
         }
 
         public void Start()
@@ -208,7 +220,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private void _Start()
         {
             _current = this;
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation");
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation.");
             try
             {
                 _call.Method.Invoke(null, new object[] { });
@@ -217,6 +229,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             {
                 Logger.LogError(e);
             }
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation completed.");
         }
     }
 }

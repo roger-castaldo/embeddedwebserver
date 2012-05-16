@@ -198,7 +198,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                         _isMobile = (_osName != null ? _osName : "").ToUpper() == "ANDROID";
                         break;
                     case BrowserFamilies.Opera:
-                        _isMobile = userAgent.StartsWith("HTC-ST7377");
+                        _isMobile = userAgent.StartsWith("HTC-ST7377") || _name=="Opera Mobi";
                         break;
                 }
                 _isMobile |= userAgent.Contains("SymbianOS") | (OSType == BrowserOSTypes.BlackBerry);

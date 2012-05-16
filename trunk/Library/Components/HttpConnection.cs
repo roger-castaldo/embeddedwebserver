@@ -252,6 +252,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 inputStream = socket.GetStream();
             _exit = false;
             _backgroundReaderThread = new Thread(new ThreadStart(backgroundRunStart));
+            _backgroundReaderThread.IsBackground = true;
             _backgroundReaderThread.Start();
             try
             {
