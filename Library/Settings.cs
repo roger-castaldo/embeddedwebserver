@@ -85,5 +85,17 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return true;
             }
         }
+
+        //The default timeout for a request to be handled
+        private const string REQUEST_TIMEOUT_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.RequestTimeout";
+        public static int RequestTimeout
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[REQUEST_TIMEOUT_SETTING_ID] != null)
+                    return int.Parse(ConfigurationSettings.AppSettings[REQUEST_TIMEOUT_SETTING_ID]);
+                return int.MaxValue;
+            }
+        }
     }
 }

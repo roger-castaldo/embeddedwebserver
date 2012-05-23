@@ -271,21 +271,44 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             else
             {
-                start = DateTime.Now;
-                if (con.URL.AbsolutePath == "/")
-                    con.UseDefaultPath(useSite);
-                Site.SetCurrentSite(useSite);
-                try
+                TimedThread tt = new TimedThread(new ParameterizedThreadStart(_processRequest));
+                Exception ex;
+                bool timedOut;
+                tt.Start(new object[] { con, useSite, start });
+                tt.WaitTillFinished(out timedOut, out ex);
+                if (ex != null && !con.IsResponseSent)
                 {
-                    useSite.ProcessRequest(con);
-                }
-                catch (Exception e) {
                     con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                    con.ResponseWriter.WriteLine(e.Message);
+                    con.ResponseWriter.WriteLine(ex.Message);
                     con.SendResponse();
                 }
-                Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                else if (timedOut && !con.IsResponseSent)
+                {
+                    con.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                    con.ResponseWriter.WriteLine("The request has taken to long to process.");
+                    con.SendResponse();
+                }
             }
+        }
+
+        private void _processRequest(object pars)
+        {
+            HttpConnection con = (HttpConnection)((object[])pars)[0];
+            Site useSite = (Site)((object[])pars)[1];
+            DateTime start = (DateTime)((object[])pars)[2];
+            start = DateTime.Now;
+            if (con.URL.AbsolutePath == "/")
+                con.UseDefaultPath(useSite);
+            Site.SetCurrentSite(useSite);
+            try
+            {
+                useSite.ProcessRequest(con);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
 
         internal void CheckRefresh()

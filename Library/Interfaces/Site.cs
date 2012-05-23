@@ -189,6 +189,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return true; }
         }
 
+        //indicated the request timeout for a given site, if not overriden use the default
+        public virtual int RequestTimeout
+        {
+            get { return Settings.RequestTimeout; }
+        }
+
         //indicates the diagnostics level the site should use for logging
         public virtual DiagnosticsLevels DiagnosticsLevel
         {

@@ -12,4 +12,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
         }
     }
+
+    public class ThreadTimeoutException : Exception
+    {
+        public ThreadTimeoutException(long timeout) :
+            base("A thread has timed out after " + timeout.ToString() + "ms")
+        {
+        }
+    }
 }
