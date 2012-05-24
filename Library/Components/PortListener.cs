@@ -274,7 +274,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 TimedThread tt = new TimedThread(new ParameterizedThreadStart(_processRequest));
                 Exception ex;
                 bool timedOut;
-                tt.Start(new object[] { con, useSite, start });
+                tt.Start(new object[] { con, useSite, start }, useSite.RequestTimeout,false);
                 tt.WaitTillFinished(out timedOut, out ex);
                 if (ex != null && !con.IsResponseSent)
                 {
@@ -304,6 +304,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 useSite.ProcessRequest(con);
             }
+            catch (ThreadAbortException tae) { }
             catch (Exception e)
             {
                 throw e;

@@ -67,11 +67,29 @@ namespace Tester
             }
         }
 
+        public override List<IRequestHandler> Handlers
+        {
+            get
+            {
+                List<IRequestHandler> hlds = base.Handlers;
+                hlds.Add(new TimeoutProducer());
+                return hlds;
+            }
+        }
+
         protected override void PreRequest(HttpConnection conn)
         {
             if (conn.JSONParameter != null)
             {
                 Console.WriteLine(conn.JSONParameter.GetType().FullName);
+            }
+        }
+
+        public override int RequestTimeout
+        {
+            get
+            {
+                return 1000;
             }
         }
     }
