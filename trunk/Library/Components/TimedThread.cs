@@ -2,17 +2,22 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Timer = System.Timers.Timer;
+using System.Timers;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
     public class TimedThread
     {
+        private Timer _timMonitor;
         private Thread _opThread;
-        private Thread _timerThread;
         private bool _timedout = false;
         private ManualResetEvent _mre;
-        private DateTime _endTime;
         private Exception _exception=null;
+        private bool _exceptionOnTimeout;
+        private bool _aborted=false;
+        private int _timeout;
+        private bool _waiting = false;
 
         public TimedThread(ThreadStart start)
         {
@@ -37,82 +42,97 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             Start(int.MaxValue);
         }
 
+        public void Start(bool exceptionOnTimeout)
+        {
+            Start(int.MaxValue,exceptionOnTimeout);
+        }
+
         public void Start(int timeout)
         {
-            _endTime = DateTime.Now.AddMilliseconds(timeout);
-            _timerThread = new Thread(new ParameterizedThreadStart(_Start));
-            _timerThread.Start(timeout);
+            Start(timeout,true);
+        }
+
+        public void Start(int timeout,bool exceptionOnTimeout)
+        {
+            _timeout = timeout;
+            _exceptionOnTimeout = exceptionOnTimeout;
+            _timMonitor = new Timer(timeout);
+            _timMonitor.AutoReset = false;
+            _timMonitor.Elapsed += new ElapsedEventHandler(_threadTimeout);
+            try
+            {
+                _opThread.Start(null);
+            }
+            catch (ThreadAbortException tae) { }
+            catch (Exception ex)
+            {
+                if (_waiting)
+                    _exception = ex;
+                else
+                    throw ex;
+            }
+            _timMonitor.Start();
         }
 
         public void Start(object parameter)
         {
-            Start(parameter,int.MaxValue);
+            Start(parameter,int.MaxValue,true);
+        }
+
+        public void Start(object parameter,bool exceptionOnTimeout)
+        {
+            Start(parameter, int.MaxValue, exceptionOnTimeout);
         }
 
         public void Start(object parameter,int timeout)
         {
-            _endTime = DateTime.Now.AddMilliseconds(timeout);
-            _timerThread = new Thread(new ParameterizedThreadStart(_Start));
-            _timerThread.Start(new object[]{parameter,timeout});
+            Start(parameter, timeout,true);
         }
 
-        private void _Start(object pars)
+        public void Start(object parameter,int timeout,bool exceptionOnTimeout)
         {
-            int timeout = 0;
-            if (pars is object[])
-            {
-                _opThread.Start(((object[])pars)[0]);
-                timeout = (int)((object[])pars)[1];
-            }
-            else
-            {
-                _opThread.Start();
-                timeout = (int)pars;
-            }
+            _timeout = timeout;
+            _exceptionOnTimeout = exceptionOnTimeout;
+            _timMonitor = new Timer(timeout);
+            _timMonitor.AutoReset = false;
+            _timMonitor.Elapsed += new System.Timers.ElapsedEventHandler(_threadTimeout);
             try
             {
-                if (!_opThread.Join(timeout))
-                {
-                    _timedout = true;
-                    try
-                    {
-                        _opThread.Abort();
-                    }
-                    catch (Exception ex)
-                    {
-                    }
-                }
+                _opThread.Start(parameter);
             }
-            catch (ThreadAbortException tae)
+            catch (ThreadAbortException tae) { }
+            catch (Exception ex)
             {
+                if (_waiting)
+                    _exception = ex;
+                else
+                    throw ex;
+            }
+            _timMonitor.Start();
+        }
+
+        private void _threadTimeout(object sender, ElapsedEventArgs e)
+        {
+            if (!_aborted)
+            {
+                try
+                {
+                    _opThread.Abort();
+                }
+                catch (Exception ex)
+                {
+                }
                 _timedout = true;
             }
-            catch (Exception e)
-            {
-                _exception = e;
-            }
-            if (_timedout)
-                throw new ThreadTimeoutException(timeout);
+            if (_timedout && _exceptionOnTimeout && !_waiting)
+                throw new ThreadTimeoutException(_timeout);
             else
                 _mre.Set();
         }
 
         public void Abort()
         {
-            try
-            {
-                _timerThread.Abort();
-            }
-            catch (Exception e)
-            {
-            }
-            try
-            {
-                _opThread.Abort();
-            }
-            catch (Exception e)
-            {
-            }
+            _aborted = true;
         }
 
         public void Join()
@@ -132,10 +152,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         public void WaitTillFinished(out bool timedOut,out Exception exception)
         {
-            timedOut = false;
-            if (!_mre.WaitOne((int)_endTime.Subtract(DateTime.Now).TotalMilliseconds))
-                timedOut = true;
-            timedOut |= _timedout;
+            _waiting = true;
+            _mre.WaitOne();
+            timedOut = _timedout;
             exception = _exception;
         }
 

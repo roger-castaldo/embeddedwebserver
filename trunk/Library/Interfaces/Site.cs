@@ -383,6 +383,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             {
                                 handler.ProcessRequest(conn, this);
                             }
+                            catch (ThreadAbortException tae)
+                            {
+                                if (!conn.IsResponseSent)
+                                {
+                                    conn.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    conn.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    conn.SendResponse();
+                                }
+                            }
                             catch (Exception e)
                             {
                                 Logger.LogError(e);
@@ -405,6 +414,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             try
                             {
                                 hndl.ProcessRequest(conn, this);
+                            }
+                            catch (ThreadAbortException tae)
+                            {
+                                if (!conn.IsResponseSent)
+                                {
+                                    conn.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    conn.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    conn.SendResponse();
+                                }
                             }
                             catch (Exception e)
                             {
