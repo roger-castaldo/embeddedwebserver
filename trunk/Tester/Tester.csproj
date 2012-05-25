@@ -41,7 +41,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="services\TestService.cs" />
-    <Compile Include="SystemMonitor.cs" />
     <Compile Include="TestSite.cs" />
     <Compile Include="TimeoutProducer.cs" />
   </ItemGroup>

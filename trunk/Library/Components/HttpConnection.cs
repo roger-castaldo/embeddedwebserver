@@ -201,7 +201,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     }
                 }
                 catch (Exception e) { }
-                if (!_headerRecieved || !_requestComplete)
+                if (IsResponseSent)
+                    _exit = true;
+                else if (!_headerRecieved || !_requestComplete)
                     _buffer = new byte[_BUFFER_SIZE];
                 else
                     _exit = true;
@@ -214,10 +216,44 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _requestStart; }
         }
 
+        private DateTime _requestTimeout;
+        private Thread _housingThread;
+        internal void SetTimeout(Site site,Thread housingThread)
+        {
+            _requestTimeout = _requestStart.AddMilliseconds(site.RequestTimeout);
+            _housingThread = housingThread;
+        }
+
+        internal DateTime TimeoutTime
+        {
+            get { return _requestTimeout; }
+        }
+
+        internal bool TimedOut
+        {
+            get { return DateTime.Now.Ticks < _requestTimeout.Ticks; }
+        }
+
+        internal void AbortConnection()
+        {
+            try
+            {
+                _housingThread.Abort();
+            }
+            catch (Exception e) { }
+        }
+
         private long _id;
         public long ID
         {
             get { return _id; }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is HttpConnection)
+                return ((HttpConnection)obj).ID == ID;
+            return false;
         }
 
         /*
@@ -233,6 +269,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _isResponseSent = false;
             _listener = listener;
             _requestStart = DateTime.Now;
+            _requestTimeout = _requestStart.AddMilliseconds(int.MaxValue);
             this.socket = s;
             _sbuffer = new StringBuilder();
             _buffer = new byte[_BUFFER_SIZE];

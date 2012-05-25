@@ -29,6 +29,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private DateTime _lastConnectionRefresh;
         //backlog amount
         private int _backLog = 1000;
+        //houses the http connections that are running in the background, in a way that they can be killed
+        private List<HttpConnection> _currentConnections;
 
         private MT19937 _rand;
 
@@ -102,6 +104,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //then binding the tcplistener to wait for incoming connections
         public void Start()
         {
+            _currentConnections = new List<HttpConnection>();
             foreach (Site site in _sites)
                 site.Start();
             _listener = new TcpListener(_ip, _port);
@@ -272,11 +275,39 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             else
             {
-                TimedThread tt = new TimedThread(new ParameterizedThreadStart(_processRequest));
-                Exception ex;
-                bool timedOut;
-                tt.Start(new object[] { con, useSite, start }, useSite.RequestTimeout,false);
-                tt.WaitTillFinished(out timedOut, out ex);
+                lock (_currentConnections)
+                {
+                    _currentConnections.Add(con);
+                }
+                Thread tt = new Thread(new ParameterizedThreadStart(_processRequest));
+                tt.IsBackground = true;
+                Exception ex=null;
+                bool timedOut=false;
+                try
+                {
+                    tt.Start(new object[] { con, useSite, start });
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
+                try
+                {
+                    if (!tt.Join(useSite.RequestTimeout))
+                    {
+                        timedOut = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                    timedOut = con.TimedOut;
+                }
+                try
+                {
+                    tt = null;
+                }
+                catch (Exception e) { }
                 if (ex != null && !con.IsResponseSent)
                 {
                     con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
@@ -289,6 +320,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     con.ResponseWriter.WriteLine("The request has taken to long to process.");
                     con.SendResponse();
                 }
+                if (con.IsResponseSent)
+                {
+                    lock (_currentConnections)
+                    {
+                        _currentConnections.Remove(con);
+                    }
+                }
             }
         }
 
@@ -296,6 +334,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             HttpConnection con = (HttpConnection)((object[])pars)[0];
             Site useSite = (Site)((object[])pars)[1];
+            con.SetTimeout(useSite, Thread.CurrentThread);
             DateTime start = (DateTime)((object[])pars)[2];
             start = DateTime.Now;
             if (con.URL.AbsolutePath == "/")
@@ -333,6 +372,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _lastConnectionRefresh = DateTime.Now;
                 _lastConnectionRequest = DateTime.Now;
                 _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+            }
+        }
+
+        //used to cleanup timed out http connections
+        internal void CleanupTimedOutConnections()
+        {
+            if (_currentConnections != null)
+            {
+                lock (_currentConnections)
+                {
+                    for (int x = 0; x < _currentConnections.Count; x++)
+                    {
+                        try
+                        {
+                            if (_currentConnections[x].IsResponseSent || _currentConnections[x].TimedOut){
+                                _currentConnections[x].AbortConnection();
+                                _currentConnections.RemoveAt(x);
+                                x--;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                        }
+                    }
+                }
             }
         }
     }
