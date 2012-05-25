@@ -26,6 +26,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //A thread specific instance of the current connection
         [ThreadStatic()]
         private static HttpConnection _currentConnection = null;
+        internal static void SetCurrentConnection(HttpConnection con)
+        {
+            _currentConnection = con;
+        }
         public static HttpConnection CurrentConnection
         {
             get { return _currentConnection; }
