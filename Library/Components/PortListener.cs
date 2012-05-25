@@ -184,6 +184,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 if (!con.IsResponseSent)
                 {
+                    HttpConnection.SetCurrentConnection(con);
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to process connection request.");
                     if (con.URL.AbsolutePath == "/jquery.js")
                     {
@@ -300,6 +301,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             if (con.URL.AbsolutePath == "/")
                 con.UseDefaultPath(useSite);
             Site.SetCurrentSite(useSite);
+            HttpConnection.SetCurrentConnection(con);
             try
             {
                 useSite.ProcessRequest(con);
