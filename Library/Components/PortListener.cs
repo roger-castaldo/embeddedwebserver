@@ -348,7 +348,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (ThreadAbortException tae) { }
             catch (Exception e)
             {
-                throw e;
+                Logger.LogError(e);
+                if (!con.IsResponseSent)
+                {
+                    con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                    con.ClearResponse();
+                    con.ResponseWriter.Write(e.Message);
+                }
             }
             Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
         }
