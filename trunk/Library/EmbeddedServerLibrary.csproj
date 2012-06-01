@@ -61,7 +61,6 @@
     <Compile Include="Components\PortListener.cs" />
     <Compile Include="Components\Readers\BufferReader.cs" />
     <Compile Include="Components\Readers\ITextReader.cs" />
-    <Compile Include="Components\ThreadMonitor.cs" />
     <Compile Include="Components\Message\UploadedFile.cs" />
     <Compile Include="Components\Message\UploadedFileCollection.cs" />
     <Compile Include="Components\UserAgentTools.cs" />
