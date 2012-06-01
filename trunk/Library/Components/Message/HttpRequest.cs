@@ -54,6 +54,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _requestTimeout = _requestStart.AddMilliseconds(site.RequestTimeout);
         }
 
+        public void SetTimeout(int milliseconds)
+        {
+            _timer.Change(milliseconds, Timeout.Infinite);
+            _requestTimeout = _requestStart.AddMilliseconds(milliseconds);
+        }
+
         internal DateTime TimeoutTime
         {
             get { return _requestTimeout; }
