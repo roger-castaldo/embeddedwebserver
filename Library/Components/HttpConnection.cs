@@ -133,7 +133,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void OnReceive(IAsyncResult ar)
         {
             _currentConnection = this;
-            _idleTimer.Change(_CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
             // been closed by our side.
             if (_inputStream == null)
                 return;
@@ -203,11 +202,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _inputStream.Flush();
             }
             if (shutdown)
-                _idleTimer.Change(1000, Timeout.Infinite);
+            {
+                if (_idleTimer!=null)
+                    _idleTimer.Change(1000, Timeout.Infinite);
+                else
+                    _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, 1000, Timeout.Infinite);
+            }
+            else
+                _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
         }
 
         private void _RequestLineRecieved(string[] words)
         {
+            _idleTimer.Dispose();
             _currentConnection = this;
             if (words[0].ToUpper() != "HTTP"&&!_shutdown)
             {
