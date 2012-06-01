@@ -454,6 +454,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 Logger.LogMessage(DiagnosticsLevels.DEBUG, "WARNING:  Response has already been sent before site called to send it.");
             else
                 request.SendResponse();
+            try
+            {
+                request.Connection.DisposeRequest(request);
+            }
+            catch (Exception e) { }
         }
 
         public Site() {

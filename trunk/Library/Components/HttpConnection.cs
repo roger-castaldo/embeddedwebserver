@@ -24,7 +24,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
      */
     internal class HttpConnection : IDisposable
     {
-        private const int _CONNECTION_IDLE_TIMEOUT = 300000;
+        private const int _CONNECTION_IDLE_TIMEOUT = 5000;
 
         //A thread specific instance of the current connection
         [ThreadStatic()]
@@ -84,7 +84,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             return false;
         }
 
-        public void Close()
+        public void Close(bool disposing)
         {
             _shutdown = true;
             try
@@ -93,6 +93,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             catch (Exception e) { }
             Buffers.Enqueue(_buffer);
+            if (!disposing)
+                _listener.DisposeOfConnection(this);
         }
 
         /*
@@ -127,7 +129,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void _IdleTimeout(object state)
         {
             _currentConnection = this;
-            _listener.DisposeOfConnection(this);
+            if (!_shutdown)
+                _listener.DisposeOfConnection(this);
         }
 
         private void OnReceive(IAsyncResult ar)
@@ -142,7 +145,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (bytesLeft == 0)
                 {
                     Logger.Trace("Client disconnected.");
-                    Close();
+                    Close(false);
                     return;
                 }
 
@@ -169,7 +172,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 Logger.Trace(err.ToString());
                 SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " " + err.Message),true);
                 _inputStream.Flush();
-                Close();
+                Close(false);
             }
             catch (Exception err)
             {
@@ -179,7 +182,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.InternalServerError).ToString() + " " + err.Message),true);
                     _inputStream.Flush();
                 }
-                Close();
+                Close(false);
             }
         }
 
@@ -203,6 +206,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             if (shutdown)
             {
+                _shutdown = shutdown;
                 if (_idleTimer!=null)
                     _idleTimer.Change(1000, Timeout.Infinite);
                 else
@@ -246,7 +250,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public void Dispose()
         {
             if (!_shutdown)
-                Close();
+                Close(true);
             lock (_requests)
             {
                 while (_requests.Count > 0)
