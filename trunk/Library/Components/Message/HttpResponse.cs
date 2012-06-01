@@ -121,7 +121,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
                 if (_responseHeaders.Date == null)
                     _responseHeaders.Date = DateTime.Now.ToString(CookieDateFormat);
-                _responseHeaders["Connection"] = "Keep-alive";
+                if (_request.Headers["Connection"] != null)
+                {
+                    if (_request.Headers["Connection"].ToLower() == "keep-alive")
+                        _responseHeaders["Connection"] = _request.Headers["Connection"];
+                    else
+                        _responseHeaders["Connection"] = "close";
+                }
+                else
+                    _responseHeaders["Connection"] = "close";
                 MemoryStream outStream = new MemoryStream();
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
@@ -160,7 +168,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 if (_request.URL != null)
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
-                _request.Connection.SendBuffer(outStream.ToArray());
+                _request.Connection.SendBuffer(outStream.ToArray(),_responseHeaders["Connection"]=="close");
                 if (_request.URL != null)
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
