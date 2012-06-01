@@ -40,6 +40,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             get { return _connection; }
         }
 
+        public EndPoint Client
+        {
+            get { return _connection.Client; }
+        }
+
         private string _path;
 
         private DateTime _requestTimeout;
