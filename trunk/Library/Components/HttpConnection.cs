@@ -215,6 +215,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void _RequestLineRecieved(string[] words)
         {
             _idleTimer.Dispose();
+            _idleTimer = null;
             _currentConnection = this;
             if (words[0].ToUpper() != "HTTP"&&!_shutdown)
             {
@@ -261,6 +262,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             try
             {
                 _idleTimer.Dispose();
+                _idleTimer = null;
             }
             catch (Exception e) { }
         }
