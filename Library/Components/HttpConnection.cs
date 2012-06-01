@@ -168,7 +168,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (ParserException err)
             {
                 Logger.Trace(err.ToString());
-                SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " " + err.Message));
+                SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " " + err.Message),true);
                 _inputStream.Flush();
                 Close();
             }
@@ -177,14 +177,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 if (!(err is IOException))
                 {
                     Logger.Error("Failed to read from stream: " + err);
-                    SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.InternalServerError).ToString() + " " + err.Message));
+                    SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.InternalServerError).ToString() + " " + err.Message),true);
                     _inputStream.Flush();
                 }
                 Close();
             }
         }
 
-        internal void SendBuffer(byte[] buffer)
+        internal void SendBuffer(byte[] buffer,bool shutdown)
         {
             lock (_inputStream)
             {
@@ -202,6 +202,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 _inputStream.Flush();
             }
+            if (shutdown)
+                _idleTimer.Change(1000, Timeout.Infinite);
         }
 
         private void _RequestLineRecieved(string[] words)

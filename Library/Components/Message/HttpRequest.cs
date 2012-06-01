@@ -95,8 +95,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _currentRequest = this;
             HttpConnection.SetCurrentConnection(_connection);
             Logger.Trace("Failed to recieve the complete request header prior to the timeout.");
-            _connection.SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " Request Header not recieved in a proper amount of time."));
-            _connection.Close();
+            _connection.SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " Request Header not recieved in a proper amount of time."),true);
         }
 
         private void _RequestHeaderLineReceived(string name, string value)
