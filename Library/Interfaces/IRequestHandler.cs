@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Components;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -16,14 +17,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         bool IsReusable { get; }
         
         //called to see if the handler is valid for the given request
-        bool CanProcessRequest(HttpConnection conn, Site site);
+        bool CanProcessRequest(HttpRequest request, Site site);
         //called to process the given request after it was determined to be the appropriate handler
-        void ProcessRequest(HttpConnection conn,Site site);
+        void ProcessRequest(HttpRequest request, Site site);
         //any initialization functionality that should occur when the site starts
         void Init();
         //any shutdown functionality that should occur when the site shutsdown
         void DeInit();
         //returns whether or not the current request requires a session
-        bool RequiresSessionForRequest(HttpConnection conn, Site site);
+        bool RequiresSessionForRequest(HttpRequest request, Site site);
     }
 }

@@ -10,6 +10,7 @@ using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -111,7 +112,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //indicates the time to hold a cookie for the site.  If not set, it assumes 60 minute default
         public virtual int CookieExpireMinutes
         {
-            get { return Org.Reddragonit.EmbeddedWebServer.Components.CookieCollection.DEFAULT_COOKIE_DURATION_MINUTES; }
+            get { return Org.Reddragonit.EmbeddedWebServer.Components.Message.CookieCollection.DEFAULT_COOKIE_DURATION_MINUTES; }
         }
 
         private static readonly IRequestHandler[] _defaultHandlers = new IRequestHandler[]{
@@ -228,12 +229,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         //an implemented stop that gets called after the handlers are deinitialized
         protected virtual void PostStop() { }
         //an implemented function that gets called before the processing of a request
-        protected virtual void PreRequest(HttpConnection conn) { }
+        protected virtual void PreRequest(HttpRequest request) { }
         //an implemented function that gets called after the processing of a request
-        protected virtual void PostRequest(HttpConnection conn) { }
+        protected virtual void PostRequest(HttpRequest request) { }
         //an implemented function that gets called when an error occurs while processing the request
         //returns true if this completes the request, else default response information gets sent
-        protected virtual bool RequestError(HttpConnection conn, Exception error) {
+        protected virtual bool RequestError(HttpRequest request, Exception error)
+        {
             return false;
         }
         #endregion
@@ -361,81 +363,81 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
          * the requirement of a session first.  If not, create a new instance, init the instance, and use the new instance 
          * to perform the same tasks, once completed deinit the handler.
          */
-        public void ProcessRequest(HttpConnection conn)
+        public void ProcessRequest(HttpRequest request)
         {
-            PreRequest(conn);
-            if (!conn.IsResponseSent)
+            PreRequest(request);
+            if (!request.IsResponseSent)
             {
                 DateTime start = DateTime.Now;
                 _currentSite = this;
                 bool found = false;
                 foreach (IRequestHandler handler in Handlers)
                 {
-                    if (handler.CanProcessRequest(conn, this))
+                    if (handler.CanProcessRequest(request, this))
                     {
                         found = true;
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + conn.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
                         if (handler.IsReusable)
                         {
-                            if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                SessionManager.LoadStateForConnection(conn, this);
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.LoadStateForConnection(request, this);
                             try
                             {
-                                handler.ProcessRequest(conn, this);
+                                handler.ProcessRequest(request, this);
                             }
                             catch (ThreadAbortException tae)
                             {
-                                if (!conn.IsResponseSent)
+                                if (!request.IsResponseSent)
                                 {
-                                    conn.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                    conn.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                    conn.SendResponse();
+                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    request.SendResponse();
                                 }
                             }
                             catch (Exception e)
                             {
                                 Logger.LogError(e);
-                                if (!RequestError(conn,e))
+                                if (!RequestError(request, e))
                                 {
-                                    conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                    conn.ClearResponse();
-                                    conn.ResponseWriter.Write(e.Message);
+                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    request.ClearResponse();
+                                    request.ResponseWriter.Write(e.Message);
                                 }
                             }
-                            if (handler.RequiresSessionForRequest(conn, this) || (DefaultPage == conn.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                SessionManager.StoreSessionForConnection(conn, this);
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.StoreSessionForConnection(request, this);
                         }
                         else
                         {
                             IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
                             hndl.Init();
-                            if (hndl.RequiresSessionForRequest(conn, this))
-                                SessionManager.LoadStateForConnection(conn, this);
+                            if (hndl.RequiresSessionForRequest(request, this))
+                                SessionManager.LoadStateForConnection(request, this);
                             try
                             {
-                                hndl.ProcessRequest(conn, this);
+                                hndl.ProcessRequest(request, this);
                             }
                             catch (ThreadAbortException tae)
                             {
-                                if (!conn.IsResponseSent)
+                                if (!request.IsResponseSent)
                                 {
-                                    conn.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                    conn.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                    conn.SendResponse();
+                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    request.SendResponse();
                                 }
                             }
                             catch (Exception e)
                             {
                                 Logger.LogError(e);
-                                if (!RequestError(conn, e))
+                                if (!RequestError(request, e))
                                 {
-                                    conn.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                    conn.ClearResponse();
-                                    conn.ResponseWriter.Write(e.Message);
+                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    request.ClearResponse();
+                                    request.ResponseWriter.Write(e.Message);
                                 }
                             }
-                            if (hndl.RequiresSessionForRequest(conn, this))
-                                SessionManager.StoreSessionForConnection(conn, this);
+                            if (hndl.RequiresSessionForRequest(request, this))
+                                SessionManager.StoreSessionForConnection(request, this);
                             hndl.DeInit();
                         }
                         break;
@@ -443,15 +445,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 }
                 if (!found)
                 {
-                    conn.ClearResponse();
-                    conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                    request.ClearResponse();
+                    request.ResponseStatus = HttpStatusCodes.Not_Found;
                 }
             }
-            PostRequest(conn);
-            if (conn.IsResponseSent)
+            PostRequest(request);
+            if (request.IsResponseSent)
                 Logger.LogMessage(DiagnosticsLevels.DEBUG, "WARNING:  Response has already been sent before site called to send it.");
             else
-                conn.SendResponse();
+                request.SendResponse();
         }
 
         public Site() {

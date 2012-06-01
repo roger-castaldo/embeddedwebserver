@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.IO;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
@@ -26,23 +27,23 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             get { return true; }
         }
 
-        bool IRequestHandler.CanProcessRequest(HttpConnection conn, Site site)
+        bool IRequestHandler.CanProcessRequest(HttpRequest request, Site site)
         {
             if (site.BaseSitePath != null)
-                return new FileInfo(site.BaseSitePath + Path.DirectorySeparatorChar.ToString() + TranslateURLPath(conn.URL.AbsolutePath)).Exists;
+                return new FileInfo(site.BaseSitePath + Path.DirectorySeparatorChar.ToString() + TranslateURLPath(request.URL.AbsolutePath)).Exists;
             return false;
         }
 
-        void IRequestHandler.ProcessRequest(HttpConnection conn, Site site)
+        void IRequestHandler.ProcessRequest(HttpRequest request, Site site)
         {
-            FileInfo fi = new FileInfo(site.BaseSitePath + Path.DirectorySeparatorChar.ToString() + TranslateURLPath(conn.URL.AbsolutePath));
-            conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(fi.Extension);
+            FileInfo fi = new FileInfo(site.BaseSitePath + Path.DirectorySeparatorChar.ToString() + TranslateURLPath(request.URL.AbsolutePath));
+            request.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(fi.Extension);
             BinaryReader br = new BinaryReader(new FileStream(fi.FullName,
                 FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
             while (br.BaseStream.Position < br.BaseStream.Length)
             {
                 byte[] buffer = br.ReadBytes(1024);
-                conn.ResponseWriter.BaseStream.Write(buffer, 0, buffer.Length);
+                request.ResponseWriter.BaseStream.Write(buffer, 0, buffer.Length);
             }
             br.Close();
         }
@@ -55,7 +56,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         {
         }
 
-        bool IRequestHandler.RequiresSessionForRequest(HttpConnection conn, Site site)
+        bool IRequestHandler.RequiresSessionForRequest(HttpRequest request, Site site)
         {
             return false;
         }

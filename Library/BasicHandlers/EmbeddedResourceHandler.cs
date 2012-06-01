@@ -7,6 +7,7 @@ using Org.Reddragonit.EmbeddedWebServer.Minifiers;
 using System.IO;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
@@ -75,11 +76,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 
         //Checks through the list of embedded files from the site definition to 
         //see if any of the files available match the requested url
-        bool IRequestHandler.CanProcessRequest(HttpConnection conn, Site site)
+        bool IRequestHandler.CanProcessRequest(HttpRequest request, Site site)
         {
             if (site.EmbeddedFiles != null)
             {
-                return site.EmbeddedFiles.ContainsKey(conn.URL.AbsolutePath);
+                return site.EmbeddedFiles.ContainsKey(request.URL.AbsolutePath);
             }
             return false;
         }
@@ -90,31 +91,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          * If its uncompresssed css or js, checks the cache, if not compresses it,
          * and caches it.  It then writes the given file out to the response stream.
          */
-        void IRequestHandler.ProcessRequest(HttpConnection conn,Site site)
+        void IRequestHandler.ProcessRequest(HttpRequest request, Site site)
         {
-            conn.ResponseHeaders["Cache-Control"] = "Private";
-            sEmbeddedFile file = site.EmbeddedFiles[conn.URL.AbsolutePath];
+            request.ResponseHeaders["Cache-Control"] = "Private";
+            sEmbeddedFile file = site.EmbeddedFiles[request.URL.AbsolutePath];
             Stream str=null;
             switch (file.FileType)
             {
                 case EmbeddedFileTypes.Compressed_Css:
                     string comCss = Utility.ReadEmbeddedResource(file.DLLPath);
                     if (comCss == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        request.ResponseStatus = HttpStatusCodes.Not_Found;
                     else
                     {
-                        conn.ResponseHeaders.ContentType = "text/css";
-                        conn.ResponseWriter.Write(comCss);
+                        request.ResponseHeaders.ContentType = "text/css";
+                        request.ResponseWriter.Write(comCss);
                     }
                     break;
                 case EmbeddedFileTypes.Compressed_Javascript:
                     string comJs = Utility.ReadEmbeddedResource(file.DLLPath);
                     if (comJs == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        request.ResponseStatus = HttpStatusCodes.Not_Found;
                     else
                     {
-                        conn.ResponseHeaders.ContentType = "text/javascript";
-                        conn.ResponseWriter.Write(comJs);
+                        request.ResponseHeaders.ContentType = "text/javascript";
+                        request.ResponseWriter.Write(comJs);
                     }
                     break;
                 case EmbeddedFileTypes.Css:
@@ -123,18 +124,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     if (_compressedCache.ContainsKey(file.DLLPath))
                     {
                         loadCss = false;
-                        conn.ResponseHeaders.ContentType = "text/css";
-                        conn.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
+                        request.ResponseHeaders.ContentType = "text/css";
+                        request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
                     }
                     Monitor.Exit(_lock);
                     if (loadCss)
                     {
                         string css = Utility.ReadEmbeddedResource(file.DLLPath);
                         if (css == null)
-                            conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                            request.ResponseStatus = HttpStatusCodes.Not_Found;
                         else
                         {
-                            conn.ResponseHeaders.ContentType = "text/css";
+                            request.ResponseHeaders.ContentType = "text/css";
                             Monitor.Enter(_lock);
                             if (site.CompressCSS)
                                 css = CSSMinifier.Minify(css);
@@ -143,7 +144,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                                 _compressedCache.Add(file.DLLPath, new CachedItemContainer(css));
                             }
                             Monitor.Exit(_lock);
-                            conn.ResponseWriter.Write(css);
+                            request.ResponseWriter.Write(css);
                         }
                     }
                     break;
@@ -153,18 +154,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     if (_compressedCache.ContainsKey(file.DLLPath))
                     {
                         loadJS = false;
-                        conn.ResponseHeaders.ContentType = "text/javascript";
-                        conn.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
+                        request.ResponseHeaders.ContentType = "text/javascript";
+                        request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
                     }
                     Monitor.Exit(_lock);
                     if (loadJS)
                     {
                         string js = Utility.ReadEmbeddedResource(file.DLLPath);
                         if (js == null)
-                            conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                            request.ResponseStatus = HttpStatusCodes.Not_Found;
                         else
                         {
-                            conn.ResponseHeaders.ContentType = "text/javascript";
+                            request.ResponseHeaders.ContentType = "text/javascript";
                             if (site.CompressJS)
                                 js = JSMinifier.Minify(js);
                             Monitor.Enter(_lock);
@@ -173,26 +174,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                                 _compressedCache.Add(file.DLLPath, new CachedItemContainer(js));
                             }
                             Monitor.Exit(_lock);
-                            conn.ResponseWriter.Write(js);
+                            request.ResponseWriter.Write(js);
                         }
                     }
                     break;
                 case EmbeddedFileTypes.Image:
                     str = Utility.LocateEmbededResource(file.DLLPath);
                     if (str == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        request.ResponseStatus = HttpStatusCodes.Not_Found;
                     else
                     {
-                        conn.ResponseHeaders.ContentType = "image/"+file.ImageType.Value.ToString();
-                        conn.UseResponseStream(str);
+                        request.ResponseHeaders.ContentType = "image/"+file.ImageType.Value.ToString();
+                        request.UseResponseStream(str);
                     }
                     break;
                 case EmbeddedFileTypes.Text:
                     str = Utility.LocateEmbededResource(file.DLLPath);
                     if (str == null)
-                        conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                        request.ResponseStatus = HttpStatusCodes.Not_Found;
                     else
-                        conn.UseResponseStream(str);
+                        request.UseResponseStream(str);
                     break;
             }
         }
@@ -208,7 +209,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         }
 
         //always returns false as sessions are never necessary
-        bool IRequestHandler.RequiresSessionForRequest(HttpConnection conn, Site site)
+        bool IRequestHandler.RequiresSessionForRequest(HttpRequest request, Site site)
         {
             return false;
         }

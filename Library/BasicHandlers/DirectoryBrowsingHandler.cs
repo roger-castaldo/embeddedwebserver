@@ -5,6 +5,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.IO;
 using System.IO.Compression;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
@@ -58,24 +59,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             get { return true; }
         }
 
-        public bool CanProcessRequest(HttpConnection conn, Site site)
+        public bool CanProcessRequest(HttpRequest request, Site site)
         {
-            if (conn.URL.AbsolutePath == _fileIconPath)
+            if (request.URL.AbsolutePath == _fileIconPath)
                 return true;
-            else if (conn.URL.AbsolutePath == _folderIconPath)
+            else if (request.URL.AbsolutePath == _folderIconPath)
                 return true;
-            else if (conn.URL.AbsolutePath == _downloadIconPath)
+            else if (request.URL.AbsolutePath == _downloadIconPath)
                 return true;
             bool ret = false;
             lock (_paths)
             {
                 foreach (string str in _paths.Keys)
                 {
-                    if (conn.URL.AbsolutePath.StartsWith(str))
+                    if (request.URL.AbsolutePath.StartsWith(str))
                     {
                         ret = true;
-                        conn["IFolder"] = _paths[str];
-                        conn["IFolderPath"] = str;
+                        request["IFolder"] = _paths[str];
+                        request["IFolderPath"] = str;
                         break;
                     }
                 }
@@ -83,29 +84,29 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             return ret;
         }
 
-        public void ProcessRequest(HttpConnection conn, Site site)
+        public void ProcessRequest(HttpRequest request, Site site)
         {
-            if (conn.URL.AbsolutePath == _fileIconPath)
+            if (request.URL.AbsolutePath == _fileIconPath)
             {
-                conn.UseResponseStream(_browserImages[_fileIconPath]);
-                conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension("png");
+                request.UseResponseStream(_browserImages[_fileIconPath]);
+                request.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension("png");
                 return;
             }
-            else if (conn.URL.AbsolutePath == _folderIconPath)
+            else if (request.URL.AbsolutePath == _folderIconPath)
             {
-                conn.UseResponseStream(_browserImages[_folderIconPath]);
-                conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension("png");
+                request.UseResponseStream(_browserImages[_folderIconPath]);
+                request.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension("png");
                 return;
             }
-            else if (conn.URL.AbsolutePath == _downloadIconPath)
+            else if (request.URL.AbsolutePath == _downloadIconPath)
             {
-                conn.UseResponseStream(_browserImages[_downloadIconPath]);
-                conn.ResponseHeaders.ContentLength = HttpUtility.GetContentTypeForExtension("png");
+                request.UseResponseStream(_browserImages[_downloadIconPath]);
+                request.ResponseHeaders.ContentLength = HttpUtility.GetContentTypeForExtension("png");
                 return;
             }
-            IDirectoryFolder idf = (IDirectoryFolder)conn["IFolder"];
-            string path = conn.URL.AbsolutePath;
-            path = path.Substring(((string)conn["IFolderPath"]).Length);
+            IDirectoryFolder idf = (IDirectoryFolder)request["IFolder"];
+            string path = request.URL.AbsolutePath;
+            path = path.Substring(((string)request["IFolderPath"]).Length);
             if (path.StartsWith("/"))
                 path = path.Substring(1);
             IDirectoryFile ifile = null;
@@ -114,40 +115,40 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                 ifold = idf;
             else
                 LocateObjectForPath((path.EndsWith("/") ? path : path + "/"), idf, out ifold, out ifile);
-            if (conn.RequestParameters["DownloadPath"] != null)
+            if (request.Parameters["DownloadPath"] != null)
             {
                 path = (path.EndsWith("/") ? path.Substring(0,path.Length-1) : path);
                 if (ifile != null)
                 {
-                    conn.UseResponseStream(ifile.ContentStream);
-                    conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(path.Substring(path.LastIndexOf(".")));
+                    request.UseResponseStream(ifile.ContentStream);
+                    request.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(path.Substring(path.LastIndexOf(".")));
                 }
                 else
                 {
                     ZipFile zf = new ZipFile(path.Substring(path.LastIndexOf("/") + 1));
                     string basePath = Utility.TraceFullDirectoryPath(ifold);
                     zf.AddDirectory(ifold,basePath.Substring(0,basePath.Length-ifold.Name.Length));
-                    conn.UseResponseStream(zf.ToStream());
-                    conn.ResponseHeaders.ContentType = zf.ContentType;
-                    conn.ResponseHeaders["Content-Disposition"] = "attachment; filename=" + zf.Name+"."+zf.Extension;
+                    request.UseResponseStream(zf.ToStream());
+                    request.ResponseHeaders.ContentType = zf.ContentType;
+                    request.ResponseHeaders["Content-Disposition"] = "attachment; filename=" + zf.Name+"."+zf.Extension;
                 }
             }
             else
             {
                 if (ifile != null)
                 {
-                    conn.UseResponseStream(ifile.ContentStream);
-                    conn.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(path.Substring(path.LastIndexOf(".")));
+                    request.UseResponseStream(ifile.ContentStream);
+                    request.ResponseHeaders.ContentType = HttpUtility.GetContentTypeForExtension(path.Substring(path.LastIndexOf(".")));
                 }
                 else if (ifold != null)
                 {
-                    conn.ResponseHeaders.ContentType = "text/html";
-                    conn.ResponseWriter.Write(RenderFolderBrowser(ifold,site,conn));
+                    request.ResponseHeaders.ContentType = "text/html";
+                    request.ResponseWriter.Write(RenderFolderBrowser(ifold,site,request));
                 }
                 else
                 {
-                    conn.ResponseStatus = HttpStatusCodes.Not_Found;
-                    conn.ResponseWriter.WriteLine("<h1>Unable to locate the folder at the path " + conn.URL.AbsolutePath + "</h1>");
+                    request.ResponseStatus = HttpStatusCodes.Not_Found;
+                    request.ResponseWriter.WriteLine("<h1>Unable to locate the folder at the path " + request.URL.AbsolutePath + "</h1>");
                 }
             }
         }
@@ -206,7 +207,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                 
         }
 
-        private string RenderFolderBrowser(IDirectoryFolder folder,Site site,HttpConnection conn){
+        private string RenderFolderBrowser(IDirectoryFolder folder,Site site,HttpRequest request){
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<html><head><title>"+folder.Name+"</title>");
             sb.AppendLine("<script src=\"/jquery.js\" type=\"text/javascript\" language=\"javascript\"></script>");
@@ -239,22 +240,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
             sb.AppendLine("</script>");
             sb.AppendLine("</head>");
             sb.AppendLine("<body>");
-            sb.AppendLine("<a class=\"Folder\" href=\"" + conn.URL.AbsolutePath + "\">.</a>");
+            sb.AppendLine("<a class=\"Folder\" href=\"" + request.URL.AbsolutePath + "\">.</a>");
             bool alt=true;
             if (folder.Parent != null)
             {
                 alt = false;
-                sb.AppendLine("<a class=\"Folder\" href=\"" + conn.URL.AbsolutePath.Substring(0, conn.URL.AbsolutePath.LastIndexOf("/")) + "\">..</a>");
+                sb.AppendLine("<a class=\"Folder\" href=\"" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/")) + "\">..</a>");
             }
             foreach (IDirectoryFolder fold in folder.Folders)
             {
-                sb.AppendLine("<a oncontextmenu=\"$(this).next().css({ left: GetMousePosition(event).left, top: GetMousePosition(event).top, zIndex: '101' }).show();return false;\" class=\"Folder " + (alt ? "Alt" : "") + "\" href=\"" + conn.URL.AbsolutePath + "/" + fold.Name + "\">" + fold.Name + " [" + fold.CreateDate.ToString("ddd, MMM dd yyyy") + "]</a>");
+                sb.AppendLine("<a oncontextmenu=\"$(this).next().css({ left: GetMousePosition(event).left, top: GetMousePosition(event).top, zIndex: '101' }).show();return false;\" class=\"Folder " + (alt ? "Alt" : "") + "\" href=\"" + request.URL.AbsolutePath + "/" + fold.Name + "\">" + fold.Name + " [" + fold.CreateDate.ToString("ddd, MMM dd yyyy") + "]</a>");
                 alt = !alt;
-                sb.AppendLine("<div class=\"vmenu\" onmouseout=\"$(this).hide();\" onclick=\"location.href='"+conn.URL.AbsolutePath+"/"+fold.Name+"/?DownloadPath=true';\">Download</div>");
+                sb.AppendLine("<div class=\"vmenu\" onmouseout=\"$(this).hide();\" onclick=\"location.href='"+request.URL.AbsolutePath+"/"+fold.Name+"/?DownloadPath=true';\">Download</div>");
             }
             foreach (IDirectoryFile file in folder.Files)
             {
-                sb.AppendLine("<a class=\"File " + (alt ? "Alt" : "") + "\" href=\"" + conn.URL.AbsolutePath + "/" + file.Name + "\">" + file.Name + " [" + file.CreateDate.ToString("ddd, MMM dd yyyy") + "]</a>");
+                sb.AppendLine("<a class=\"File " + (alt ? "Alt" : "") + "\" href=\"" + request.URL.AbsolutePath + "/" + file.Name + "\">" + file.Name + " [" + file.CreateDate.ToString("ddd, MMM dd yyyy") + "]</a>");
                 alt = !alt;
             }
             sb.AppendLine("</body></html>");
@@ -269,7 +270,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         {
         }
 
-        public bool RequiresSessionForRequest(HttpConnection conn, Site site)
+        public bool RequiresSessionForRequest(HttpRequest request, Site site)
         {
             return false;
         }

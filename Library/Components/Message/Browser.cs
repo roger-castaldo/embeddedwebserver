@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Components
+namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     public class Browser
     {

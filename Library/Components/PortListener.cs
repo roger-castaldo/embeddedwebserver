@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -31,6 +32,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private int _backLog = 1000;
         //houses the http connections that are running in the background, in a way that they can be killed
         private List<HttpConnection> _currentConnections;
+        private bool _shutdown;
 
         private MT19937 _rand;
 
@@ -104,6 +106,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //then binding the tcplistener to wait for incoming connections
         public void Start()
         {
+            _shutdown = false;
             _currentConnections = new List<HttpConnection>();
             foreach (Site site in _sites)
                 site.Start();
@@ -112,20 +115,23 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
-            _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+            _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
         }
 
         //stops the tcplistener from accepting connections and stops all sites contained within
         public void Stop()
         {
+            _shutdown = true;
             try
             {
-                _listener.EndAcceptTcpClient(null);
+                _listener.EndAcceptSocket(null);
             }
             catch (Exception e) {
                 Logger.LogError(e);
             }
             _listener.Stop();
+            foreach (HttpConnection con in _currentConnections)
+                con.Dispose();
             foreach (Site site in _sites)
                 site.Stop();
         }
@@ -142,221 +148,169 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          */
         private void RecieveClient(IAsyncResult res)
         {
-            TcpClient clnt = null;
+            Socket sock = null;
             lock (_listener)
             {
                 _lastConnectionRequest = DateTime.Now;
             }
             try
             {
-                clnt = _listener.EndAcceptTcpClient(res);
+                sock = _listener.EndAcceptSocket(res);
             }
             catch (Exception e) {
                 Logger.LogError(e);
-                clnt = null;
+                sock = null;
             }
-            try
+            if (!_shutdown)
             {
-                _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+                try
+                {
+                    _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
+                }
             }
-            catch (Exception e) {
-                Logger.LogError(e);
-            }
-            _LoadClient(clnt);
-        }
-
-        private void _LoadClient(object obj)
-        {
-            TcpClient clnt = null;
-            if (obj != null)
-                clnt = (TcpClient)obj;
-            if (clnt != null)
+            if (sock != null && !_shutdown)
             {
                 long id = _rand.NextLong();
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "New tcp client recieved, generating http connection [id:" + id.ToString() + "]");
                 HttpConnection con = null;
                 try
                 {
-                    con = (UseSSL ? new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)), id)
-                        : new HttpConnection(clnt, new sIPPortPair(_ip, _port, UseSSL), null, id));
+                    con = (UseSSL ? new HttpConnection(sock, this, _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)), id)
+                        : new HttpConnection(sock, this, null, id));
                 }
                 catch (Exception e)
                 {
                     Logger.LogError(e);
                     return;
                 }
-                if (!con.IsResponseSent)
+                if (!_shutdown)
                 {
-                    HttpConnection.SetCurrentConnection(con);
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to process connection request.");
-                    if (con.URL.AbsolutePath == "/jquery.js")
+                    lock (_currentConnections)
                     {
-                        con.ResponseStatus = HttpStatusCodes.OK;
-                        con.ResponseHeaders.ContentType = "text/javascript";
-                        if (!con.RequestHeaders.Browser.IsMobile)
-                            con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
-                        else
-                            con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.mobile.min.js"));
-                        con.SendResponse();
+                        _currentConnections.Add(con);
                     }
-                    else if (con.URL.AbsolutePath == "/json.js")
-                    {
-                        con.ResponseStatus = HttpStatusCodes.OK;
-                        con.ResponseHeaders.ContentType = "text/javascript";
-                        con.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.json2.min.js"));
-                        con.SendResponse();
-                    }
+                }
+            }
+        }
+
+        internal void HandleRequest(HttpRequest request)
+        {
+            if (!request.IsResponseSent)
+            {
+                HttpRequest.SetCurrentRequest(request);
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Attempting to process connection request.");
+                if (request.URL.AbsolutePath == "/jquery.js")
+                {
+                    request.ResponseStatus = HttpStatusCodes.OK;
+                    request.ResponseHeaders.ContentType = "text/javascript";
+                    if (!request.Headers.Browser.IsMobile)
+                        request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
                     else
+                        request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.mobile.min.js"));
+                    request.SendResponse();
+                }
+                else if (request.URL.AbsolutePath == "/json.js")
+                {
+                    request.ResponseStatus = HttpStatusCodes.OK;
+                    request.ResponseHeaders.ContentType = "text/javascript";
+                    request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.json2.min.js"));
+                    request.SendResponse();
+                }
+                else
+                {
+                    DateTime start = DateTime.Now;
+                    Site site = null;
+                    if (_sites.Count > 1)
                     {
-                        DateTime start = DateTime.Now;
-                        bool Processed = false;
-                        if (_sites.Count > 1)
+                        foreach (Site s in _sites)
+                        {
+                            if ((s.ServerName != null) && (s.ServerName == request.URL.Host))
+                            {
+                                site = s;
+                                break;
+                            }
+                        }
+                        if (site==null)
                         {
                             foreach (Site s in _sites)
                             {
-                                if ((s.ServerName != null) && (s.ServerName == con.URL.Host))
+                                if (s.Aliases != null)
                                 {
-                                    ProcessRequest(con, s, start);
-                                    Processed = true;
-                                    break;
-                                }
-                            }
-                            if (!Processed)
-                            {
-                                foreach (Site s in _sites)
-                                {
-                                    if (s.Aliases != null)
+                                    foreach (string str in s.Aliases)
                                     {
-                                        foreach (string str in s.Aliases)
+                                        if (str == request.URL.Host)
                                         {
-                                            if (str == con.URL.Host)
-                                            {
-                                                ProcessRequest(con, s, start);
-                                                Processed = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (!Processed)
-                            {
-                                foreach (Site s in _sites)
-                                {
-                                    foreach (sIPPortPair ipp in s.ListenOn)
-                                    {
-                                        if ((ipp.Address != IPAddress.Any) && (con.LocalEndPoint == new IPEndPoint(ipp.Address, ipp.Port)))
-                                        {
-                                            ProcessRequest(con, s, start);
-                                            Processed = true;
+                                            site = s;
                                             break;
                                         }
                                     }
                                 }
                             }
                         }
-                        if (!Processed)
-                            ProcessRequest(con, _defaultSite, start);
+                        if (site==null)
+                        {
+                            foreach (Site s in _sites)
+                            {
+                                foreach (sIPPortPair ipp in s.ListenOn)
+                                {
+                                    if ((ipp.Address != IPAddress.Any) && (request.Connection.LocalEndPoint == new IPEndPoint(ipp.Address, ipp.Port)))
+                                    {
+                                        site = s;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (site == null)
+                        site = _defaultSite;
+                    Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                    if ((!site.AllowGET && request.Method.ToUpper() == "GET") ||
+                        (!site.AllowPOST && request.Method.ToUpper() == "POST"))
+                    {
+                        request.ResponseStatus = HttpStatusCodes.Method_Not_Allowed;
+                        request.SendResponse();
+                    }
+                    else
+                    {
+                        request.SetTimeout(site);
+                        try
+                        {
+                            if (request.URL.AbsolutePath == "/")
+                                request.UseDefaultPath(site);
+                            site.ProcessRequest(request);
+                        }
+                        catch (ThreadAbortException tae)
+                        {
+                            if (!request.IsResponseSent)
+                            {
+                                request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                request.ClearResponse();
+                                request.ResponseWriter.WriteLine("The server timed out processing the request.");
+                                request.SendResponse();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError(e);
+                            if (!request.IsResponseSent)
+                            {
+                                request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                request.ClearResponse();
+                                request.ResponseWriter.Write(e.Message);
+                                request.SendResponse();
+                            }
+                        }
+                        Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                     }
                 }
-                else
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Response sent prior to processing, error in request."); 
-            }
-        }
-
-        private void ProcessRequest(HttpConnection con, Site useSite, DateTime start)
-        {
-            Logger.LogMessage(DiagnosticsLevels.DEBUG,"Total time to find site: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-            if ((!useSite.AllowGET && con.Method.ToUpper() == "GET") ||
-                (!useSite.AllowPOST && con.Method.ToUpper() == "POST"))
-            {
-                con.ResponseStatus = HttpStatusCodes.Method_Not_Allowed;
-                con.SendResponse();
             }
             else
-            {
-                lock (_currentConnections)
-                {
-                    _currentConnections.Add(con);
-                }
-                Thread tt = new Thread(new ParameterizedThreadStart(_processRequest));
-                tt.IsBackground = true;
-                Exception ex=null;
-                bool timedOut=false;
-                try
-                {
-                    tt.Start(new object[] { con, useSite, start });
-                }
-                catch (Exception e)
-                {
-                    ex = e;
-                }
-                try
-                {
-                    if (!tt.Join(useSite.RequestTimeout))
-                    {
-                        timedOut = true;
-                    }
-                }
-                catch (Exception e)
-                {
-                    ex = e;
-                    timedOut = con.TimedOut;
-                }
-                try
-                {
-                    tt = null;
-                }
-                catch (Exception e) { }
-                if (ex != null && !con.IsResponseSent)
-                {
-                    con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                    con.ResponseWriter.WriteLine(ex.Message);
-                    con.SendResponse();
-                }
-                else if (timedOut && !con.IsResponseSent)
-                {
-                    con.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                    con.ResponseWriter.WriteLine("The request has taken to long to process.");
-                    con.SendResponse();
-                }
-                if (con.IsResponseSent)
-                {
-                    lock (_currentConnections)
-                    {
-                        _currentConnections.Remove(con);
-                    }
-                }
-            }
-        }
-
-        private void _processRequest(object pars)
-        {
-            HttpConnection con = (HttpConnection)((object[])pars)[0];
-            Site useSite = (Site)((object[])pars)[1];
-            con.SetTimeout(useSite, Thread.CurrentThread);
-            DateTime start = (DateTime)((object[])pars)[2];
-            start = DateTime.Now;
-            if (con.URL.AbsolutePath == "/")
-                con.UseDefaultPath(useSite);
-            Site.SetCurrentSite(useSite);
-            HttpConnection.SetCurrentConnection(con);
-            try
-            {
-                useSite.ProcessRequest(con);
-            }
-            catch (ThreadAbortException tae) { }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
-                if (!con.IsResponseSent)
-                {
-                    con.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                    con.ClearResponse();
-                    con.ResponseWriter.Write(e.Message);
-                }
-            }
-            Logger.LogMessage(DiagnosticsLevels.DEBUG, "Total time to process request to URL " + con.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Response sent prior to processing, error in request.");
         }
 
         internal void CheckRefresh()
@@ -381,26 +335,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
-        //used to cleanup timed out http connections
-        internal void CleanupTimedOutConnections()
+        internal void DisposeOfConnection(HttpConnection httpConnection)
         {
-            if (_currentConnections != null)
+            lock (_currentConnections)
             {
-                lock (_currentConnections)
+                for (int x = 0; x < _currentConnections.Count; x++)
                 {
-                    for (int x = 0; x < _currentConnections.Count; x++)
+                    if (httpConnection.ID == _currentConnections[x].ID)
                     {
-                        try
-                        {
-                            if (_currentConnections[x].IsResponseSent || _currentConnections[x].TimedOut){
-                                _currentConnections[x].AbortConnection();
-                                _currentConnections.RemoveAt(x);
-                                x--;
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                        }
+                        _currentConnections.RemoveAt(x);
+                        httpConnection.Dispose();
                     }
                 }
             }

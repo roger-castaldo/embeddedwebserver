@@ -27,9 +27,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
         //the background operation control that gets started when the servers are started.
         //it runs similarly to the linux cron concept.
         private static BackgroundOperationRunner _backgroundRunner;
-        //This thread checks all port listeners and forces them to clean up any timed out requests.
-        private static Thread _requestCleanerThread;
-        private static bool _exitCleaner = false;
 
         internal static List<sIPPortPair> BoundPairs
         {
@@ -117,33 +114,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     pt.Start();
                 _backgroundRunner = new BackgroundOperationRunner();
                 _backgroundRunner.Start();
-                _exitCleaner = false;
-                _requestCleanerThread = new Thread(new ThreadStart(_CleanerThreadStart));
-                _requestCleanerThread.Start();
                 _started = true;
             }
             Monitor.Exit(_lock);
-        }
-
-        /*
-         * background running thread that is designed clean up all http connections that 
-         * have timed out for one reason or another
-         */
-        private static void _CleanerThreadStart()
-        {
-            while (!_exitCleaner)
-            {
-                Thread.Sleep(10000);
-                Monitor.Enter(_lock);
-                if (_listeners != null)
-                {
-                    foreach (PortListener pt in _listeners)
-                    {
-                        pt.CleanupTimedOutConnections();
-                    }
-                }
-                Monitor.Exit(_lock);
-            }
         }
 
         /*
@@ -153,7 +126,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
          */
         public static void Stop()
         {
-            _exitCleaner = true;
             Monitor.Enter(_lock);
             if (!_started)
                 throw new Exception(Messages.Current["Org.Reddragonit.EmbeddedWebServer.ServerControl.Errors.ServerNotStarted"]);

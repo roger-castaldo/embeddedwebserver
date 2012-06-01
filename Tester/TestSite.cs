@@ -6,6 +6,7 @@ using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Tester
 {
@@ -77,11 +78,16 @@ namespace Tester
             }
         }
 
-        protected override void PreRequest(HttpConnection conn)
+        protected override void PreRequest(HttpRequest request)
         {
-            if (conn.JSONParameter != null)
+            if (request.JSONParameter != null)
             {
-                Console.WriteLine(conn.JSONParameter.GetType().FullName);
+                Console.WriteLine(request.JSONParameter.GetType().FullName);
+            }
+            else if (request.Parameters != null)
+            {
+                foreach (string str in request.Parameters.Keys)
+                    Console.WriteLine("Parameter[" + str + "] = " + request.Parameters[str]);
             }
         }
 

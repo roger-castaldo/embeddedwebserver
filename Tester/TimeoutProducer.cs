@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Tester
 {
@@ -16,15 +17,15 @@ namespace Tester
             get { return true; }
         }
 
-        public bool CanProcessRequest(HttpConnection conn, Site site)
+        public bool CanProcessRequest(HttpRequest request, Site site)
         {
-            return conn.URL.AbsolutePath == "/timeout.html";
+            return request.URL.AbsolutePath == "/timeout.html";
         }
 
-        public void ProcessRequest(HttpConnection conn, Site site)
+        public void ProcessRequest(HttpRequest request, Site site)
         {
             Thread.Sleep(site.RequestTimeout * 2);
-            conn.ResponseWriter.WriteLine("<h1>If you can read this the timeout failed.</h1>");
+            request.ResponseWriter.WriteLine("<h1>If you can read this the timeout failed.</h1>");
         }
 
         public void Init()
@@ -35,7 +36,7 @@ namespace Tester
         {
         }
 
-        public bool RequiresSessionForRequest(HttpConnection conn, Site site)
+        public bool RequiresSessionForRequest(HttpRequest request, Site site)
         {
             return false;
         }

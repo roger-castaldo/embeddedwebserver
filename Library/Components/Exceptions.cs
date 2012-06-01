@@ -20,4 +20,34 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
         }
     }
+
+    public class HttpException : Exception
+    {
+        private HttpStatusCodes _code;
+        public HttpStatusCodes Code
+        {
+            get { return _code; }
+        }
+
+        public HttpException(HttpStatusCodes code, string errMsg) : base(errMsg) {
+            _code = code;
+        }
+        public HttpException(HttpStatusCodes code, string errMsg, Exception inner)
+            : base(errMsg, inner)
+        {
+            _code = code;
+        }
+    }
+
+    public class BadRequestException : HttpException
+    {
+        public BadRequestException(string errMsg) : base(HttpStatusCodes.Bad_Request, errMsg) { }
+        public BadRequestException(string errMsg,Exception inner) : base(HttpStatusCodes.Bad_Request, errMsg,inner) { }
+    }
+
+    public class ParserException : BadRequestException
+    {
+        public ParserException(string errMsg) : base(errMsg) { }
+        public ParserException(string errMsg, Exception inner) : base(errMsg, inner) { }
+    }
 }

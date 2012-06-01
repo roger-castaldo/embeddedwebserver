@@ -6,6 +6,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using System.Threading;
 using System.IO;
 using Org.Reddragonit.EmbeddedWebServer.Attributes;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Sessions
 {
@@ -73,21 +74,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
             return ret;
         }
 
-        public static void LoadStateForConnection(HttpConnection conn,Site site)
+        public static void LoadStateForConnection(HttpRequest request,Site site)
         {
             switch (site.SessionStateType)
             {
                 case SiteSessionTypes.ThreadState:
-                    if (conn.RequestCookie.SessionID == null)
+                    if (request.Cookie.SessionID == null)
                     {
                         Monitor.Enter(_lock);
                         if (_ipSessionIds == null)
                             _ipSessionIds = new Dictionary<string, CachedItemContainer>();
-                        if (_ipSessionIds.ContainsKey(conn.Client.ToString()))
-                            conn.RequestCookie.SessionID = _ipSessionIds[conn.Client.ToString()].Value.ToString();
+                        if (_ipSessionIds.ContainsKey(request.Connection.Client.ToString()))
+                            request.Cookie.SessionID = _ipSessionIds[request.Connection.Client.ToString()].Value.ToString();
                         Monitor.Exit(_lock);
                     }
-                    if (conn.RequestCookie.SessionID != null)
+                    if (request.Cookie.SessionID != null)
                     {
                         Monitor.Enter(_lock);
                         if (_sessions == null)
@@ -95,10 +96,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                         for (int x = 0; x < _sessions.Count; x++)
                         {
                             SessionState session = _sessions[x];
-                            if (session.ID == conn.RequestCookie.SessionID)
+                            if (session.ID == request.Cookie.SessionID)
                             {
                                 session.Renew(site.SessionTimeoutMinutes);
-                                conn.SetSession(session);
+                                request.SetSession(session);
                                 _sessions.RemoveAt(x);
                                 _sessions.Insert(x, session);
                                 break;
@@ -106,7 +107,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                         }
                         Monitor.Exit(_lock);
                     }
-                    if (conn.Session==null)
+                    if (request.Session==null)
                     {
                         Monitor.Enter(_lock);
                         while (true)
@@ -127,45 +128,45 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                             {
                                 if (_ipSessionIds == null)
                                     _ipSessionIds = new Dictionary<string, CachedItemContainer>();
-                                _ipSessionIds.Add(conn.Client.ToString(), new CachedItemContainer(id));
+                                _ipSessionIds.Add(request.Connection.Client.ToString(), new CachedItemContainer(id));
                                 SessionState ss = new SessionState(id);
                                 ss.Renew(site.SessionTimeoutMinutes);
                                 _sessions.Add(ss);
-                                conn.SetSession(ss);
+                                request.SetSession(ss);
                                 break;
                             }
                         }
                         Monitor.Exit(_lock);
-                        conn.ResponseCookie.SessionID = conn.Session.ID;
+                        request.ResponseCookie.SessionID = request.Session.ID;
                     }
                     break;
                 case SiteSessionTypes.FileSystem:
-                    if (conn.RequestCookie.SessionID == null)
+                    if (request.Cookie.SessionID == null)
                     {
                         Monitor.Enter(_lock);
                         if (_ipSessionIds == null)
                             _ipSessionIds = new Dictionary<string, CachedItemContainer>();
-                        if (_ipSessionIds.ContainsKey(conn.Client.ToString()))
-                            conn.RequestCookie.SessionID = _ipSessionIds[conn.Client.ToString()].Value.ToString();
+                        if (_ipSessionIds.ContainsKey(request.Connection.Client.ToString()))
+                            request.Cookie.SessionID = _ipSessionIds[request.Connection.Client.ToString()].Value.ToString();
                         Monitor.Exit(_lock);
                     }
-                    if (conn.RequestCookie.SessionID != null)
+                    if (request.Cookie.SessionID != null)
                     {
                         Monitor.Enter(_lock);
                         DirectoryInfo di = new DirectoryInfo(site.TMPPath + Path.DirectorySeparatorChar + "Sessions");
                         if (!di.Exists)
                             di.Create();
-                        if (di.GetFiles(conn.RequestCookie.SessionID + ".xml").Length > 0)
+                        if (di.GetFiles(request.Cookie.SessionID + ".xml").Length > 0)
                         {
-                            SessionState ss = new SessionState(conn.RequestCookie.SessionID);
-                            ss.LoadFromFile(di.FullName + Path.DirectorySeparatorChar + conn.RequestCookie.SessionID + ".xml");
+                            SessionState ss = new SessionState(request.Cookie.SessionID);
+                            ss.LoadFromFile(di.FullName + Path.DirectorySeparatorChar + request.Cookie.SessionID + ".xml");
                             ss.Renew(site.SessionTimeoutMinutes);
-                            ss.StoreToFile(di.FullName + Path.DirectorySeparatorChar + conn.RequestCookie.SessionID + ".xml");
-                            conn.SetSession(ss);
+                            ss.StoreToFile(di.FullName + Path.DirectorySeparatorChar + request.Cookie.SessionID + ".xml");
+                            request.SetSession(ss);
                         }
                         Monitor.Exit(_lock);
                     }
-                    if (conn.Session == null)
+                    if (request.Session == null)
                     {
                         Monitor.Enter(_lock);
                         DirectoryInfo di = new DirectoryInfo(site.TMPPath + Path.DirectorySeparatorChar + "Sessions");
@@ -180,53 +181,53 @@ namespace Org.Reddragonit.EmbeddedWebServer.Sessions
                             {
                                 if (_ipSessionIds == null)
                                     _ipSessionIds = new Dictionary<string, CachedItemContainer>();
-                                _ipSessionIds.Add(conn.Client.ToString(), new CachedItemContainer(id));
+                                _ipSessionIds.Add(request.Connection.Client.ToString(), new CachedItemContainer(id));
                                 SessionState ss = new SessionState(id);
                                 ss.StoreToFile(di.FullName + Path.DirectorySeparatorChar + id + ".xml");
-                                conn.SetSession(ss);
+                                request.SetSession(ss);
                                 break;
                             }
                         }
                         Monitor.Exit(_lock);
-                        conn.ResponseCookie.SessionID = conn.Session.ID;
+                        request.ResponseCookie.SessionID = request.Session.ID;
                     }
                     break;
             }
         }
 
-        public static void StoreSessionForConnection(HttpConnection conn, Site site)
+        public static void StoreSessionForConnection(HttpRequest request, Site site)
         {
             switch (site.SessionStateType)
             {
                 case SiteSessionTypes.ThreadState:
-                    if (conn.Session != null)
+                    if (request.Session != null)
                     {
                         Monitor.Enter(_lock);
                         for (int x = 0; x < _sessions.Count; x++)
                         {
-                            if (_sessions[x].ID == conn.Session.ID)
+                            if (_sessions[x].ID == request.Session.ID)
                             {
                                 _sessions.RemoveAt(x);
                                 break;
                             }
                         }
-                        conn.Session.Renew(site.SessionTimeoutMinutes);
-                        _sessions.Add(conn.Session);
+                        request.Session.Renew(site.SessionTimeoutMinutes);
+                        _sessions.Add(request.Session);
                         Monitor.Exit(_lock);
-                        conn.ResponseCookie.SessionID = conn.Session.ID;
+                        request.ResponseCookie.SessionID = request.Session.ID;
                     }
                     break;
                 case SiteSessionTypes.FileSystem:
-                    if (conn.Session != null)
+                    if (request.Session != null)
                     {
                         Monitor.Enter(_lock);
                         DirectoryInfo di = new DirectoryInfo(site.TMPPath + Path.DirectorySeparatorChar + "Sessions");
                         if (!di.Exists)
                             di.Create();
-                        conn.Session.Renew(site.SessionTimeoutMinutes);
-                        conn.Session.StoreToFile(di.FullName + Path.DirectorySeparatorChar + conn.Session.ID + ".xml");
+                        request.Session.Renew(site.SessionTimeoutMinutes);
+                        request.Session.StoreToFile(di.FullName + Path.DirectorySeparatorChar + request.Session.ID + ".xml");
                         Monitor.Exit(_lock);
-                        conn.ResponseCookie.SessionID = conn.Session.ID;
+                        request.ResponseCookie.SessionID = request.Session.ID;
                     }
                     break;
             }

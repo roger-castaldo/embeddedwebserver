@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Components
+namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     /*
      * Used to easily access the http headers either supplied to the client
