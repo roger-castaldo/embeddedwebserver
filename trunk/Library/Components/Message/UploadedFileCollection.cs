@@ -2,17 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Components
+namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
-    /*
-  * Used to easily access the http parameters either supplied to the client
-  * or that were supplied by the client.
-  */
-    public class ParameterCollection
+    public class UploadedFileCollection
     {
-            //holds the parameters as name value pairs
-            private Dictionary<string, string> _values;
-            public string this[string name]
+        private Dictionary<string, UploadedFile> _values;
+            public UploadedFile this[string name]
             {
                 get
                 {
@@ -45,9 +40,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 get { return _values.Count; }
             }
 
-            internal ParameterCollection(Dictionary<string,string> vals)
+            internal UploadedFileCollection(Dictionary<string, UploadedFile> vals)
             {
                 _values = vals;
             }
-        }
+    }
 }

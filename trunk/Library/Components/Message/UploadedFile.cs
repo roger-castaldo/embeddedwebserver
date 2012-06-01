@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Components
+namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     /*
      * This class houses an uploaded file, specifying the parameter name of the file,

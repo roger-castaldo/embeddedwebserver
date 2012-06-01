@@ -8,6 +8,7 @@ using Org.Reddragonit.EmbeddedWebServer.Attributes;
 using System.Security.Cryptography;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Minifiers;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
 {
@@ -79,18 +80,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          * This function is used to process a call made to an embedded service.
          * It loads the embedded service specified then invokes the request.
          */
-        private void ProcessEmbeddedServiceCall(HttpConnection conn, Site site)
+        private void ProcessEmbeddedServiceCall(HttpRequest request, Site site)
         {
-            string type = conn.URL.AbsolutePath.Substring(0, conn.URL.AbsolutePath.LastIndexOf("/"));
+            string type = request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"));
             if (_pathMaps.ContainsKey(type))
             {
-                conn.ResponseHeaders.ContentType="application/json";
+                request.ResponseHeaders.ContentType="application/json";
                 Type t = Utility.LocateType(_pathMaps[type]);
                 EmbeddedService es = (EmbeddedService)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                es.Invoke(conn, site);
+                es.Invoke(request, site);
             }
             else
-                conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                request.ResponseStatus = HttpStatusCodes.Not_Found;
         }
 
         /*
@@ -100,21 +101,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          * finding all methods that are tagged as web methods and generates
          * code to handle each method.
          */
-        private void ProcessJSGeneration(HttpConnection conn, Site site)
+        private void ProcessJSGeneration(HttpRequest request, Site site)
         {
-            Type t = Utility.LocateType(conn.RequestParameters["TYPE"]);
+            Type t = Utility.LocateType(request.Parameters["TYPE"]);
             if (t == null)
             {
-                conn.ResponseStatus = HttpStatusCodes.Not_Found;
+                request.ResponseStatus = HttpStatusCodes.Not_Found;
             }
             else
             {
-                conn.ResponseHeaders.ContentType = "text/javascript";
+                request.ResponseHeaders.ContentType = "text/javascript";
                 bool create = true;
                 Monitor.Enter(_lock);
                 if (_generatedJS.ContainsKey(t.FullName))
                 {
-                    conn.ResponseWriter.Write(_generatedJS[t.FullName].Value);
+                    request.ResponseWriter.Write(_generatedJS[t.FullName].Value);
                     create = false;
                 }
                 Monitor.Exit(_lock);
@@ -167,7 +168,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     if (!_generatedJS.ContainsKey(t.FullName))
                         _generatedJS.Add(t.FullName, new CachedItemContainer(res));
                     Monitor.Exit(_lock);
-                    conn.ResponseWriter.Write(res);
+                    request.ResponseWriter.Write(res);
                 }
             }
         }
@@ -242,27 +243,27 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         }
 
         //returns true if the requested url is for an embedded service or to generate javascript
-        public bool CanProcessRequest(HttpConnection conn, Site site)
+        public bool CanProcessRequest(HttpRequest request, Site site)
         {
             Monitor.Enter(_lock);
             if (_pathMaps == null)
                 Init();
             Monitor.Exit(_lock);
-            return _pathMaps.ContainsKey(conn.URL.AbsolutePath.Substring(0,conn.URL.AbsolutePath.LastIndexOf("/")))||(conn.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js") && (conn.RequestParameters["TYPE"] != null));
+            return _pathMaps.ContainsKey(request.URL.AbsolutePath.Substring(0,request.URL.AbsolutePath.LastIndexOf("/")))||(request.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js") && (request.Parameters["TYPE"] != null));
         }
 
         //processes the reuqest as to whether or not it should generate javascript 
         //or perform the given operation
-        public void ProcessRequest(HttpConnection conn, Site site)
+        public void ProcessRequest(HttpRequest request, Site site)
         {
             Monitor.Enter(_lock);
             if (_pathMaps == null)
                 Init();
             Monitor.Exit(_lock);
-            if (conn.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js"))
-                ProcessJSGeneration(conn, site);
+            if (request.URL.AbsolutePath.EndsWith("EmbeddedJSGenerator.js"))
+                ProcessJSGeneration(request, site);
             else
-                ProcessEmbeddedServiceCall(conn, site);
+                ProcessEmbeddedServiceCall(request, site);
         }
 
         //initializes the embedded service paths for the given site and 
@@ -287,21 +288,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          * If any method with that name requires the session state, then return true to create
          * a session within the request.
         */
-        public bool RequiresSessionForRequest(HttpConnection conn, Site site)
+        public bool RequiresSessionForRequest(HttpRequest request, Site site)
         {
             Monitor.Enter(_lock);
             if (_pathMaps == null)
                 Init();
             Monitor.Exit(_lock);
-            string type = conn.URL.AbsolutePath.Substring(0, conn.URL.AbsolutePath.LastIndexOf("/"));
+            string type = request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"));
             if (_pathMaps.ContainsKey(type))
             {
                 Type t = Utility.LocateType(_pathMaps[type]);
                 EmbeddedService es = (EmbeddedService)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                es.GetMethodForRequest(conn, site);
-                if (conn[EmbeddedService.CONTEXT_METHOD_VARIABLE] != null)
+                es.GetMethodForRequest(request, site);
+                if (request[EmbeddedService.CONTEXT_METHOD_VARIABLE] != null)
                 {
-                    return ((WebMethod)((MethodInfo)conn[EmbeddedService.CONTEXT_METHOD_VARIABLE]).GetCustomAttributes(typeof(WebMethod), true)[0]).UseSession;
+                    return ((WebMethod)((MethodInfo)request[EmbeddedService.CONTEXT_METHOD_VARIABLE]).GetCustomAttributes(typeof(WebMethod), true)[0]).UseSession;
                 }
             }
             return false;

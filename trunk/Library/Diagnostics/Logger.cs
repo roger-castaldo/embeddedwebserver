@@ -121,6 +121,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             Monitor.Exit(_lock);
         }
 
+        public static void Trace(string Message)
+        {
+            LogMessage(DiagnosticsLevels.TRACE, Message);
+        }
+
+        public static void Debug(string Message){
+            LogMessage(DiagnosticsLevels.DEBUG, Message);
+        }
+
+        public static void Error(string Message)
+        {
+            LogMessage(DiagnosticsLevels.CRITICAL, Message);
+        }
+
         /*
          * Called to log a message.  It checks if to check for site settings
          * for the log, or just general settings.  Once it has been determined if 
@@ -196,7 +210,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                     if (site.ServerName != null)
                         return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.ServerName+"|"+sfs+"|" + Message;
                     else if (conn!=null)
-                        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + conn.Listener.Address.ToString() + ":" + conn.Listener.Port.ToString() + "|" + sfs + "|" + Message;
+                        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + conn.Listener.IP.ToString() + ":" + conn.Listener.Port.ToString() + "|" + sfs + "|" + Message;
                     else
                         return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + site.ListenOn[0].Address.ToString() + ":" + site.ListenOn[0].Port.ToString() + "|" + sfs + "|" + Message;
                 }else
@@ -205,7 +219,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
             else if (conn != null)
             {
                 if (Settings.UseServerNameInLogging)
-                    return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + conn.Listener.Address.ToString() + ":" + conn.Listener.Port.ToString() + "|" + sfs + "|" + Message;
+                    return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|" + conn.Listener.IP.ToString() + ":" + conn.Listener.Port.ToString() + "|" + sfs + "|" + Message;
             }
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "|" + logLevel.ToString() + "|null|" + sfs + "|" + Message;
         }

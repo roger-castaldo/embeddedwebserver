@@ -15,6 +15,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
     //response codes written into basic english, including their numbers
     public enum HttpStatusCodes
     {
+        Continue = 100,
         OK = 200,
         Moved_Permanently = 301,
         Found = 302,

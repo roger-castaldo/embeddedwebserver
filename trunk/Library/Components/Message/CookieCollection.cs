@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Org.Reddragonit.EmbeddedWebServer.Components
+namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     /*
      * This class is used to provide simple access to 
