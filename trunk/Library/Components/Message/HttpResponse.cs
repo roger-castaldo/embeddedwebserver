@@ -107,6 +107,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
          */
         public void SendResponse()
         {
+            HttpConnection.SetCurrentConnection(_request.Connection);
+            HttpRequest.SetCurrentRequest(_request);
             if (!_isResponseSent)
             {
                 _isResponseSent = true;
