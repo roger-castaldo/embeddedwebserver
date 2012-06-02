@@ -91,6 +91,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _connection = null;
             _contentBuffer = new MemoryStream();
             _headers = null;
+            _parameters = null;
+            _jsonParameter = null;
+            _uploadedFiles = null;
+            _handlingThread = null;
             _response.Reset();
         }
 
