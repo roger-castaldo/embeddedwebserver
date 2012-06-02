@@ -7,7 +7,7 @@ using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
-    internal class HttpResponse : IDisposable
+    internal class HttpResponse
     {
         private HttpRequest _request;
 
@@ -198,17 +198,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             set { _responseCookie = value; }
         }
 
-        #region IDisposable Members
-
-        public void Dispose()
+        internal void Reset()
         {
-            try
-            {
-                _outStream.Dispose();
-            }
-            catch (Exception e) { }
+            _isResponseSent = false;
+            _outStream = new MemoryStream();
+            _responseCookie = new CookieCollection();
+            _responseHeaders = new HeaderCollection();
+            _responseStatus = HttpStatusCodes.OK;
+            _responseWriter = new StreamWriter(_outStream);
         }
 
-        #endregion
+        internal void Dispose()
+        {
+            _outStream.Dispose();
+        }
     }
 }

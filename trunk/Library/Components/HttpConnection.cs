@@ -14,6 +14,7 @@ using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using Org.Reddragonit.EmbeddedWebServer.Components.Message;
+using Org.Reddragonit.EmbeddedWebServer.Components.Readers;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -22,9 +23,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
      * the client.  It houses the underlying socket as well as 
      * the cookie and header information.
      */
-    internal class HttpConnection : IDisposable
+    internal class HttpConnection
     {
-        private const int _CONNECTION_IDLE_TIMEOUT = 5000;
+        private const int _CONNECTION_IDLE_TIMEOUT = 100000; //keep alive for 100 seconds
+        private const int _BUFFER_SIZE = 65535;
 
         //A thread specific instance of the current connection
         [ThreadStatic()]
@@ -38,7 +40,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             get { return _currentConnection; }
         }
 
-        private static readonly ObjectPool<byte[]> Buffers = new ObjectPool<byte[]>(() => new byte[65535]);
+        private static readonly ObjectPool<HttpRequest> Requests = new ObjectPool<HttpRequest>(() => new HttpRequest());
 
         //the maximium size of a post data allowed
         private static int MAX_POST_SIZE = 10 * 1024 * 1024; // 10MB
@@ -49,6 +51,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private List<HttpRequest> _requests;
         private Stream _inputStream;
         private bool _shutdown;
+        private bool _disposed;
         private HttpParser _parser;
         private byte[] _buffer;
         private MT19937 _rand;
@@ -84,17 +87,34 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             return false;
         }
 
-        public void Close(bool disposing)
+        public void Close()
         {
             _shutdown = true;
-            try
+            if (socket != null)
             {
-                socket.Close();
+                if (_idleTimer != null)
+                {
+                    _idleTimer.Dispose();
+                    _idleTimer = null;
+                }
+                try
+                {
+                    socket.Disconnect(false);
+                    socket.Close();
+                    socket = null;
+                    _inputStream.Dispose();
+                    _inputStream = null;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e.Message);
+                }
             }
-            catch (Exception e) { }
-            Buffers.Enqueue(_buffer);
-            if (!disposing)
-                _listener.DisposeOfConnection(this);
+            _buffer = null;
+            _parser.RequestLineRecieved = null;
+            _parser.Clear();
+            if (!_disposed)
+                _listener.ClearConnection(this);
         }
 
         /*
@@ -103,13 +123,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
          * header information, it avoids loading in post data for efficeincy.
          * The post data gets loaded later on when the parameters are accessed.
          */
-        internal HttpConnection(Socket s, PortListener listener, X509Certificate cert,long id)
+        internal HttpConnection(){
+            _disposed = false;
+            _parser = new HttpParser();
+        }
+        
+        internal void Start(Socket s, PortListener listener, X509Certificate cert,long id)
         {
             _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
             _rand = new MT19937(id);
-            _buffer = Buffers.Dequeue();
+            _buffer = new byte[_BUFFER_SIZE];
             _requests = new List<HttpRequest>();
-            _parser = new HttpParser(_RequestLineRecieved);
+            _parser.RequestLineRecieved = _RequestLineRecieved;
             _shutdown = false;
             _id = id;
             socket = s;
@@ -129,13 +154,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private void _IdleTimeout(object state)
         {
             _currentConnection = this;
+            SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.RequestTimeout).ToString() + " Failed to send a request before the idle timeout"), false);
             if (!_shutdown)
-                _listener.DisposeOfConnection(this);
+                Close();
         }
 
         private void OnReceive(IAsyncResult ar)
         {
             _currentConnection = this;
+            if (_idleTimer != null)
+                _idleTimer.Change(_CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
             // been closed by our side.
             if (_inputStream == null)
                 return;
@@ -144,9 +172,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 int bytesLeft = _inputStream.EndRead(ar);
                 if (bytesLeft == 0)
                 {
-                    Logger.Trace("Client disconnected.");
-                    Close(false);
-                    return;
+                    if (!socket.Connected)
+                    {
+                        Logger.Trace("Client disconnected.");
+                        Close();
+                        return;
+                    }
                 }
 
                 Logger.Debug(Client.ToString() + " received " + bytesLeft + " bytes.");
@@ -170,62 +201,74 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             catch (ParserException err)
             {
                 Logger.Trace(err.ToString());
-                SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " " + err.Message),true);
-                _inputStream.Flush();
-                Close(false);
+                SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " " + err.Message),false);
+                Close();
             }
             catch (Exception err)
             {
                 if (!(err is IOException))
                 {
                     Logger.Error("Failed to read from stream: " + err);
-                    SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.InternalServerError).ToString() + " " + err.Message),true);
-                    _inputStream.Flush();
+                    SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.InternalServerError).ToString() + " " + err.Message),false);
                 }
-                Close(false);
+                Close();
             }
         }
 
         internal void SendBuffer(byte[] buffer,bool shutdown)
         {
-            lock (_inputStream)
+            if (socket == null)
             {
-                int index = 0;
-                while (buffer.Length - index > socket.SendBufferSize)
+                Close();
+                return;
+            }
+            if (socket.Connected)
+            {
+                lock (_inputStream)
                 {
-                    Logger.Trace("Sending chunk of data size " + socket.SendBufferSize.ToString());
-                    _inputStream.Write(buffer, index, socket.SendBufferSize);
-                    index += socket.SendBufferSize;
+                    try
+                    {
+                        int index = 0;
+                        while (buffer.Length - index > socket.SendBufferSize)
+                        {
+                            Logger.Trace("Sending chunk of data size " + socket.SendBufferSize.ToString());
+                            _inputStream.Write(buffer, index, socket.SendBufferSize);
+                            index += socket.SendBufferSize;
+                        }
+                        if (index < buffer.Length)
+                        {
+                            Logger.Trace("Sending chunkc of data size " + (buffer.Length - index).ToString());
+                            _inputStream.Write(buffer, index, buffer.Length - index);
+                        }
+                        _inputStream.Flush();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e.Message);
+                    }
                 }
-                if (index < buffer.Length)
-                {
-                    Logger.Trace("Sending chunkc of data size " + (buffer.Length - index).ToString());
-                    _inputStream.Write(buffer, index, buffer.Length - index);
-                }
-                _inputStream.Flush();
             }
             if (shutdown)
             {
-                _shutdown = shutdown;
-                if (_idleTimer!=null)
-                    _idleTimer.Change(1000, Timeout.Infinite);
-                else
-                    _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, 1000, Timeout.Infinite);
+                Close();
             }
             else
                 _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
+
         }
 
         private void _RequestLineRecieved(string[] words)
         {
             _idleTimer.Dispose();
-            _idleTimer = null;
+            _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
             _currentConnection = this;
             if (words[0].ToUpper() != "HTTP"&&!_shutdown)
             {
+                HttpRequest req = Requests.Dequeue();
                 lock (_requests)
                 {
-                    _requests.Add(new HttpRequest(_rand.NextLong(),words, this, ref _parser));
+                    req.StartRequest(_rand.NextLong(), words, this, ref _parser);
+                    _requests.Add(req);
                 }
             }
         }
@@ -249,15 +292,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         public void Dispose()
         {
+            _disposed = true;
             if (!_shutdown)
-                Close(true);
+                Close();
             lock (_requests)
             {
                 while (_requests.Count > 0)
                 {
                     try
                     {
-                        _requests[0].Dispose();
+                        _requests[0].Reset();
+                        Requests.Enqueue(_requests[0]);
                         _requests.RemoveAt(0);
                     }
                     catch (Exception e) { }
@@ -272,5 +317,46 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         }
 
         #endregion
+
+        internal void HeaderComplete()
+        {
+            _idleTimer.Dispose();
+            _idleTimer = null;
+        }
+
+        internal void CompleteRequest(HttpRequest httpRequest)
+        {
+            if (!_shutdown)
+            {
+                httpRequest.Reset();
+                Requests.Enqueue(httpRequest);
+                _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
+            }
+            else
+                DisposeRequest(httpRequest);
+        }
+
+        internal void Reset()
+        {
+            try
+            {
+                _idleTimer.Dispose();
+                _idleTimer = null;
+            }
+            catch (Exception e) { }
+            lock (_requests)
+            {
+                while (_requests.Count > 0)
+                {
+                    try
+                    {
+                        _requests[0].Reset();
+                        Requests.Enqueue(_requests[0]);
+                        _requests.RemoveAt(0);
+                    }
+                    catch (Exception e) { }
+                }
+            }
+        }
     }
 }

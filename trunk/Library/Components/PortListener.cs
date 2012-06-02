@@ -18,6 +18,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
      */
     internal class PortListener
     {
+        private static readonly ObjectPool<HttpConnection> ConnectionPool = new ObjectPool<HttpConnection>(() => new HttpConnection());
+
         //the tcp connection listener for the given sites
         private TcpListener _listener;
         //maximum idle time between requests in seconds
@@ -130,8 +132,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 Logger.LogError(e);
             }
             _listener.Stop();
-            foreach (HttpConnection con in _currentConnections)
-                con.Dispose();
+            lock (_currentConnections)
+            {
+                while (_currentConnections.Count > 0)
+                {
+                    _currentConnections[0].Close();
+                    _currentConnections[0].Reset();
+                    ConnectionPool.Enqueue(_currentConnections[0]);
+                    _currentConnections.RemoveAt(0);
+                }
+            }
             foreach (Site site in _sites)
                 site.Stop();
         }
@@ -176,25 +186,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 long id = _rand.NextLong();
                 Logger.LogMessage(DiagnosticsLevels.TRACE, "New tcp client recieved, generating http connection [id:" + id.ToString() + "]");
-                HttpConnection con = null;
-                try
+                HttpConnection con = ConnectionPool.Dequeue();
+                con.Start(sock, this, (UseSSL ? _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)) : null), id);
+                lock (_currentConnections)
                 {
-                    con = (UseSSL ? new HttpConnection(sock, this, _sites[0].GetCertificateForEndpoint(new sIPPortPair(_ip, _port, UseSSL)), id)
-                        : new HttpConnection(sock, this, null, id));
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e);
-                    return;
-                }
-                if (!_shutdown)
-                {
-                    lock (_currentConnections)
-                    {
-                        _currentConnections.Add(con);
-                    }
+                    _currentConnections.Add(con);
                 }
             }
+            else if (_shutdown)
+            {
+                sock.Disconnect(false);
+                sock.Close();
+            }
+
         }
 
         internal void HandleRequest(HttpRequest request)
@@ -335,16 +339,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
         }
 
-        internal void DisposeOfConnection(HttpConnection httpConnection)
+        internal void ClearConnection(HttpConnection httpConnection)
         {
-            lock (_currentConnections)
+            if (!_shutdown)
             {
-                for (int x = 0; x < _currentConnections.Count; x++)
+                lock (_currentConnections)
                 {
-                    if (httpConnection.ID == _currentConnections[x].ID)
+                    for (int x = 0; x < _currentConnections.Count; x++)
                     {
-                        _currentConnections.RemoveAt(x);
-                        httpConnection.Dispose();
+                        if (httpConnection.ID == _currentConnections[x].ID)
+                        {
+                            _currentConnections.RemoveAt(x);
+                            httpConnection.Reset();
+                            ConnectionPool.Enqueue(httpConnection);
+                        }
                     }
                 }
             }

@@ -12,10 +12,8 @@ using System.Collections.Specialized;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
-    public class HttpRequest : IDisposable
+    public class HttpRequest
     {
-        private const int _REQUEST_HEADER_TIMEOUT = 2000;
-
         [ThreadStatic()]
         private static HttpRequest _currentRequest;
         public static HttpRequest CurrentRequest
@@ -50,7 +48,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private DateTime _requestTimeout;
         internal void SetTimeout(Site site)
         {
-            _timer.Change(site.RequestTimeout, Timeout.Infinite);
+            if (_timer!=null)
+                _timer.Change(site.RequestTimeout, Timeout.Infinite);
             _requestTimeout = _requestStart.AddMilliseconds(site.RequestTimeout);
         }
 
@@ -78,7 +77,26 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         private Timer _timer;
 
-        internal HttpRequest(long id,string[] words,HttpConnection connection,ref HttpParser parser)
+        internal void Reset()
+        {
+            if (_timer != null)
+            {
+                _timer.Dispose();
+                _timer = null;
+            }
+            _method = null;
+            _path = null;
+            _version = null;
+            _mreParameters.Reset();
+            _connection = null;
+            _contentBuffer = new MemoryStream();
+            _headers = null;
+            _response.Reset();
+        }
+
+        internal HttpRequest() { }
+
+        internal void StartRequest(long id,string[] words,HttpConnection connection,ref HttpParser parser)
         {
             _method = words[0].ToUpper();
             _path = words[1];
@@ -89,25 +107,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _requestTimeout = _requestStart.AddMilliseconds(int.MaxValue);
             _headers = new HeaderCollection();
             _requestStart = DateTime.Now;
-            _timer = new Timer(new TimerCallback(_RequestHeaderTimeout), null, _REQUEST_HEADER_TIMEOUT, Timeout.Infinite);
+            _parser = parser;
+            _response = new HttpResponse(this);
             parser.RequestHeaderLineRecieved = _RequestHeaderLineReceived;
             parser.RequestHeaderComplete = _RequestHeaderComplete;
             parser.RequestBodyBytesRecieved = _RequestBodyBytesReceived;
             parser.RequestComplete = _RequestComplete;
-            _response = new HttpResponse(this);
         }
-
-        private HttpRequest() { }
 
         #region Parser
-
-        private void _RequestHeaderTimeout(object state)
-        {
-            _currentRequest = this;
-            HttpConnection.SetCurrentConnection(_connection);
-            Logger.Trace("Failed to recieve the complete request header prior to the timeout.");
-            _connection.SendBuffer(Encoding.Default.GetBytes("HTTP/1.0 " + ((int)HttpStatusCode.BadRequest).ToString() + " Request Header not recieved in a proper amount of time."),true);
-        }
 
         private void _RequestHeaderLineReceived(string name, string value)
         {
@@ -116,7 +124,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         private void _RequestHeaderComplete()
         {
-            _timer.Dispose();
+            _parser.RequestHeaderLineRecieved = null;
+            _parser.RequestHeaderComplete = null;
+            _connection.HeaderComplete();
             _timer = new Timer(new TimerCallback(_RequestTimeout), null, int.MaxValue, Timeout.Infinite);
             _url = new Uri("http://" + _headers.Host.Replace("//", "/") + _path.Replace("//", "/"));
             _cookie = new CookieCollection(_headers["Cookie"]);
@@ -133,20 +143,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 _handlingThread.Abort();
             }
             catch (Exception e) { }
+            _parser.RequestBodyBytesRecieved = null;
+            _parser.RequestComplete = null;
         }
 
         private void _HandleRequest()
         {
             _currentRequest = this;
-            if (this.Headers["expect"]!=null && this.Headers["expect"].ToLower().Contains("100-continue"))
+            if (this.Headers != null)
             {
-                Logger.Trace("Got 100 continue request.");
-                ResponseStatus = HttpStatusCodes.Continue;
-                ClearResponse();
-                SendResponse();
-                _timer.Dispose();
-            }else
-                _connection.Listener.HandleRequest(this);
+                if (this.Headers["expect"] != null)
+                {
+                    if (this.Headers["expect"].ToLower().Contains("100-continue"))
+                    {
+                        Logger.Trace("Got 100 continue request.");
+                        ResponseStatus = HttpStatusCodes.Continue;
+                        ClearResponse();
+                        SendResponse();
+                        _timer.Dispose();
+                    }
+                    else
+                        _connection.Listener.HandleRequest(this);
+                }
+                else
+                    _connection.Listener.HandleRequest(this);
+            }
         }
 
         private void _RequestBodyBytesReceived(byte[] buffer, int index, int count)
@@ -156,6 +177,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         private void _RequestComplete()
         {
+            _parser.RequestBodyBytesRecieved = null;
+            _parser.RequestComplete = null;
             Dictionary<string, string> Parameters = new Dictionary<string, string>();
             Dictionary<string, UploadedFile> uploadedFiles = new Dictionary<string, UploadedFile>();
             if (URL.Query != null)
@@ -444,7 +467,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         #region Response
         public bool IsResponseSent
         {
-            get { return _response.IsResponseSent; }
+            get {
+                if (_response == null)
+                    return true;
+                return _response.IsResponseSent; 
+            }
         }
         
         public StreamWriter ResponseWriter
@@ -466,10 +493,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         public void SendResponse()
         {
-            _response.SendResponse();
-            _timer.Dispose();
+            if (_timer != null)
+            {
+                _timer.Dispose();
+                _timer = null;
+            }
+            try
+            {
+                _response.SendResponse();
+            }
+            catch (Exception e) { }
             HttpRequest._currentRequest = null;
-            _connection.DisposeRequest(this);
+            if (_connection!=null)
+                _connection.CompleteRequest(this);
         }
 
         public HeaderCollection ResponseHeaders
@@ -491,22 +527,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         }
         #endregion
 
-        #region IDisposable Members
-
-        public void Dispose()
+        internal void Dispose()
         {
-            try
+            if (_timer != null)
             {
                 _timer.Dispose();
+                _timer = null;
             }
-            catch (Exception e) { }
-            try
-            {
-                _response.Dispose();
-            }
-            catch (Exception e) { }
+            _contentBuffer.Dispose();
+            _response.Dispose();
         }
-
-        #endregion
     }
 }
