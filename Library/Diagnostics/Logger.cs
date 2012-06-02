@@ -8,6 +8,7 @@ using System.IO;
 using System.Net.Sockets;
 using Org.Reddragonit.EmbeddedWebServer.Components;
 using System.Diagnostics;
+using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
 {
@@ -20,7 +21,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
     public class Logger : IBackgroundOperationContainer
     {
         //delegate used to append a message to the log file queue asynchronously
-        private delegate void delAppendMessageToFile(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message);
+        private delegate void delAppendMessageToFile(Site site,HttpConnection conn,HttpRequest request, DiagnosticsLevels logLevel, string Message);
 
         //number of messages to write to a file with each pass of the background thread.
         private const int MESSAGE_WRITE_COUNT = 20;
@@ -162,16 +163,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
                 switch (opt)
                 {
                     case DiagnosticsOutputs.DEBUG:
-                        System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
+                        System.Diagnostics.Debug.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection,HttpRequest.CurrentRequest, logLevel, Message));
                         break;
                     case DiagnosticsOutputs.CONSOLE:
-                        Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message));
+                        Console.WriteLine(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection,HttpRequest.CurrentRequest, logLevel, Message));
                         break;
                     case DiagnosticsOutputs.FILE:
-                        new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
+                        new delAppendMessageToFile(AppendMessageToFile).BeginInvoke(Site.CurrentSite, HttpConnection.CurrentConnection,HttpRequest.CurrentRequest, logLevel, Message, new AsyncCallback(QueueMessageComplete), null);
                         break;
                     case DiagnosticsOutputs.SOCKET:
-                        _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
+                        _sockLog.SendTo(System.Text.ASCIIEncoding.ASCII.GetBytes(_FormatDiagnosticsMessage(Site.CurrentSite, HttpConnection.CurrentConnection,HttpRequest.CurrentRequest, logLevel, Message) + "\n\n"), Site.CurrentSite.RemoteLoggingServer);
                         break;
                 }
             }
@@ -180,21 +181,23 @@ namespace Org.Reddragonit.EmbeddedWebServer.Diagnostics
         //static function designed to catch finishing of async call to queue log message.
         private static void QueueMessageComplete(IAsyncResult res) { }
 
-        private static void AppendMessageToFile(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
+        private static void AppendMessageToFile(Site site,HttpConnection conn,HttpRequest request, DiagnosticsLevels logLevel, string Message)
         {
             Monitor.Enter(_lock);
-            _messages.Enqueue(_FormatDiagnosticsMessage(site,conn, logLevel, Message));
+            _messages.Enqueue(_FormatDiagnosticsMessage(site,conn,request, logLevel, Message));
             Monitor.Exit(_lock);
         }
 
         //formats a diagnostics message using the appropriate date time format as well as site and log level information
-        private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn, DiagnosticsLevels logLevel, string Message)
+        private static string _FormatDiagnosticsMessage(Site site,HttpConnection conn,HttpRequest request, DiagnosticsLevels logLevel, string Message)
         {
             string sfs = "UNKNOWN";
-            if (conn != null)
-                sfs = "HttpConnection[" + HttpConnection.CurrentConnection.ID.ToString() + "]";
+            if (request != null)
+                sfs = "HttpRequest[" + request.ID.ToString() + "]";
+            else if (conn != null)
+                sfs = "HttpConnection[" + conn.ID.ToString() + "]";
             else if (BackgroundOperationRun.Current != null)
-                sfs = "BackgroundRunThread[" + BackgroundOperationRun.Current.ID.ToString() + "]["+BackgroundOperationRun.Current.Call.type.FullName+"."+BackgroundOperationRun.Current.Call.Method.Name+"]";
+                sfs = "BackgroundRunThread[" + BackgroundOperationRun.Current.ID.ToString() + "][" + BackgroundOperationRun.Current.Call.type.FullName + "." + BackgroundOperationRun.Current.Call.Method.Name + "]";
             else
             {
                 try

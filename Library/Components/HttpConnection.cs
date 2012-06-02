@@ -227,6 +227,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         internal void SendBuffer(byte[] buffer,bool shutdown)
         {
+            HttpConnection.SetCurrentConnection(this);
             if (socket == null)
             {
                 Close();
