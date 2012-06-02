@@ -238,18 +238,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     try
                     {
-                        int index = 0;
-                        while (buffer.Length - index > socket.SendBufferSize)
-                        {
-                            Logger.Trace("Sending chunk of data size " + socket.SendBufferSize.ToString());
-                            _inputStream.Write(buffer, index, socket.SendBufferSize);
-                            index += socket.SendBufferSize;
-                        }
-                        if (index < buffer.Length)
-                        {
-                            Logger.Trace("Sending chunkc of data size " + (buffer.Length - index).ToString());
-                            _inputStream.Write(buffer, index, buffer.Length - index);
-                        }
+                        Logger.Trace("Sending chunk of data size " + buffer.Length.ToString());
+                        _inputStream.Write(buffer, 0, buffer.Length);
                         _inputStream.Flush();
                     }
                     catch (Exception e)
