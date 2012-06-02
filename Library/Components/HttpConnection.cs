@@ -159,6 +159,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 Close();
         }
 
+        internal void ResetTimer()
+        {
+            if (_idleTimer != null)
+                _idleTimer.Change(_CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
+        }
+
         private void OnReceive(IAsyncResult ar)
         {
             _currentConnection = this;
@@ -172,9 +178,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 int bytesLeft = _inputStream.EndRead(ar);
                 if (bytesLeft == 0)
                 {
-                    if (!socket.Connected)
+                    Logger.Trace("Client disconnected.");
+                    if (_requests.Count > 0)
                     {
-                        Logger.Trace("Client disconnected.");
+                        throw new ParserException("Failed to send complete request");
+                    }
+                    else
+                    {
                         Close();
                         return;
                     }
@@ -328,6 +338,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             if (!_shutdown)
             {
+                lock (_requests)
+                {
+                    for (int x = 0; x < _requests.Count; x++)
+                    {
+                        if (_requests[x].ID == httpRequest.ID)
+                            _requests.RemoveAt(x);
+                    }
+                }
                 httpRequest.Reset();
                 Requests.Enqueue(httpRequest);
                 _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);

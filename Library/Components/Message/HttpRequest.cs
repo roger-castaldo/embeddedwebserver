@@ -119,14 +119,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         private void _RequestHeaderLineReceived(string name, string value)
         {
+            _connection.ResetTimer();
+            Logger.Trace("Header Line: Headers[" + (_headers == null ? "NULL" : "NOT_NULL") + "],name[" + (name == null ? "NULL" : "NOT_NULL") + "],value[" + (value == null ? "NULL" : "NOT_NULL") + "]");
             _headers[name] = (value == string.Empty ? null : value);
         }
 
         private void _RequestHeaderComplete()
         {
+            _connection.HeaderComplete();
             _parser.RequestHeaderLineRecieved = null;
             _parser.RequestHeaderComplete = null;
-            _connection.HeaderComplete();
             _timer = new Timer(new TimerCallback(_RequestTimeout), null, int.MaxValue, Timeout.Infinite);
             _url = new Uri("http://" + _headers.Host.Replace("//", "/") + _path.Replace("//", "/"));
             _cookie = new CookieCollection(_headers["Cookie"]);
