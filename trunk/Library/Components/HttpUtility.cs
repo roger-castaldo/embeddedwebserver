@@ -29,7 +29,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 foreach (string str in query.Split('&'))
                 {
-                    ret.Add(str.Substring(0, str.IndexOf("=")), str.Substring(str.IndexOf("=") + 1));
+                    if (str.Contains("="))
+                        ret.Add(str.Substring(0, str.IndexOf("=")), str.Substring(str.IndexOf("=") + 1));
                 }
             }
             return ret;
