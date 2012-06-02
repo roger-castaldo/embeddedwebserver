@@ -23,6 +23,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private string _headerValue;
         private ParserMethod _parserMethod;
         private OnRequestLineRecieved _reqLineRecieved;
+        public OnRequestLineRecieved RequestLineRecieved{
+            set { _reqLineRecieved = value; }
+        }
         private OnRequestHeaderLineRecieved _reqHeaderLineRecieved;
         public OnRequestHeaderLineRecieved RequestHeaderLineRecieved
         {
@@ -44,10 +47,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             set { _reqComplete = value; }
         }
 
-        internal HttpParser(OnRequestLineRecieved reqLine)
+        internal HttpParser()
         {
             _parserMethod = ParseRequestLine;
-            _reqLineRecieved = reqLine;
         }
 
         public int Parse(byte[] buffer, int offset, int count)
@@ -197,6 +199,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _headerName = string.Empty;
             _bodyBytesLeft = 0;
             _parserMethod = ParseRequestLine;
+        }
+
+        public void Clear()
+        {
+            _reader.Index = 0;
         }
     }
 }
