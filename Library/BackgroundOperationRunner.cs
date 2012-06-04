@@ -56,63 +56,17 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private const int THREAD_SLEEP = 60000;
 
         //background thread to processs required method
-        private Thread _runner;
+        private Timer _runner;
         //flag to tell the background thread to finish up
         private bool _exit;
         //used to generate ids
         private MT19937 _rand;
+        //houses all background calls
+        private List<sCall> _calls;
 
         public BackgroundOperationRunner() {
             _rand = new MT19937(DateTime.Now.Ticks);
-        }
-
-        //Called to start the background thread
-        public void Start()
-        {
-            _exit = false;
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
-            _runner = new Thread(new ThreadStart(RunThread));
-            _runner.IsBackground = true;
-            _runner.Name = "BackgroundOperationRunner";
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller's thread");
-            _runner.Start();
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread started");
-        }
-
-        //Called to stop the background thread
-        public void Stop()
-        {
-            _exit = true;
-            try
-            {
-                _runner.Interrupt();
-            }
-            catch (Exception e) {
-                Logger.LogError(e);
-            }
-            try
-            {
-                _runner.Join();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
-            }
-        }
-
-        private delegate void delInvokeRuns(List<sCall> calls);
-
-        /*
-         * This is the core of the background thread concept.  It loads all instances of 
-         * IBackgroundOperationContainer and locates all public static methods that 
-         * are tagged with the BackgroundOperationCall Attribute.  It then loads
-         * these all into a list.  While the exit flag is not set it scans all calls, checks for which need to 
-         * run, produces a delegate and executes them asynchronously.
-         */
-        private void RunThread()
-        {
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread start reached");
-            List<sCall> calls = new List<sCall>();
+            _calls = new List<sCall>();
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Constructing list of background operation calls");
             foreach (Type t in Utility.LocateTypeInstances(typeof(IBackgroundOperationContainer)))
             {
@@ -120,58 +74,74 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking method " + mi.Name + " from type " + t.FullName + " for background tags");
                     foreach (BackgroundOperationCall boc in mi.GetCustomAttributes(typeof(BackgroundOperationCall), false))
-                        calls.Add(new sCall(t, boc, mi));
+                        _calls.Add(new sCall(t, boc, mi));
                 }
             }
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background caller ready with " + calls.Count.ToString() + " calls available");
-            while (!_exit)
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background caller ready with " + _calls.Count.ToString() + " calls available");
+        }
+
+        //Called to start the background thread
+        public void Start()
+        {
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Starting up background operation caller");
+            _runner = new Timer(new TimerCallback(_ProcessBackgroundOperations), null, THREAD_SLEEP, THREAD_SLEEP);
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation caller's thread started");
+        }
+
+        private void _ProcessBackgroundOperations(object pars)
+        {
+            try
             {
-                try
+                DateTime _start = DateTime.Now;
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking to see which operations need to run at " + _start.ToLongDateString() + " " + _start.ToLongTimeString());
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking against background call list of size " + _calls.Count.ToString());
+                foreach (sCall sc in _calls)
                 {
-                    DateTime _start = DateTime.Now;
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking to see which operations need to run at " + _start.ToLongDateString() + " " + _start.ToLongTimeString());
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Checking against background call list of size " + calls.Count.ToString());
-                    foreach (sCall sc in calls)
+                    if (sc.Att.CanRunNow(_start))
                     {
-                        if (sc.Att.CanRunNow(_start))
+                        try
                         {
-                            try
-                            {
-                                new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start();
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.LogError(e);
-                            }
+                            new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start();
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError(e);
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    Logger.LogError(e);
-                }
-                if (!_exit)
-                {
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory prior to GC: " + GC.GetTotalMemory(false).ToString() + "b");
-                    try
-                    {
-                        GC.Collect();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e);
-                    }
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory after to GC: " + GC.GetTotalMemory(false).ToString() + "b");
-                    try
-                    {
-                        Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
-                    }
-                    catch (Exception e) {
-                        Logger.LogError(e);
-                    }
-                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory prior to GC: " + GC.GetTotalMemory(false).ToString() + "b");
+            try
+            {
+                GC.Collect();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
+            Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory after to GC: " + GC.GetTotalMemory(false).ToString() + "b");
+            try
+            {
+                Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
             }
         }
+
+        //Called to stop the background thread
+        public void Stop()
+        {
+            _runner.Dispose();
+            _runner = null;
+        }
+
+        private delegate void delInvokeRuns(List<sCall> calls);
     }
 
     /*

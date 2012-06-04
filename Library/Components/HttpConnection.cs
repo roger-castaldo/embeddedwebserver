@@ -367,5 +367,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
             }
         }
+
+        internal void ClearTimer()
+        {
+            _idleTimer.Dispose();
+            _idleTimer = null;
+        }
     }
 }
