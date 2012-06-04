@@ -48,6 +48,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private DateTime _requestTimeout;
         internal void SetTimeout(Site site)
         {
+            _connection.ClearTimer();
             if (_timer!=null)
                 _timer.Change(site.RequestTimeout, Timeout.Infinite);
             _requestTimeout = _requestStart.AddMilliseconds(site.RequestTimeout);
@@ -137,24 +138,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _url = new Uri("http://" + _headers.Host.Replace("//", "/") + _path.Replace("//", "/"));
             _cookie = new CookieCollection(_headers["Cookie"]);
             Logger.Trace("Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
-            _handlingThread = new Thread(new ThreadStart(_HandleRequest));
-            _handlingThread.IsBackground = true;
-            _handlingThread.Start();
-        }
-
-        private void _RequestTimeout(object state)
-        {
-            try
-            {
-                _handlingThread.Abort();
-            }
-            catch (Exception e) { }
-            _parser.RequestBodyBytesRecieved = null;
-            _parser.RequestComplete = null;
-        }
-
-        private void _HandleRequest()
-        {
+            _handlingThread = Thread.CurrentThread;
             _currentRequest = this;
             if (this.Headers != null)
             {
@@ -174,6 +158,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 else
                     _connection.Listener.HandleRequest(this);
             }
+        }
+
+        private void _RequestTimeout(object state)
+        {
+            _parser.RequestBodyBytesRecieved = null;
+            _parser.RequestComplete = null;
+            if (!IsResponseSent)
+            {
+                ResponseStatus = HttpStatusCodes.Request_Timeout;
+                ClearResponse();
+                ResponseWriter.WriteLine("The server timed out processing the request.");
+                SendResponse();
+            }
+            try
+            {
+                _handlingThread.Abort();
+            }
+            catch (Exception e) { }
         }
 
         private void _RequestBodyBytesReceived(byte[] buffer, int index, int count)
