@@ -14,6 +14,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     public class HttpRequest
     {
+        private const int _DEFAULT_REQUEST_TIMEOUT = 120000;
         [ThreadStatic()]
         private static HttpRequest _currentRequest;
         public static HttpRequest CurrentRequest
@@ -103,6 +104,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         internal void StartRequest(long id,string[] words,HttpConnection connection,ref HttpParser parser)
         {
+            _id = id;
             _method = words[0].ToUpper();
             _path = words[1];
             _version = words[2];
@@ -129,14 +131,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _headers[name] = (value == string.Empty ? null : value);
         }
 
-        private void _RequestHeaderComplete()
+        private void _RequestHeaderComplete(bool hasBody,out bool callComplete)
         {
+            callComplete = hasBody;
             _connection.HeaderComplete();
             _parser.RequestHeaderLineRecieved = null;
             _parser.RequestHeaderComplete = null;
-            _timer = new Timer(new TimerCallback(_RequestTimeout), null, int.MaxValue, Timeout.Infinite);
+            _timer = new Timer(new TimerCallback(_RequestTimeout), null, _DEFAULT_REQUEST_TIMEOUT, Timeout.Infinite);
             _url = new Uri("http://" + _headers.Host.Replace("//", "/") + _path.Replace("//", "/"));
             _cookie = new CookieCollection(_headers["Cookie"]);
+            if (!hasBody)
+                _RequestComplete();
             Logger.Trace("Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
             _handlingThread = Thread.CurrentThread;
             _currentRequest = this;
