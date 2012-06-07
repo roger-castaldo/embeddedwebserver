@@ -8,6 +8,7 @@ using Org.Reddragonit.EmbeddedWebServer.Sessions;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using System.Threading;
 using Org.Reddragonit.EmbeddedWebServer.Components.Message;
+using Org.Reddragonit.EmbeddedWebServer.Components.MonoFix;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -21,7 +22,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private static readonly ObjectPool<HttpConnection> ConnectionPool = new ObjectPool<HttpConnection>(() => new HttpConnection());
 
         //the tcp connection listener for the given sites
-        private TcpListener _listener;
+        private WrappedTcpListener _listener;
         //maximum idle time between requests in seconds
         private long _idleSeonds = long.MaxValue;
         //maximum time before refreshing listener in seconds
@@ -112,7 +113,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _currentConnections = new List<HttpConnection>();
             foreach (Site site in _sites)
                 site.Start();
-            _listener = new TcpListener(_ip, _port);
+            _listener = new WrappedTcpListener(new TcpListener(_ip, _port));
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Creating port listener on " + _ip.ToString() + ":" + _port.ToString());
             _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
@@ -327,7 +328,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     )
                 try
                 {
-                    _listener.EndAcceptTcpClient(null);
+                    _listener.EndAcceptSocket(null);
                 }
                 catch (Exception e)
                 {
@@ -335,7 +336,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 _lastConnectionRefresh = DateTime.Now;
                 _lastConnectionRequest = DateTime.Now;
-                _listener.BeginAcceptTcpClient(new AsyncCallback(RecieveClient), null);
+                _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
             }
         }
 

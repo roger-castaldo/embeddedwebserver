@@ -18,6 +18,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
      */
     internal class Utility
     {
+        public static readonly Version _OVERRIDE_VERSION = new Version("2.10");
         private static string basePath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.Substring(0, AppDomain.CurrentDomain.SetupInformation.ConfigurationFile.LastIndexOf(Path.DirectorySeparatorChar));
 
         //Called to locate a directory within the file system, starting with searching the base directory
@@ -359,7 +360,21 @@ namespace Org.Reddragonit.EmbeddedWebServer
             return ret;
         }
 
-        static Utility(){
+        private static Version _monoVersion = null;
+        internal static Version MonoVersion
+        {
+            get { return _monoVersion; }
+        }
+
+        static Utility()
+        {
+            Type type = Type.GetType("Mono.Runtime",false);
+            if (type != null)
+            {
+                MethodInfo mi = type.GetMethod("GetDisplayName", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                string str = mi.Invoke(null, new object[] { }).ToString();
+                _monoVersion = new Version(str.Substring(0, str.IndexOf(" ")));
+            }
         }
 
         internal static string TraceFullDirectoryPath(IDirectoryFolder folder)
