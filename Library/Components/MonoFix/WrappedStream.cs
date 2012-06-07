@@ -83,15 +83,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     {
                         _result.Complete();
                         _waitHandle.Set();
-                        try
-                        {
-                            if (_callBack != null)
-                                _callBack.Invoke(_result);
-                        }
-                        catch (Exception e) { }
+                        ThreadPool.QueueUserWorkItem(new WaitCallback(_ProcCallBack));
                     }
                 }
             }
+        }
+
+        private void _ProcCallBack(object state)
+        {
+            try
+            {
+                if (_callBack != null)
+                    _callBack.Invoke(_result);
+            }
+            catch (Exception e) { }
         }
 
         internal IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callBack,object state)
@@ -100,6 +105,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 return _stream.BeginRead(buffer, offset, count, callBack, state);
             else
             {
+                if (_result!=null)
+                    throw new Exception("Unable to Begin Reading, already async reading.");
                 _buffer = buffer;
                 _offset = offset;
                 _count = count;
@@ -114,6 +121,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 
         internal int EndRead(IAsyncResult res)
         {
+            _result = null;
             if (!_override)
                 return _stream.EndRead(res);
             else

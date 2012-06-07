@@ -2,11 +2,18 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Net.Sockets;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 {
     internal class WrappedTcpListenerAsyncResult : IAsyncResult
     {
+        private Socket _socket;
+        public Socket Socket
+        {
+            get { return _socket; }
+        }
+
         public WrappedTcpListenerAsyncResult(object asyncState, WaitHandle waitHandle)
         {
             _asyncState = asyncState;
@@ -18,9 +25,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             _isCompleted = true;
         }
 
-        internal void Complete()
+        internal void Complete(Socket socket)
         {
             _isCompleted = true;
+            _socket = socket;
         }
 
         #region IAsyncResult Members
