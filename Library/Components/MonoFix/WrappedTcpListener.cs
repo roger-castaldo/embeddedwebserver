@@ -116,6 +116,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 return _listener.EndAcceptSocket(asyncResult);
             else
             {
+                _result = null;
                 if (asyncResult == null)
                     throw new Exception("Unable to handle null async result.");
                 return ((WrappedTcpListenerAsyncResult)asyncResult).Socket;
