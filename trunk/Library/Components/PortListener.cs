@@ -36,6 +36,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         //houses the http connections that are running in the background, in a way that they can be killed
         private List<HttpConnection> _currentConnections;
         private bool _shutdown;
+        private IAsyncResult _acceptResult;
 
         private MT19937 _rand;
 
@@ -118,7 +119,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _listener.Start(_backLog);
             _lastConnectionRefresh = DateTime.Now;
             _lastConnectionRequest = DateTime.Now;
-            _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
+            _acceptResult=_listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
         }
 
         //stops the tcplistener from accepting connections and stops all sites contained within
@@ -176,7 +177,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             {
                 try
                 {
-                    _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
+                    _acceptResult = _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
                 }
                 catch (Exception e)
                 {
@@ -328,7 +329,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     )
                 try
                 {
-                    _listener.EndAcceptSocket(null);
+                    _listener.EndAcceptSocket(_acceptResult);
                 }
                 catch (Exception e)
                 {
@@ -336,7 +337,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 }
                 _lastConnectionRefresh = DateTime.Now;
                 _lastConnectionRequest = DateTime.Now;
-                _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
+                _acceptResult = _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
             }
         }
 
