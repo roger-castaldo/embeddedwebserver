@@ -15,7 +15,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
         private bool _closed=false;
         private Thread _thread;
         private ManualResetEvent _resBeginAccept;
-        private Socket _socket;
         private AsyncCallback _callBack;
         private WrappedTcpListenerAsyncResult _result;
         private bool _accepting;
@@ -46,6 +45,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 _resBeginAccept.Reset();
                 if (!_closed)
                 {
+                    Socket _socket = null;
                     try
                     {
                         Logger.Trace("Trying to accept a new socket");
@@ -61,17 +61,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     {
                         if (_socket != null)
                             Logger.Trace("Wrapped Listener accepted a socket, attempting to call the accept callback");
-                        _result.Complete();
+                        _result.Complete(_socket);
                         _waitHandle.Set();
                         try
                         {
                             if (_callBack != null)
-                                _callBack.Invoke(_result);
+                                ThreadPool.QueueUserWorkItem(new WaitCallback(_ProcCallBack), (object)(new object[] { _callBack,_result}));
                         }
                         catch (Exception e) { }
                     }
                 }
             }
+        }
+
+        private void _ProcCallBack(object obj)
+        {
+            AsyncCallback callBack = (AsyncCallback)((object[])obj)[0];
+            WrappedTcpListenerAsyncResult result = (WrappedTcpListenerAsyncResult)((object[])obj)[1];
+            callBack.Invoke(result);
         }
 
         public void Start(int backlog)
@@ -86,6 +93,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 return _listener.BeginAcceptSocket(callback, state);
             else
             {
+                if (_result != null)
+                    throw new Exception("Unable to begin Accepting Socket, already asynchronously waiting");
                 Logger.Trace("Accepting Socket through WrappedTcpClient override");
                 _callBack = callback;
                 _result = new WrappedTcpListenerAsyncResult(state, _waitHandle);
@@ -102,10 +111,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 
         public Socket EndAcceptSocket(IAsyncResult asyncResult)
         {
+            _result = null;
             if (!_override)
                 return _listener.EndAcceptSocket(asyncResult);
             else
-                return _socket;
+            {
+                if (asyncResult == null)
+                    throw new Exception("Unable to handle null async result.");
+                return ((WrappedTcpListenerAsyncResult)asyncResult).Socket;
+            }
         }
 
         public void Stop()
