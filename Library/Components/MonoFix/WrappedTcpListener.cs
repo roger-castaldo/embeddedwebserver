@@ -93,7 +93,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 return _listener.BeginAcceptSocket(callback, state);
             else
             {
-                if (_result == null)
+                if (_result != null)
                     throw new Exception("Unable to begin Accepting Socket, already asynchronously waiting");
                 Logger.Trace("Accepting Socket through WrappedTcpClient override");
                 _callBack = callback;
