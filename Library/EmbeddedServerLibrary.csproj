@@ -56,6 +56,9 @@
     <Compile Include="Components\Message\HttpParser.cs" />
     <Compile Include="Components\Message\HttpRequest.cs" />
     <Compile Include="Components\Message\HttpResponse.cs" />
+    <Compile Include="Components\MonoFix\WrappedStreamAsyncResult.cs" />
+    <Compile Include="Components\MonoFix\WrappedTcpListener.cs" />
+    <Compile Include="Components\MonoFix\WrappedTcpListenerAsyncResult.cs" />
     <Compile Include="Components\ObjectPool.cs" />
     <Compile Include="Components\Message\ParameterCollection.cs" />
     <Compile Include="Components\PortListener.cs" />
@@ -64,6 +67,7 @@
     <Compile Include="Components\Message\UploadedFile.cs" />
     <Compile Include="Components\Message\UploadedFileCollection.cs" />
     <Compile Include="Components\UserAgentTools.cs" />
+    <Compile Include="Components\MonoFix\WrappedStream.cs" />
     <Compile Include="Components\ZipFile.cs" />
     <Compile Include="Diagnostics\Enums.cs" />
     <Compile Include="Diagnostics\Logger.cs" />

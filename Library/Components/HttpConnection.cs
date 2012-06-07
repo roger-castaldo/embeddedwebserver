@@ -15,6 +15,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using Org.Reddragonit.EmbeddedWebServer.Components.Message;
 using Org.Reddragonit.EmbeddedWebServer.Components.Readers;
+using Org.Reddragonit.EmbeddedWebServer.Components.MonoFix;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -49,7 +50,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         private Socket socket;
         private X509Certificate _cert;
         private List<HttpRequest> _requests;
-        private Stream _inputStream;
+        private WrappedStream _inputStream;
         private bool _shutdown;
         private bool _disposed;
         private HttpParser _parser;
@@ -143,11 +144,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _currentConnection = this;
             if (_listener.UseSSL)
             {
-                _inputStream = new SslStream(new NetworkStream(socket), true);
-                ((SslStream)_inputStream).AuthenticateAsServer(_cert);
+                _inputStream = new WrappedStream(new SslStream(new NetworkStream(socket), true));
+                _inputStream.AuthenticateAsServer(_cert);
             }
             else
-                _inputStream = new NetworkStream(socket);
+                _inputStream = new WrappedStream(new NetworkStream(socket));
             _inputStream.BeginRead(_buffer, 0, _buffer.Length, new AsyncCallback(OnReceive), null);
         }
 
