@@ -105,7 +105,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 _count = count;
                 _callBack = callBack;
                 _result = new WrappedStreamAsyncResult(state, _waitHandle);
-                if (_thread.ThreadState == ThreadState.Unstarted)
+                if ((int)(_thread.ThreadState & ThreadState.Unstarted) == (int)ThreadState.Unstarted)
                     _thread.Start();
                 _resBeginRead.Set();
                 return _result;

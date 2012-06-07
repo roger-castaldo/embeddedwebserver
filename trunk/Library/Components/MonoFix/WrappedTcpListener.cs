@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using System.Threading;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 {
@@ -25,8 +26,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             if (Utility.MonoVersion == null)
                 _override = false;
             else
-            {
                 _override = Utility.MonoVersion < Utility._OVERRIDE_VERSION;
+            if (_override){
+                Logger.Trace("Using the wrapped Tcp Listener since running on old version of mono.");
+                _closed = false;
                 _waitHandle = new ManualResetEvent(false);
                 _resBeginAccept = new ManualResetEvent(false);
                 _thread = new Thread(new ThreadStart(_BackgroundAccept));
@@ -36,6 +39,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 
         private void _BackgroundAccept()
         {
+            Logger.Trace("Background Accept function called for WrappedTcpListener");
             while (!_closed)
             {
                 _resBeginAccept.WaitOne();
@@ -44,6 +48,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 {
                     try
                     {
+                        Logger.Trace("Trying to accept a new socket");
                         _accepting = true;
                         _socket = _listener.AcceptSocket();
                         _accepting = false;
@@ -54,6 +59,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     }
                     if (!_closed)
                     {
+                        if (_socket != null)
+                            Logger.Trace("Wrapped Listener accepted a socket, attempting to call the accept callback");
                         _result.Complete();
                         _waitHandle.Set();
                         try
@@ -74,14 +81,20 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 
         public IAsyncResult BeginAcceptSocket(AsyncCallback callback,object state)
         {
+            Logger.Trace("Begin Accept Socket called in WrappedTcpClient");
             if (!_override)
                 return _listener.BeginAcceptSocket(callback, state);
             else
             {
+                Logger.Trace("Accepting Socket through WrappedTcpClient override");
                 _callBack = callback;
                 _result = new WrappedTcpListenerAsyncResult(state, _waitHandle);
-                if (_thread.ThreadState == ThreadState.Unstarted)
+                if ((int)(_thread.ThreadState & ThreadState.Unstarted) == (int)ThreadState.Unstarted)
+                {
+                    Logger.Trace("WrappedTcpClient background thread not started, calling start");
                     _thread.Start();
+                }
+                Logger.Trace("Setting BeginAccept event to trigger background thread in WrappedTcpClient");
                 _resBeginAccept.Set();
                 return _result;
             }
