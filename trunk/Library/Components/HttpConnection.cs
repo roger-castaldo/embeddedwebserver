@@ -26,7 +26,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
      */
     internal class HttpConnection
     {
-        private const int _CONNECTION_IDLE_TIMEOUT = 100000; //keep alive for 100 seconds
+        private const int _CONNECTION_IDLE_TIMEOUT = 60000; //keep alive for 100 seconds
         private const int _BUFFER_SIZE = 65535;
 
         //A thread specific instance of the current connection
@@ -103,6 +103,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     socket.Disconnect(false);
                     socket.Close();
                     socket = null;
+                }
+                catch (Exception e) { }
+                try
+                {
                     _inputStream.Dispose();
                     _inputStream = null;
                 }

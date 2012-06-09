@@ -14,9 +14,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             get { return _socket; }
         }
 
-        public WrappedTcpListenerAsyncResult(object asyncState, WaitHandle waitHandle)
+        private AsyncCallback _callBack;
+        public AsyncCallback CallBack
+        {
+            get { return _callBack; }
+        }
+
+        public WrappedTcpListenerAsyncResult()
+        {
+        }
+
+        public void Setup(object asyncState, WaitHandle waitHandle,AsyncCallback callback)
         {
             _asyncState = asyncState;
+            _waitHandle = waitHandle;
+            _callBack = callback;
         }
 
         internal void CompleteSynchronously()
@@ -29,6 +41,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
         {
             _isCompleted = true;
             _socket = socket;
+        }
+
+        public void Reset()
+        {
+            _socket = null;
+            _asyncState = null;
+            _waitHandle = null;
+            _isCompleted = false;
+            _completedSynchronously = false;
         }
 
         #region IAsyncResult Members
