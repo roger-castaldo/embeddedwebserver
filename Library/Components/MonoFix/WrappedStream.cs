@@ -11,20 +11,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 {
     internal class WrappedStream : IDisposable
     {
+        private static readonly ObjectPool<WrappedStreamAsyncResult> _Results = new ObjectPool<WrappedStreamAsyncResult>(() => new WrappedStreamAsyncResult());
+
         private const int _READ_TIMEOUT = 5000;
         private bool _override;
         private Stream _stream;
         private ManualResetEvent _waitHandle;
-        private byte[] _buffer;
-        private int _offset;
-        private int _count;
-        private AsyncCallback _callBack;
-        private WrappedStreamAsyncResult _result;
         private bool _closed;
         private Thread _thread;
-        private ManualResetEvent _resBeginRead;
-        private int _readCount;
-        private bool _reading;
 
         public WrappedStream(SslStream stream)
         {
@@ -50,9 +44,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     _stream.ReadTimeout = _READ_TIMEOUT;
                 _closed = false;
                 _waitHandle = new ManualResetEvent(false);
-                _resBeginRead = new ManualResetEvent(false);
-                _thread = new Thread(new ThreadStart(_BackgroundRead));
-                _thread.IsBackground = true;
+                _thread = null;
             }
         }
 
@@ -61,40 +53,47 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             ((SslStream)_stream).AuthenticateAsServer(certificate);
         }
 
-        private void _BackgroundRead()
+        private void _BackgroundRead(object obj)
         {
-            while (!_closed)
+            WrappedStreamAsyncResult result = (WrappedStreamAsyncResult)obj;
+            int readCount = 0;
+            try
             {
-                _resBeginRead.WaitOne();
-                _resBeginRead.Reset();
-                if (!_closed)
-                {
-                    try
-                    {
-                        _reading = true;
-                        _readCount = _stream.Read(_buffer, _offset, _count);
-                        _reading = false;
-                    }
-                    catch (Exception e)
-                    {
-                        _readCount = 0;
-                    }
-                    if (!_closed)
-                    {
-                        _result.Complete();
-                        _waitHandle.Set();
-                        ThreadPool.QueueUserWorkItem(new WaitCallback(_ProcCallBack));
-                    }
-                }
+                readCount = _stream.Read(result.Buffer, result.Index, result.Len);
+            }
+            catch (ThreadAbortException tae)
+            {
+                result.Reset();
+                _Results.Enqueue(result);
+                result = null;
+            }
+            catch (Exception e)
+            {
+                readCount = 0;
+            }
+            if (!_closed)
+            {
+                result.Complete(readCount);
+                _waitHandle.Set();
+                ThreadPool.QueueUserWorkItem(new WaitCallback(_ProcCallBack),result);
             }
         }
 
         private void _ProcCallBack(object state)
         {
+            if ((int)(_thread.ThreadState & ThreadState.Stopped) != (int)ThreadState.Stopped)
+            {
+                try
+                {
+                    _thread.Join();
+                }
+                catch (Exception e) { }
+            }
+            WrappedStreamAsyncResult result = (WrappedStreamAsyncResult)state;
             try
             {
-                if (_callBack != null)
-                    _callBack.Invoke(_result);
+                if (result.CallBack != null)
+                    result.CallBack(result);
             }
             catch (Exception e) { }
         }
@@ -105,27 +104,35 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 return _stream.BeginRead(buffer, offset, count, callBack, state);
             else
             {
-                if (_result!=null)
-                    throw new Exception("Unable to Begin Reading, already async reading.");
-                _buffer = buffer;
-                _offset = offset;
-                _count = count;
-                _callBack = callBack;
-                _result = new WrappedStreamAsyncResult(state, _waitHandle);
-                if ((int)(_thread.ThreadState & ThreadState.Unstarted) == (int)ThreadState.Unstarted)
-                    _thread.Start();
-                _resBeginRead.Set();
-                return _result;
+                if (_thread != null)
+                {
+                    if (((int)(_thread.ThreadState & ThreadState.Unstarted) != (int)ThreadState.Unstarted)
+                        && ((int)(_thread.ThreadState & ThreadState.Stopped) != (int)ThreadState.Stopped))
+                        throw new Exception("Unable to Begin Reading, already async reading.");
+                }
+                WrappedStreamAsyncResult result = _Results.Dequeue();
+                result.Start(state, _waitHandle,callBack, offset, buffer, count);
+                _thread = new Thread(new ParameterizedThreadStart(_BackgroundRead));
+                _thread.IsBackground = true;
+                _thread.Start(result);
+                return result;
             }
         }
 
-        internal int EndRead(IAsyncResult res)
+        internal int EndRead(IAsyncResult asyncResult)
         {
-            _result = null;
             if (!_override)
-                return _stream.EndRead(res);
+                return _stream.EndRead(asyncResult);
             else
-                return _readCount;
+            {
+                if (asyncResult == null)
+                    throw new Exception("Unable to handle null async result.");
+                WrappedStreamAsyncResult result = (WrappedStreamAsyncResult)asyncResult;
+                int ret = result.Len;
+                result.Reset();
+                _Results.Enqueue(result);
+                return ret;
+            }
         }
 
         internal void Write(byte[] buffer, int offset, int count)
@@ -145,15 +152,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             if (_override)
             {
                 _closed=true;
-                if (!_reading)
-                    _resBeginRead.Set();
-                else
+                if (_thread != null)
                 {
-                    try
+                    if (((int)(_thread.ThreadState & ThreadState.Unstarted) != (int)ThreadState.Unstarted)
+                        && ((int)(_thread.ThreadState & ThreadState.Stopped) != (int)ThreadState.Stopped))
                     {
-                        _thread.Abort();
+                        try
+                        {
+                            _thread.Abort();
+                        }
+                        catch (Exception e) { }
                     }
-                    catch (Exception e) { }
+                    _thread = null;
                 }
             }
             _stream.Dispose();

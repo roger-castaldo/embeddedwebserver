@@ -7,8 +7,52 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 {
     internal class WrappedStreamAsyncResult : IAsyncResult
     {
-        public WrappedStreamAsyncResult(object asyncState,WaitHandle waitHandle){
+        private int _len;
+        public int Len
+        {
+            get { return _len; }
+        }
+
+        private AsyncCallback _callBack;
+        public AsyncCallback CallBack
+        {
+            get { return _callBack; }
+        }
+
+        private byte[] _buffer;
+        public byte[] Buffer{
+            get { return _buffer; }
+            set { _buffer = value; }
+        }
+
+        private int _index;
+        public int Index
+        {
+            get { return _index; }
+        }
+
+        public WrappedStreamAsyncResult(){
+        }
+
+        public void Start(object asyncState, WaitHandle waitHandle,AsyncCallback callback,int index,byte[] buffer,int len)
+        {
             _asyncState = asyncState;
+            _waitHandle = waitHandle;
+            _len = len;
+            _index = index;
+            _buffer = buffer;
+            _callBack = callback;
+        }
+
+        public void Reset()
+        {
+            _asyncState = null;
+            _waitHandle = null;
+            _isCompleted = false;
+            _completedSynchronously = false;
+            _len = 0;
+            _index = 0;
+            _buffer = null;
         }
 
         internal void CompleteSynchronously()
@@ -17,9 +61,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             _isCompleted = true;
         }
 
-        internal void Complete()
+        internal void Complete(int len)
         {
             _isCompleted = true;
+            _len = len;
         }
 
         #region IAsyncResult Members

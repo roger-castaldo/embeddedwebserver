@@ -324,20 +324,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             lock (_listener)
             {
                 if (
-                        (DateTime.Now.Subtract(_lastConnectionRequest).TotalSeconds>_idleSeonds)||
+                        (DateTime.Now.Subtract(_lastConnectionRequest).TotalSeconds > _idleSeonds) ||
                         (DateTime.Now.Subtract(_lastConnectionRefresh).TotalSeconds > _totalRunSeconds)
                     )
-                try
                 {
-                    _listener.EndAcceptSocket(_acceptResult);
+                    try
+                    {
+                        _listener.EndAcceptSocket(_acceptResult);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                    }
+                    _lastConnectionRefresh = DateTime.Now;
+                    _lastConnectionRequest = DateTime.Now;
+                    _acceptResult = _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), _acceptResult);
                 }
-                catch (Exception e)
-                {
-                    Logger.LogError(e);
-                }
-                _lastConnectionRefresh = DateTime.Now;
-                _lastConnectionRequest = DateTime.Now;
-                _acceptResult = _listener.BeginAcceptSocket(new AsyncCallback(RecieveClient), null);
             }
         }
 
