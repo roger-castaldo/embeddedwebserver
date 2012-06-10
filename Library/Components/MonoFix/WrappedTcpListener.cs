@@ -115,15 +115,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     throw new Exception("Unable to handle null async result.");
                 WrappedTcpListenerAsyncResult result = (WrappedTcpListenerAsyncResult)asyncResult;
                 Socket ret = result.Socket;
-                if ((ret == null) &&
-                    ((int)(_thread.ThreadState & ThreadState.Unstarted) != (int)ThreadState.Unstarted)
+                if (((int)(_thread.ThreadState & ThreadState.Unstarted) != (int)ThreadState.Unstarted)
                         && ((int)(_thread.ThreadState & ThreadState.Stopped) != (int)ThreadState.Stopped))
                 {
                     try
                     {
                         _thread.Abort();
                     }
-                    catch (Exception e) { }
+                    catch (Exception e) {
+                        Logger.LogError(e);
+                    }
                 }
                 result.Reset();
                 _Results.Enqueue(result);
