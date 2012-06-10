@@ -52,7 +52,6 @@
     <Compile Include="Components\Message\HeaderCollection.cs" />
     <Compile Include="Components\HttpConnection.cs" />
     <Compile Include="Components\HttpUtility.cs" />
-    <Compile Include="Components\KeepAliveRunner.cs" />
     <Compile Include="Components\Message\HttpParser.cs" />
     <Compile Include="Components\Message\HttpRequest.cs" />
     <Compile Include="Components\Message\HttpResponse.cs" />
