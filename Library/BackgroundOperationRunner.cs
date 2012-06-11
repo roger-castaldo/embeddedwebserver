@@ -124,14 +124,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 Logger.LogError(e);
             }
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Memory after to GC: " + GC.GetTotalMemory(false).ToString() + "b");
-            try
-            {
-                Thread.Sleep((int)DateTime.Now.AddMilliseconds(THREAD_SLEEP).Subtract(DateTime.Now).TotalMilliseconds);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
-            }
         }
 
         //Called to stop the background thread

@@ -11,6 +11,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
     {
         private static readonly ObjectPool<WrappedTcpListenerAsyncResult> _Results = new ObjectPool<WrappedTcpListenerAsyncResult>(() => new WrappedTcpListenerAsyncResult());
 
+        private int _backlog;
         private TcpListener _listener;
         private bool _override;
         private ManualResetEvent _waitHandle;
@@ -42,7 +43,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             }catch (ThreadAbortException tae){
                 result.Reset();
                 _Results.Enqueue(result);
-                throw tae;
+                socket = null;
+                return;
             }
             catch (Exception e)
             {
@@ -79,6 +81,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
 
         public void Start(int backlog)
         {
+            _backlog = backlog;
             _listener.Start(backlog);
         }
 
@@ -122,12 +125,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                     {
                         _thread.Abort();
                     }
-                    catch (Exception e) {
+                    catch (Exception e)
+                    {
                         Logger.LogError(e);
                     }
+                    _listener.Stop();
+                    _thread.Join();
+                    _listener.Start(_backlog);
                 }
-                result.Reset();
-                _Results.Enqueue(result);
+                else
+                {
+                    result.Reset();
+                    _Results.Enqueue(result);
+                }
                 return ret;
             }
         }
