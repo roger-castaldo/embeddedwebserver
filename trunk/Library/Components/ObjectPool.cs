@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components
 {
@@ -25,13 +26,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         /// <remarks>Will create one if queue is empty.</remarks>
         public T Dequeue()
         {
+            T ret = null;
             lock (_items)
             {
                 if (_items.Count > 0)
-                    return _items.Dequeue();
+                {
+                    Logger.Trace("Dequeueing item " + typeof(T).FullName + " from pool");
+                    ret = _items.Dequeue();
+                }
             }
-
-            return _createMethod();
+            if (ret == null)
+            {
+                Logger.Trace("Creating new item " + typeof(T).FullName + " since pool is empty");
+                ret = _createMethod();
+            }
+            return ret;
         }
 
         /// <summary>
@@ -42,7 +51,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         public void Enqueue(T value)
         {
             lock (_items)
+            {
+                Logger.Trace("Queueing item " + typeof(T).FullName + " to pool");
                 _items.Enqueue(value);
+            }
         }
     }
 
