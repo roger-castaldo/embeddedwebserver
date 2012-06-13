@@ -365,6 +365,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _idleTimer = null;
             }
             catch (Exception e) { }
+            _parser.Reset();
             lock (_requests)
             {
                 while (_requests.Count > 0)
