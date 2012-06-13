@@ -211,7 +211,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     Logger.Trace("Moving " + bytesLeft + " from " + offset + " to beginning of array.");
                     Buffer.BlockCopy(_buffer, offset, _buffer, 0, bytesLeft);
                 }
-                _inputStream.BeginRead(_buffer, 0, _buffer.Length - offset, OnReceive, null);
+                try
+                {
+                    _inputStream.BeginRead(_buffer, 0, _buffer.Length - offset, OnReceive, null);
+                }
+                catch (Exception e)
+                {
+                    Close();
+                }
             }
             catch (ParserException err)
             {

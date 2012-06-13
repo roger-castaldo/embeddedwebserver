@@ -48,12 +48,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             }
             catch (Exception e)
             {
+                Logger.LogError(e);
                 socket = null;
             }
             if (!_closed)
             {
                 if (socket != null)
                     Logger.Trace("Wrapped Listener accepted a socket, attempting to call the accept callback");
+                else
+                    Logger.Trace("An error occured attempting to accept a new socket.");
                 result.Complete(socket);
                 _waitHandle.Set();
                 ThreadPool.QueueUserWorkItem(new WaitCallback(_ProcCallBack), result);

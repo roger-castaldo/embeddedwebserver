@@ -131,7 +131,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                         _responseHeaders["Connection"] = "close";
                 }
                 else
-                    _responseHeaders["Connection"] = "close";
+                {
+                    if (_request.Headers.Browser != null)
+                    {
+                        if (_request.Headers.Browser.IsMobile)
+                            _responseHeaders["Connection"] = "keep-alive";
+                        else
+                            _responseHeaders["Connection"] = "close";
+                    }else
+                        _responseHeaders["Connection"] = "close";
+                }
                 MemoryStream outStream = new MemoryStream();
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
