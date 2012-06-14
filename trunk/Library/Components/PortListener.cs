@@ -213,10 +213,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 {
                     request.ResponseStatus = HttpStatusCodes.OK;
                     request.ResponseHeaders.ContentType = "text/javascript";
-                    if (!request.Headers.Browser.IsMobile)
-                        request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
-                    else
-                        request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.mobile.min.js"));
+                    request.ResponseWriter.Write(Utility.ReadEmbeddedResource("Org.Reddragonit.EmbeddedWebServer.resources.jquery.min.js"));
                     request.SendResponse();
                 }
                 else if (request.URL.AbsolutePath == "/json.js")
