@@ -26,6 +26,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _currentRequest = req;
         }
 
+        public bool IsMobile
+        {
+            get { return (Headers.Browser != null ? Headers.Browser.IsMobile : false); }
+        }
+
         private Thread _handlingThread;
         //used to buffer Body data
         private MemoryStream _contentBuffer;
@@ -382,7 +387,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         internal void UseDefaultPath(Site site)
         {
-            _url = new Uri("http://" + _url.Host + site.DefaultPage + _url.Query);
+            _url = new Uri("http://" + _url.Host + site.DefaultPage(IsMobile) + _url.Query);
         }
 
         //returns the http version specified in the request

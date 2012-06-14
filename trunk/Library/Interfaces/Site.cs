@@ -215,9 +215,9 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         //indicates the default path when none is specified in the request
-        public virtual string DefaultPage
+        public virtual string DefaultPage(bool mobileBrowser)
         {
-            get { return "/index.html"; }
+            return "/index.html";
         }
 
         //an implemented start that gets called before the handlers are initialized
@@ -368,6 +368,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             PreRequest(request);
             if (!request.IsResponseSent)
             {
+                HttpRequest.SetCurrentRequest(request);
                 DateTime start = DateTime.Now;
                 _currentSite = this;
                 bool found = false;
@@ -379,7 +380,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
                         if (handler.IsReusable)
                         {
-                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
                                 SessionManager.LoadStateForConnection(request, this);
                             try
                             {
@@ -404,7 +405,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                                     request.ResponseWriter.Write(e.Message);
                                 }
                             }
-                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
                                 SessionManager.StoreSessionForConnection(request, this);
                         }
                         else
