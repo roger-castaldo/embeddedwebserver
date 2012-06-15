@@ -102,7 +102,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _jsonParameter = null;
             _uploadedFiles = null;
             _handlingThread = null;
-            _response.Reset();
+            _response.Dispose();
+            _response = null;
         }
 
         internal HttpRequest() { }

@@ -214,16 +214,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             set { _responseCookie = value; }
         }
 
-        internal void Reset()
-        {
-            _isResponseSent = false;
-            _outStream = new MemoryStream();
-            _responseCookie = new CookieCollection();
-            _responseHeaders = new HeaderCollection();
-            _responseStatus = HttpStatusCodes.OK;
-            _responseWriter = new StreamWriter(_outStream);
-        }
-
         internal void Dispose()
         {
             _outStream.Dispose();
