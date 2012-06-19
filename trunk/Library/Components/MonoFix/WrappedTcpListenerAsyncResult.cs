@@ -20,6 +20,17 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             get { return _callBack; }
         }
 
+        private bool _aborted;
+        internal bool Aborted
+        {
+            get { return _aborted; }
+        }
+
+        internal void Abort()
+        {
+            _aborted = true;
+        }
+
         public WrappedTcpListenerAsyncResult()
         {
         }
@@ -29,6 +40,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             _asyncState = asyncState;
             _waitHandle = waitHandle;
             _callBack = callback;
+            _aborted = false;
         }
 
         internal void CompleteSynchronously()

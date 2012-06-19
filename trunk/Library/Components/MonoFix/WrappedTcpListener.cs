@@ -36,22 +36,32 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
         {
             WrappedTcpListenerAsyncResult result = (WrappedTcpListenerAsyncResult)obj;
             Socket socket = null;
-            try
+            while (!result.Aborted && socket==null)
             {
-                Logger.Trace("Trying to accept a new socket");
-                socket = _listener.AcceptSocket();
-            }catch (ThreadAbortException tae){
-                result.Reset();
-                _Results.Enqueue(result);
-                socket = null;
-                return;
+                if (_listener.Pending())
+                {
+                    try
+                    {
+                        Logger.Trace("Trying to accept a new socket");
+                        socket = _listener.AcceptSocket();
+                    }
+                    catch (ThreadAbortException tae)
+                    {
+                        result.Reset();
+                        _Results.Enqueue(result);
+                        socket = null;
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                        socket = null;
+                    }
+                }
+                else
+                    Thread.Sleep(10);
             }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
-                socket = null;
-            }
-            if (!_closed)
+            if (!_closed&&!result.Aborted)
             {
                 if (socket != null)
                     Logger.Trace("Wrapped Listener accepted a socket, attempting to call the accept callback");
@@ -124,15 +134,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                 if (((int)(_thread.ThreadState & ThreadState.Unstarted) != (int)ThreadState.Unstarted)
                         && ((int)(_thread.ThreadState & ThreadState.Stopped) != (int)ThreadState.Stopped))
                 {
-                    try
-                    {
-                        _thread.Abort();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e);
-                    }
-                    _listener.Stop();
+                    result.Abort();
                     _thread.Join();
                     _listener.Start(_backlog);
                 }
@@ -162,9 +164,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                         catch (Exception e) { }
                     }
                     _thread = null;
+                    _listener.Server.Close();
                 }
-            }
-            _listener.Stop();
+                else
+                    _listener.Stop();
+            }else
+                _listener.Stop();
         }
     }
 }
