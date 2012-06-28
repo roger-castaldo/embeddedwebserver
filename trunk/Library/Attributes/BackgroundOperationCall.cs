@@ -15,6 +15,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
     public class BackgroundOperationCall : Attribute
     {
         private Regex _regMatch;
+        private int? _maxRunTime=null;
+        public int? MaxRunTime
+        {
+            get { return _maxRunTime; }
+        }
 
         public bool CanRunNow(DateTime date)
         {
@@ -32,7 +37,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
                 reg += ".{3}";
             else
                 reg += weekDay.ToString().Substring(0, 3);
-            _regMatch = new Regex(reg,RegexOptions.Compiled | RegexOptions.ECMAScript);
+            _regMatch = new Regex(reg, RegexOptions.Compiled | RegexOptions.ECMAScript);
+        }
+
+        public BackgroundOperationCall(int minute, int hour, int day, int month, BackgroundOperationDaysOfWeek weekDay,int maxRunMilliseconds)
+            : this(minute,hour,day,month,weekDay)
+        {
+            _maxRunTime = maxRunMilliseconds;
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Tester
         {
             get
             {
-                return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 8080,false),
+                return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 8080,false,60,null,null),
                     new sIPPortPair(IPAddress.Loopback,8081,true)
                 };
             }
