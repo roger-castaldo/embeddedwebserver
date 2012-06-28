@@ -375,7 +375,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 string str = mi.Invoke(null, new object[] { }).ToString();
                 _monoVersion = new Version(str.Substring(0, str.IndexOf(" ")));
             }
-            _monoVersion = new Version("2.6");
         }
 
         internal static string TraceFullDirectoryPath(IDirectoryFolder folder)
