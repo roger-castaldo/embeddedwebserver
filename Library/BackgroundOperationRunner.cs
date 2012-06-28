@@ -13,7 +13,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
          * Structure designed to store the background call information, including the referenced type,
          * and the method to be called.
          */
-    internal struct sCall
+    public struct sCall
     {
         private BackgroundOperationCall _att;
         public BackgroundOperationCall Att
@@ -63,8 +63,42 @@ namespace Org.Reddragonit.EmbeddedWebServer
         private MT19937 _rand;
         //houses all background calls
         private List<sCall> _calls;
+        //houses all the pre calls
+        private List<ServerControl.delPreBackgroundCall> _preCalls;
+        public void RegisterPreCall(ServerControl.delPreBackgroundCall call)
+        {
+            lock (_preCalls)
+            {
+                _preCalls.Add(call);
+            }
+        }
+        public void UnregisterPreCall(ServerControl.delPreBackgroundCall call)
+        {
+            lock (_preCalls)
+            {
+                _preCalls.Remove(call);
+            }
+        }
+        //houses all the post calls
+        private List<ServerControl.delPostBackgroundCall> _postCalls;
+        public void RegisterPostCall(ServerControl.delPostBackgroundCall call)
+        {
+            lock (_postCalls)
+            {
+                _postCalls.Add(call);
+            }
+        }
+        public void UnregisterPostCall(ServerControl.delPostBackgroundCall call)
+        {
+            lock (_postCalls)
+            {
+                _postCalls.Remove(call);
+            }
+        }
 
         public BackgroundOperationRunner() {
+            _preCalls = new List<ServerControl.delPreBackgroundCall>();
+            _postCalls = new List<ServerControl.delPostBackgroundCall>();
             _rand = new MT19937(DateTime.Now.Ticks);
             _calls = new List<sCall>();
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Constructing list of background operation calls");
@@ -99,13 +133,31 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     if (sc.Att.CanRunNow(_start))
                     {
-                        try
+                        bool run = true;
+                        lock (_preCalls)
                         {
-                            new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start();
+                            foreach (ServerControl.delPreBackgroundCall call in _preCalls)
+                            {
+                                call.Invoke(sc, ref run);
+                                if (!run)
+                                    break;
+                            }
                         }
-                        catch (Exception e)
+                        if (run)
                         {
-                            Logger.LogError(e);
+                            ServerControl.delPostBackgroundCall[] backs;
+                            lock (_postCalls)
+                            {
+                                backs = _postCalls.ToArray();
+                            }
+                            try
+                            {
+                                new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start(backs);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError(e);
+                            }
                         }
                     }
                 }
@@ -164,34 +216,66 @@ namespace Org.Reddragonit.EmbeddedWebServer
         }
         private DateTime _start;
         private Thread _runner;
+        private Timer _timer;
 
         public BackgroundOperationRun(sCall call,DateTime start,long id)
         {
+            _timer = null;
             _call = call;
             _id = id;
             _start = start;
-            _runner = new Thread(new ThreadStart(_Start));
+            _runner = new Thread(new ParameterizedThreadStart(_Start));
             _runner.IsBackground = true;
         }
 
-        public void Start()
+        public void Start(ServerControl.delPostBackgroundCall[] backs)
         {
-            _runner.Start();
+            if (_call.Att.MaxRunTime.HasValue)
+                _timer = new Timer(new TimerCallback(_timedOut), null, _call.Att.MaxRunTime.Value, Timeout.Infinite);
+            _runner.Start(backs);
         }
 
-        private void _Start()
+        private void _Start(object pars)
         {
+            ServerControl.delPostBackgroundCall[] calls = (ServerControl.delPostBackgroundCall[])pars;
             _current = this;
+            bool aborted = false;
+            Exception error = null;
+            DateTime start = DateTime.Now;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation.");
             try
             {
                 _call.Method.Invoke(null, new object[] { });
             }
+            catch (ThreadAbortException tae)
+            {
+                aborted = true;
+                Logger.LogMessage(DiagnosticsLevels.CRITICAL, "Background operation call " + _call.type.FullName + "." + _call.Method.Name + " timed out");
+            }
             catch (Exception e)
             {
+                error = e;
                 Logger.LogError(e);
             }
+            double milliSeconds = DateTime.Now.Subtract(start).TotalMilliseconds;
             Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation completed.");
+            if (_timer != null)
+                _timer.Dispose();
+            foreach (ServerControl.delPostBackgroundCall call in calls)
+            {
+                try
+                {
+                    call.Invoke(_call,milliSeconds,error,aborted);
+                }
+                catch (Exception e) {
+                    Logger.LogError(e);
+                }
+            }
+        }
+
+        private void _timedOut(object pars)
+        {
+            _runner.Abort();
         }
     }
 }

@@ -18,6 +18,9 @@ namespace Org.Reddragonit.EmbeddedWebServer
          * either start or stop the server.
          */
 
+        public delegate void delPreBackgroundCall(sCall call,ref bool abort);
+        public delegate void delPostBackgroundCall(sCall call, double milliseconds,Exception error,bool timedOut);
+
         //used as a single use lock for the lsits below
         private static object _lock=new object();
         //the list of Port Listeners that were created to run on the server
@@ -160,6 +163,26 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     pt.CheckRefresh();
             }
             Monitor.Exit(_lock);
+        }
+
+        public static void RegisterBackgroundOperationPreCall(ServerControl.delPreBackgroundCall call)
+        {
+            _backgroundRunner.RegisterPreCall(call);
+        }
+
+        public static void UnRegisterBackgroundOperationPreCall(ServerControl.delPreBackgroundCall call)
+        {
+            _backgroundRunner.UnregisterPreCall(call);
+        }
+
+        public static void RegisterBackgrounOperationPostCall(ServerControl.delPostBackgroundCall call)
+        {
+            _backgroundRunner.RegisterPostCall(call);
+        }
+
+        public static void UnRegisterBackgroundOperationPostCall(ServerControl.delPostBackgroundCall call)
+        {
+            _backgroundRunner.UnregisterPostCall(call);
         }
     }
 }
