@@ -133,31 +133,13 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     if (sc.Att.CanRunNow(_start))
                     {
-                        bool run = true;
-                        lock (_preCalls)
+                        try
                         {
-                            foreach (ServerControl.delPreBackgroundCall call in _preCalls)
-                            {
-                                call.Invoke(sc, out run);
-                                if (!run)
-                                    break;
-                            }
+                            new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start(_preCalls.ToArray(),_postCalls.ToArray());
                         }
-                        if (run)
+                        catch (Exception e)
                         {
-                            ServerControl.delPostBackgroundCall[] backs;
-                            lock (_postCalls)
-                            {
-                                backs = _postCalls.ToArray();
-                            }
-                            try
-                            {
-                                new BackgroundOperationRun(sc, _start, _rand.NextLong()).Start(backs);
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.LogError(e);
-                            }
+                            Logger.LogError(e);
                         }
                     }
                 }
@@ -228,47 +210,59 @@ namespace Org.Reddragonit.EmbeddedWebServer
             _runner.IsBackground = true;
         }
 
-        public void Start(ServerControl.delPostBackgroundCall[] backs)
+        public void Start(ServerControl.delPreBackgroundCall[] pres,ServerControl.delPostBackgroundCall[] backs)
         {
-            if (_call.Att.MaxRunTime.HasValue)
-                _timer = new Timer(new TimerCallback(_timedOut), null, _call.Att.MaxRunTime.Value, Timeout.Infinite);
-            _runner.Start(backs);
+            _runner.Start((object)(new object[]{pres,backs}));
         }
 
         private void _Start(object pars)
         {
-            ServerControl.delPostBackgroundCall[] calls = (ServerControl.delPostBackgroundCall[])pars;
+            ServerControl.delPreBackgroundCall[] pres = (ServerControl.delPreBackgroundCall[])((object[])pars)[0];
+            ServerControl.delPostBackgroundCall[] backs = (ServerControl.delPostBackgroundCall[])((object[])pars)[1];
             _current = this;
-            bool aborted = false;
-            Exception error = null;
-            DateTime start = DateTime.Now;
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation.");
-            try
+            bool abort = false;
+            foreach (ServerControl.delPreBackgroundCall pc in pres)
             {
-                _call.Method.Invoke(null, new object[] { });
+                pc.Invoke(_call, out abort);
+                if (abort)
+                    break;
             }
-            catch (ThreadAbortException tae)
+            if (!abort)
             {
-                aborted = true;
-                Logger.LogMessage(DiagnosticsLevels.CRITICAL, "Background operation call " + _call.type.FullName + "." + _call.Method.Name + " timed out");
-            }
-            catch (Exception e)
-            {
-                error = e;
-                Logger.LogError(e);
-            }
-            double milliSeconds = DateTime.Now.Subtract(start).TotalMilliseconds;
-            Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation completed.");
-            if (_timer != null)
-                _timer.Dispose();
-            foreach (ServerControl.delPostBackgroundCall call in calls)
-            {
+                if (_call.Att.MaxRunTime.HasValue)
+                    _timer = new Timer(new TimerCallback(_timedOut), null, _call.Att.MaxRunTime.Value, Timeout.Infinite);
+                bool aborted = false;
+                Exception error = null;
+                DateTime start = DateTime.Now;
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Invoking background operation.");
                 try
                 {
-                    call.Invoke(_call,milliSeconds,error,aborted);
+                    _call.Method.Invoke(null, new object[] { });
                 }
-                catch (Exception e) {
+                catch (ThreadAbortException tae)
+                {
+                    aborted = true;
+                    Logger.LogMessage(DiagnosticsLevels.CRITICAL, "Background operation call " + _call.type.FullName + "." + _call.Method.Name + " timed out");
+                }
+                catch (Exception e)
+                {
+                    error = e;
                     Logger.LogError(e);
+                }
+                double milliSeconds = DateTime.Now.Subtract(start).TotalMilliseconds;
+                Logger.LogMessage(DiagnosticsLevels.TRACE, "Background operation completed.");
+                if (_timer != null)
+                    _timer.Dispose();
+                foreach (ServerControl.delPostBackgroundCall call in backs)
+                {
+                    try
+                    {
+                        call.Invoke(_call, milliSeconds, error, aborted);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                    }
                 }
             }
         }
