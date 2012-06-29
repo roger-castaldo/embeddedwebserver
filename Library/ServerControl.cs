@@ -18,7 +18,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
          * either start or stop the server.
          */
 
-        public delegate void delPreBackgroundCall(sCall call,ref bool abort);
+        public delegate void delPreBackgroundCall(sCall call,out bool abort);
         public delegate void delPostBackgroundCall(sCall call, double milliseconds,Exception error,bool timedOut);
 
         //used as a single use lock for the lsits below
