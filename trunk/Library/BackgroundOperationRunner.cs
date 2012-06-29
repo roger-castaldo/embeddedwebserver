@@ -138,7 +138,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                         {
                             foreach (ServerControl.delPreBackgroundCall call in _preCalls)
                             {
-                                call.Invoke(sc, ref run);
+                                call.Invoke(sc, out run);
                                 if (!run)
                                     break;
                             }
