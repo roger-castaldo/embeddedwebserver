@@ -27,6 +27,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             return true;
         }
 
+        //allows for additional conversion from json objects as/if required
+        protected virtual object ConvertJsonObject(object obj, Type expectedType, out bool converted)
+        {
+            converted = false;
+            return obj;
+        }
+
         //houses the current http connection being used for the current request
         private HttpRequest _request;
         public HttpRequest Request
@@ -267,11 +274,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
             else
             {
-                object ret = expectedType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                foreach (string str in ((Hashtable)obj).Keys)
+                bool converted = false;
+                object ret = ConvertJsonObject(obj, expectedType, out converted);
+                if (!converted)
                 {
-                    PropertyInfo pi = expectedType.GetProperty(str);
-                    pi.SetValue(ret, ConvertObjectToType(((Hashtable)obj)[str], pi.PropertyType), new object[0]);
+                    ret = expectedType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                    foreach (string str in ((Hashtable)obj).Keys)
+                    {
+                        PropertyInfo pi = expectedType.GetProperty(str);
+                        pi.SetValue(ret, ConvertObjectToType(((Hashtable)obj)[str], pi.PropertyType), new object[0]);
+                    }
                 }
                 return ret;
             }
