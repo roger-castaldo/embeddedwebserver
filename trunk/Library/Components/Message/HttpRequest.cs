@@ -137,7 +137,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _headers[name] = (value == string.Empty ? null : value);
         }
 
-        private void _RequestHeaderComplete(bool hasBody,out bool callComplete)
+        private void _RequestHeaderComplete(bool hasBody,bool bodyComplete,out bool callComplete)
         {
             callComplete = hasBody;
             _connection.HeaderComplete();
@@ -148,6 +148,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             _cookie = new CookieCollection(_headers["Cookie"]);
             if (!hasBody)
                 _RequestComplete();
+            else if (bodyComplete)
+                _ParseBody();
             Logger.Trace("Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
             _handlingThread = Thread.CurrentThread;
             _currentRequest = this;
@@ -198,6 +200,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         {
             _parser.RequestBodyBytesRecieved = null;
             _parser.RequestComplete = null;
+            if (_parameters == null)
+                _ParseBody();
+        }
+
+        private void _ParseBody(){
             Dictionary<string, string> Parameters = new Dictionary<string, string>();
             Dictionary<string, UploadedFile> uploadedFiles = new Dictionary<string, UploadedFile>();
             if (URL.Query != null)
