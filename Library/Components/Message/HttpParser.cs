@@ -12,7 +12,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         internal delegate void OnRequestLineRecieved(string[] words);
         internal delegate void OnRequestHeaderLineRecieved(string name, string value);
-        internal delegate void OnRequestHeaderComplete(bool hasBody, out bool callComplete);
+        internal delegate void OnRequestHeaderComplete(bool hasBody,bool bodyFinished, out bool callComplete);
         internal delegate void OnRequestComplete();
         internal delegate void OnBodyBytesRecieved(byte[] buffer, int offset, int count);
 
@@ -95,7 +95,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 // Eat the line break
                 _reader.Consume('\r', '\n');
                 bool callcomplete = true;
-                _reqHeaderComplete(_bodyBytesLeft!=0,out callcomplete);
+                bool hasBody = _bodyBytesLeft > 0;
+                if (_bodyBytesLeft != 0 && _bodyBytesLeft <= _reader.RemainingLength)
+                {
+                    _reqBodyBytesRecieved(_buffer, _reader.Index, _bodyBytesLeft);
+                    _reader.Index += _bodyBytesLeft;
+                    _bodyBytesLeft = 0;
+                }
+                _reqHeaderComplete(hasBody,hasBody && (_bodyBytesLeft==0),out callcomplete);
                 // Don't have a body?
                 if (_bodyBytesLeft == 0)
                 {
