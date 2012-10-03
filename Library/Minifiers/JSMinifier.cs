@@ -24,18 +24,24 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
 		public static string Minify(string js)
 		{
 			string[] lines = js.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-			StringBuilder emptyLines = new StringBuilder();
-			foreach (string line in lines) {
-				string s = line.Trim();
-				if (s.Length > 0 && !s.StartsWith("//"))
-					emptyLines.AppendLine(s.Trim());
-			}
-			
-			string ret = CSSMinifier.StripComments(emptyLines.ToString());
-            Stream outMS = new MemoryStream();
-            Stream inMS = new MemoryStream(ASCIIEncoding.ASCII.GetBytes(ret));
-            new JSMinifier().Minify(ref inMS, ref outMS);
-			return ASCIIEncoding.ASCII.GetString(((MemoryStream)outMS).ToArray());;
+            if (lines.Length != 1)
+            {
+                StringBuilder emptyLines = new StringBuilder();
+                foreach (string line in lines)
+                {
+                    string s = line.Trim();
+                    if (s.Length > 0 && !s.StartsWith("//"))
+                        emptyLines.AppendLine(s.Trim());
+                }
+
+                string ret = CSSMinifier.StripComments(emptyLines.ToString());
+                Stream outMS = new MemoryStream();
+                Stream inMS = new MemoryStream(ASCIIEncoding.ASCII.GetBytes(ret));
+                new JSMinifier().Minify(ref inMS, ref outMS);
+                return ASCIIEncoding.ASCII.GetString(((MemoryStream)outMS).ToArray()); ;
+            }
+            else
+                return js;
 		}
 
         const int EOF = -1;

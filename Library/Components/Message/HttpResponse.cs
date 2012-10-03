@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
+using Org.Reddragonit.EmbeddedWebServer.Minifiers;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
@@ -113,6 +114,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             {
                 _isResponseSent = true;
                 ResponseWriter.Flush();
+                _CompressIfNecessary();
                 DateTime start = DateTime.Now;
                 _responseHeaders.ContentLength = _outStream.Length.ToString();
                 if (_responseHeaders["Accept-Ranges"] == null)
@@ -187,6 +189,29 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 _request.Connection.SendBuffer(outStream.ToArray(),_responseHeaders["Connection"]=="close");
                 if (_request.URL != null)
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+            }
+        }
+
+        private void _CompressIfNecessary()
+        {
+            if (_request.URL.AbsolutePath.EndsWith(".js")){
+                MemoryStream jms = new MemoryStream();
+                StreamWriter jsw = new StreamWriter(jms);
+                StreamReader jsr = new StreamReader(_outStream);
+                _outStream.Position = 0;
+                jsw.Write(JSMinifier.Minify(jsr.ReadToEnd()));
+                jsw.Flush();
+                _outStream = jms;
+            }
+            else if (_request.URL.AbsolutePath.EndsWith(".css"))
+            {
+                MemoryStream cms = new MemoryStream();
+                StreamWriter csw = new StreamWriter(cms);
+                StreamReader csr = new StreamReader(_outStream);
+                _outStream.Position = 0;
+                csw.Write(CSSMinifier.Minify(csr.ReadToEnd()));
+                csw.Flush();
+                _outStream = cms;
             }
         }
 
