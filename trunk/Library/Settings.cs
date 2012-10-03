@@ -97,5 +97,31 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 return int.MaxValue;
             }
         }
+
+        //the flag to allow backend compression of all js files
+        private const string COMPRESS_ALL_JS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllJS";
+        public static bool CompressAllJS
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[COMPRESS_ALL_JS_SETTING_ID] != null)
+                    return bool.Parse(ConfigurationSettings.AppSettings[COMPRESS_ALL_JS_SETTING_ID]);
+                return false;
+
+            }
+        }
+
+        //the flag to allow backend compression of all css files
+        private const string COMPRESS_ALL_CSS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllCSS";
+        public static bool CompressAllCSS
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[COMPRESS_ALL_CSS_SETTING_ID] != null)
+                    return bool.Parse(ConfigurationSettings.AppSettings[COMPRESS_ALL_CSS_SETTING_ID]);
+                return false;
+
+            }
+        }
     }
 }
