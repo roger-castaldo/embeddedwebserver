@@ -111,6 +111,18 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //the comma seperated list of js files (absolute urls) to ignore for compress all flag
+        private const string COMPRESS_ALL_JS_IGNORE_PATHS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllJSIgnorePaths";
+        public static List<string> CompressAllJSIgnorePaths
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[COMPRESS_ALL_JS_IGNORE_PATHS_SETTING_ID] != null)
+                    return new List<string>(ConfigurationSettings.AppSettings[COMPRESS_ALL_JS_IGNORE_PATHS_SETTING_ID].Split(','));
+                return new List<string>();
+            }
+        }
+
         //the flag to allow backend compression of all css files
         private const string COMPRESS_ALL_CSS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllCSS";
         public static bool CompressAllCSS
@@ -121,6 +133,18 @@ namespace Org.Reddragonit.EmbeddedWebServer
                     return bool.Parse(ConfigurationSettings.AppSettings[COMPRESS_ALL_CSS_SETTING_ID]);
                 return false;
 
+            }
+        }
+
+        //the comma seperated list of css files (absolute urls) to ignore for compress all flag
+        private const string COMPRESS_ALL_CSS_IGNORE_PATHS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllCSSIgnorePaths";
+        public static List<string> CompressAllCSSIgnorePaths
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[COMPRESS_ALL_CSS_IGNORE_PATHS_SETTING_ID] != null)
+                    return new List<string>(ConfigurationSettings.AppSettings[COMPRESS_ALL_CSS_IGNORE_PATHS_SETTING_ID].Split(','));
+                return new List<string>();
             }
         }
     }

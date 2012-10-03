@@ -194,7 +194,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         private void _CompressIfNecessary()
         {
-            if (_request.URL.AbsolutePath.EndsWith(".js")){
+            if (_request.URL.AbsolutePath.EndsWith(".js") && !Settings.CompressAllJSIgnorePaths.Contains(_request.URL.AbsolutePath)){
                 MemoryStream jms = new MemoryStream();
                 StreamWriter jsw = new StreamWriter(jms);
                 StreamReader jsr = new StreamReader(_outStream);
@@ -203,7 +203,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 jsw.Flush();
                 _outStream = jms;
             }
-            else if (_request.URL.AbsolutePath.EndsWith(".css"))
+            else if (_request.URL.AbsolutePath.EndsWith(".css") && !Settings.CompressAllCSSIgnorePaths.Contains(_request.URL.AbsolutePath))
             {
                 MemoryStream cms = new MemoryStream();
                 StreamWriter csw = new StreamWriter(cms);
