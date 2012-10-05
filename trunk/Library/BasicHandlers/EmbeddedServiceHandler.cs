@@ -140,20 +140,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         sw.AppendLine("e.setAttribute('name','jsonScriptTag');");
                         sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
                     }
-                    sw.AppendLine("var splitted = '" + t.FullName + "'.split('.');" +
-                    "var tmp = splitted[0]; " +
-                    "if (window[tmp]==undefined){ " +
-                    "    window[tmp]= new Object(); " +
-                    "} " +
-                    "var curObj = window[tmp]; " +
-                    "for (var x=1;x<splitted.length;x++){ " +
-                    "    if (curObj[splitted[x]]==undefined){ " +
-                    "        curObj[splitted[x]]={}; " +
-                    "    } " +
-                    "    tmp+='.'+splitted[x]; " +
-                    "    curObj=curObj[splitted[x]]; " +
-                    "}");
-                    sw.Append(t.FullName + " = {fullNameSpace:'" + t.Namespace + "'");
+                    string[] splitted = t.FullName.Split('.');
+                    sw.AppendLine("var " + splitted[0] + " = " + splitted[0] + " || {};");
+                    string nspace = splitted[0];
+                    for (int x = 1; x < splitted.Length-1; x++)
+                    {
+                        sw.AppendLine(nspace+"."+splitted[x]+" = "+nspace+"." + splitted[x] + " || {};");
+                        nspace += "."+splitted[x];
+                    }
+                    sw.Append(t.FullName+" = {'fullNameSpace':'" + t.Namespace + "'");
                     foreach (MethodInfo mi in t.GetMethods())
                     {
                         if (mi.GetCustomAttributes(typeof(WebMethod), true).Length > 0)
@@ -162,8 +157,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                             GenerateFunctionCall(mi, t, path, sw);
                         }
                     }
-                    sw.AppendLine("};\n");
-                    string res = JSMinifier.Minify(sw.ToString());
+                    sw.AppendLine("};");
+                    string res = (Settings.CompressAllJS ? JSMinifier.Minify(sw.ToString()) : sw.ToString());
                     Monitor.Enter(_lock);
                     if (!_generatedJS.ContainsKey(t.FullName))
                         _generatedJS.Add(t.FullName, new CachedItemContainer(res));
