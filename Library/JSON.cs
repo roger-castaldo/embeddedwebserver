@@ -395,9 +395,7 @@ namespace Procurios.Public
 
         protected object OptimizeNumber(long val)
         {
-            if (val > (long)byte.MinValue && val < (long)byte.MaxValue)
-                return (byte)val;
-            else if (val > (long)short.MinValue && val < (long)short.MaxValue)
+            if (val > (long)short.MinValue && val < (long)short.MaxValue)
                 return (short)val;
             else if (val > (long)int.MinValue && val < (long)int.MaxValue)
                 return (int)val;
@@ -406,9 +404,7 @@ namespace Procurios.Public
 
         protected object OptimizeNumber(ulong val)
         {
-            if (val > (ulong)byte.MinValue && val < (ulong)byte.MaxValue)
-                return (byte)val;
-            else if (val > (ulong)ushort.MinValue && val < (ulong)ushort.MaxValue)
+            if (val > (ulong)ushort.MinValue && val < (ulong)ushort.MaxValue)
                 return (ushort)val;
             else if (val > (ulong)uint.MinValue && val < (ulong)uint.MaxValue)
                 return (uint)val;
