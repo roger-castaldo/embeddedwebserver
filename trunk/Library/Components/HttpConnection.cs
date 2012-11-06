@@ -174,7 +174,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         {
             _currentConnection = this;
             if (_idleTimer != null)
-                _idleTimer.Change(_CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
+            {
+                try
+                {
+                    _idleTimer.Change(_CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
+                }
+                catch (Exception e) { }
+            }
             // been closed by our side.
             if (_inputStream == null)
                 return;
