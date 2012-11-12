@@ -141,6 +141,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
                     }
                     string[] splitted = t.FullName.Split('.');
+                    if (t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
+                        splitted = (((EmbeddedServiceNamespace)t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace+"."+t.Name).Split('.');
                     sw.AppendLine("var " + splitted[0] + " = " + splitted[0] + " || {};");
                     string nspace = splitted[0];
                     for (int x = 1; x < splitted.Length-1; x++)
@@ -148,12 +150,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                         sw.AppendLine(nspace+"."+splitted[x]+" = "+nspace+"." + splitted[x] + " || {};");
                         nspace += "."+splitted[x];
                     }
-                    sw.Append(t.FullName+" = {'fullNameSpace':'" + t.Namespace + "'");
+                    sw.Append(nspace+" = {");
+                    bool first = true;
                     foreach (MethodInfo mi in t.GetMethods())
                     {
                         if (mi.GetCustomAttributes(typeof(WebMethod), true).Length > 0)
                         {
-                            sw.AppendLine(",");
+                            if (!first)
+                                sw.AppendLine(",");
+                            else
+                                first = false;
                             GenerateFunctionCall(mi, t, path, sw);
                         }
                     }

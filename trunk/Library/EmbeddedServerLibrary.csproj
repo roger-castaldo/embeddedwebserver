@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{140F88D6-E0EE-4021-9167-A6455F32ADC1}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\BackgroundOperationCall.cs" />
+    <Compile Include="Attributes\EmbeddedServiceNamespace.cs" />
     <Compile Include="Attributes\Enums.cs" />
     <Compile Include="Attributes\WebMethod.cs" />
     <Compile Include="BackgroundOperationRunner.cs" />
