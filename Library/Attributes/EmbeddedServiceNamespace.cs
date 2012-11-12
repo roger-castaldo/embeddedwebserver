@@ -15,7 +15,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Attributes
 
         public EmbeddedServiceNamespace(string Namespace)
         {
-            _namespace = (Namespace.EndsWith(".") ? NameSpace.Trim('.') : NameSpace);
+            _namespace = (Namespace.EndsWith(".") ? Namespace.Trim('.') : Namespace);
         }
     }
 }

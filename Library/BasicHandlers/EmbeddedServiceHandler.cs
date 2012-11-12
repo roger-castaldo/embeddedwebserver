@@ -103,24 +103,38 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          */
         private void ProcessJSGeneration(HttpRequest request, Site site)
         {
-            Type t = Utility.LocateType(request.Parameters["TYPE"]);
-            if (t == null)
+            Monitor.Enter(_lock);
+            if (_generatedJS.ContainsKey(request.Parameters["TYPE"]))
             {
-                request.ResponseStatus = HttpStatusCodes.Not_Found;
-            }
-            else
-            {
-                request.ResponseHeaders.ContentType = "text/javascript";
-                bool create = true;
-                Monitor.Enter(_lock);
-                if (_generatedJS.ContainsKey(t.FullName))
-                {
-                    request.ResponseWriter.Write(_generatedJS[t.FullName].Value);
-                    create = false;
-                }
+                request.ResponseWriter.Write(_generatedJS[request.Parameters["TYPE"]].Value);
                 Monitor.Exit(_lock);
-                if (create)
+                request.SendResponse();
+            }
+            if (!request.IsResponseSent)
+            {
+                Monitor.Exit(_lock);
+                Type t = Utility.LocateType(request.Parameters["TYPE"]);
+                if (t == null)
                 {
+                    foreach (Type ty in Site.CurrentSite.EmbeddedServiceTypes)
+                    {
+                        if (ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
+                        {
+                            if (((EmbeddedServiceNamespace)ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + ty.Name == request.Parameters["TYPE"])
+                            {
+                                t = ty;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (t == null)
+                {
+                    request.ResponseStatus = HttpStatusCodes.Not_Found;
+                }
+                else
+                {
+                    request.ResponseHeaders.ContentType = "text/javascript";
                     string path = GetPathForType(t);
 
                     StringBuilder sw = new StringBuilder();
@@ -142,15 +156,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                     }
                     string[] splitted = t.FullName.Split('.');
                     if (t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
-                        splitted = (((EmbeddedServiceNamespace)t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace+"."+t.Name).Split('.');
+                        splitted = (((EmbeddedServiceNamespace)t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + t.Name).Split('.');
                     sw.AppendLine("var " + splitted[0] + " = " + splitted[0] + " || {};");
                     string nspace = splitted[0];
-                    for (int x = 1; x < splitted.Length-1; x++)
+                    for (int x = 1; x < splitted.Length - 1; x++)
                     {
-                        sw.AppendLine(nspace+"."+splitted[x]+" = "+nspace+"." + splitted[x] + " || {};");
-                        nspace += "."+splitted[x];
+                        sw.AppendLine(nspace + "." + splitted[x] + " = " + nspace + "." + splitted[x] + " || {};");
+                        nspace += "." + splitted[x];
                     }
-                    sw.Append(nspace+" = {");
+                    sw.Append(nspace + " = $.extend(" + nspace + ",{" + splitted[splitted.Length - 1] + ":{");
                     bool first = true;
                     foreach (MethodInfo mi in t.GetMethods())
                     {
@@ -163,11 +177,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                             GenerateFunctionCall(mi, t, path, sw);
                         }
                     }
-                    sw.AppendLine("};");
+                    sw.AppendLine("}});");
                     string res = (Settings.CompressAllJS ? JSMinifier.Minify(sw.ToString()) : sw.ToString());
                     Monitor.Enter(_lock);
-                    if (!_generatedJS.ContainsKey(t.FullName))
-                        _generatedJS.Add(t.FullName, new CachedItemContainer(res));
+                    if (!_generatedJS.ContainsKey(request.Parameters["TYPE"]))
+                        _generatedJS.Add(request.Parameters["TYPE"], new CachedItemContainer(res));
                     Monitor.Exit(_lock);
                     request.ResponseWriter.Write(res);
                 }
@@ -277,6 +291,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                 tmp.Add(GetPathForType(t), t.FullName);
             }
             _pathMaps = tmp;
+            _generatedJS = new Dictionary<string, CachedItemContainer>();
         }
 
         public void DeInit()
