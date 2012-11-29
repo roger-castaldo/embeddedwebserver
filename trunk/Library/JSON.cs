@@ -825,10 +825,16 @@ namespace Procurios.Public
 
         protected void SerializeNumber(object o, StringBuilder builder)
         {
-            if (o is int || o is Int32 || o is Int16 || o is Int16 || o is Int64 || o is long)
+            if (o is int? || o is Int32? || o is Int16? || o is Int16? || o is Int64? || o is long? || o is byte? || o is Byte?)
+                builder.Append((o == null ? "null" : Convert.ToString(long.Parse(o.ToString()), CultureInfo.InvariantCulture)));
+            else if (o is uint? || o is UInt16? || o is UInt32? || o is UInt64? || o is ushort? || o is ulong?)
+                builder.Append((o == null ? "null" : Convert.ToString(ulong.Parse(o.ToString()), CultureInfo.InvariantCulture)));
+            else if (o is int || o is Int32 || o is Int16 || o is Int16 || o is Int64 || o is long)
                 builder.Append(Convert.ToString(long.Parse(o.ToString()), CultureInfo.InvariantCulture));
             else if (o is uint || o is UInt16 || o is UInt32 || o is UInt64 || o is ushort || o is ulong)
                 builder.Append(Convert.ToString(ulong.Parse(o.ToString()), CultureInfo.InvariantCulture));
+            else if (o is double? || o is Double? || o is decimal? || o is Decimal? || o is float?)
+                builder.Append((o == null ? "null" : Convert.ToString(double.Parse(o.ToString()), CultureInfo.InvariantCulture)));
             else
                 builder.Append(Convert.ToString(double.Parse(o.ToString()), CultureInfo.InvariantCulture));
         }
@@ -839,7 +845,8 @@ namespace Procurios.Public
         /// </summary>
         protected bool IsNumeric(object o)
         {
-            return o is int || o is Int32 || o is Int16 || o is Int16 || o is Int64 || o is long || o is double || o is Double || o is decimal || o is Decimal || o is uint || o is UInt16 || o is UInt32 || o is UInt64 || o is ushort || o is ulong || o is float;
+            return o is int || o is Int32 || o is Int16 || o is Int16 || o is Int64 || o is long || o is double || o is Double || o is decimal || o is Decimal || o is uint || o is UInt16 || o is UInt32 || o is UInt64 || o is ushort || o is ulong || o is float || o is byte || o is Byte
+                || o is int? || o is Int32? || o is Int16? || o is Int16? || o is Int64? || o is long? || o is double? || o is Double? || o is decimal? || o is Decimal? || o is uint? || o is UInt16? || o is UInt32? || o is UInt64? || o is ushort? || o is ulong? || o is float? || o is byte? || o is Byte?;
         }
 	}
 }
