@@ -81,7 +81,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     try
                     {
-                        if (!ass.GetName().Name.Contains("mscorlib") && !ass.GetName().Name.StartsWith("System") && !ass.GetName().Name.StartsWith("Microsoft"))
+                        if (ass.GetName().Name != "mscorlib" && !ass.GetName().Name.StartsWith("System.") && ass.GetName().Name != "System" && !ass.GetName().Name.StartsWith("Microsoft"))
                         {
                             t = ass.GetType(typeName, false, true);
                             if (t != null)
@@ -108,7 +108,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
             {
                 try
                 {
-                    if (!ass.GetName().Name.Contains("mscorlib") && !ass.GetName().Name.StartsWith("System") && !ass.GetName().Name.StartsWith("Microsoft"))
+                    if (ass.GetName().Name != "mscorlib" && !ass.GetName().Name.StartsWith("System.") && ass.GetName().Name != "System" && !ass.GetName().Name.StartsWith("Microsoft"))
                     {
                         foreach (Type t in ass.GetTypes())
                         {
@@ -160,7 +160,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 {
                     try
                     {
-                        if (!ass.GetName().Name.Contains("mscorlib") && !ass.GetName().Name.StartsWith("System") && !ass.GetName().Name.StartsWith("Microsoft"))
+                        if (ass.GetName().Name != "mscorlib" && !ass.GetName().Name.StartsWith("System.") && ass.GetName().Name != "System" && !ass.GetName().Name.StartsWith("Microsoft"))
                         {
                             ret = ass.GetManifestResourceStream(name);
                             if (ret != null)
