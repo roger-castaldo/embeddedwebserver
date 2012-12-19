@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
+using System.Security.Cryptography;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
 {
@@ -91,6 +92,42 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             _idleSeonds = (idleSeconds.HasValue ? idleSeconds.Value : (long)(60 * 60));
             _totalRunSeconds = (totalRunSeconds.HasValue ? totalRunSeconds.Value : (long)(24 * 60 * 60));
             _backlog = (backLog.HasValue ? backLog.Value : 20);
+        }
+    }
+
+    public struct sHttpAuthUsernamePassword
+    {
+        private string _username;
+        public string UserName
+        {
+            get { return _username; }
+        }
+
+        private string _password;
+        public string Password
+        {
+            get { return _password; }
+        }
+
+        public sHttpAuthUsernamePassword(string username, string password)
+        {
+            _username = username;
+            _password = password;
+            _basicAuthString = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes(_username + ":" + _password));
+        }
+
+        private string _basicAuthString;
+        internal string BasicAuthorizationString
+        {
+            get { return _basicAuthString; }
+        }
+
+        internal string GetDigestString(string realm, string method,string uri, string nonce)
+        {
+            MD5 m = MD5.Create();
+            string ha1 = BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(_username + ":" + realm + ":" + _password))).Replace("-", "").ToLower();
+            string ha2 = BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(method + ":" + uri))).Replace("-", "").ToLower();
+            return BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(ha1 + ":" + nonce + ":" + ha2))).Replace("-", "").ToLower();
         }
     }
 }

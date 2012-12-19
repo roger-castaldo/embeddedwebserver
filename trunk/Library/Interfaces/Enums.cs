@@ -23,4 +23,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         jpeg,
         gif
     }
+
+    //the list of available http auth types
+    public enum HttpAuthTypes
+    {
+        Basic,
+        Digest,
+        None
+    }
 }
