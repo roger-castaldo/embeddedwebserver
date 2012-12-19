@@ -251,6 +251,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         }
 
         protected virtual void PostAuthentication(HttpRequest request, sHttpAuthUsernamePassword user) { }
+
+        protected virtual void PreAuthentication(HttpRequest request, out bool loadSession) { loadSession = false; }
         #endregion
 
         private string _id;
@@ -387,6 +389,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 bool found = false;
                 string realm = null;
                 bool authed = false;
+                bool loadSession = false;
+                this.PreAuthentication(request, out loadSession);
+                if (loadSession)
+                    SessionManager.LoadStateForConnection(request, this);
                 HttpAuthTypes authType = this.GetAuthenticationTypeForUrl(request.URL,out realm);
                 switch (authType)
                 {
