@@ -109,23 +109,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return _password; }
         }
 
+        private string _ha1;
+
         public sHttpAuthUsernamePassword(string username, string password)
+            : this(username, password, null) { }
+
+        public sHttpAuthUsernamePassword(string username, string password,string ha1)
         {
             _username = username;
             _password = password;
-            _basicAuthString = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes(_username + ":" + _password));
+            _ha1 = ha1;
+            _basicAuthString = null;
+            if (_password!=null)
+                _basicAuthString = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes(_username + ":" + _password));
         }
 
         private string _basicAuthString;
-        internal string BasicAuthorizationString
+        public string BasicAuthorizationString
         {
             get { return _basicAuthString; }
         }
 
-        internal string GetDigestString(string realm, string method,string uri, string nonce)
+        public string GetDigestString(string realm, string method,string uri, string nonce)
         {
             MD5 m = MD5.Create();
-            string ha1 = BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(_username + ":" + realm + ":" + _password))).Replace("-", "").ToLower();
+            string ha1 = (_ha1==null ? BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(_username + ":" + realm + ":" + _password))).Replace("-", "").ToLower() : _ha1);
             string ha2 = BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(method + ":" + uri))).Replace("-", "").ToLower();
             return BitConverter.ToString(m.ComputeHash(ASCIIEncoding.ASCII.GetBytes(ha1 + ":" + nonce + ":" + ha2))).Replace("-", "").ToLower();
         }

@@ -253,6 +253,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         protected virtual void PostAuthentication(HttpRequest request, sHttpAuthUsernamePassword user) { }
 
         protected virtual void PreAuthentication(HttpRequest request, out bool loadSession) { loadSession = false; }
+
+        protected virtual void PostAuthenticationFailure(HttpRequest request,string username) { }
         #endregion
 
         private string _id;
@@ -417,6 +419,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             if (!authed)
                             {
+                                PostAuthenticationFailure(request,pars["username"]);
                                 request.ResponseStatus = HttpStatusCodes.Unauthorized;
                                 request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\"" + Convert.ToBase64String(_rand.NextBytes(4)) + "\"";
                             }
@@ -442,6 +445,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             if (!authed)
                             {
+                                PostAuthenticationFailure(request,ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]);
                                 request.ResponseStatus = HttpStatusCodes.Unauthorized;
                                 request.ResponseHeaders["WWW-Authenticate"] = "Basic realm=\"" + realm + "\"";
                             }
