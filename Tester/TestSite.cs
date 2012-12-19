@@ -57,6 +57,24 @@ namespace Tester
             }
         }
 
+        protected override sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url)
+        {
+            if (url.AbsolutePath == "/" || url.AbsolutePath == "/index.html")
+                return new sHttpAuthUsernamePassword[] { new sHttpAuthUsernamePassword("roger", "castaldo") };
+            return null;
+        }
+
+        protected override HttpAuthTypes GetAuthenticationTypeForUrl(Uri url, out string realm)
+        {
+            realm = null;
+            if (url.AbsolutePath == "/" || url.AbsolutePath == "/index.html")
+            {
+                realm = "Hello";
+                return HttpAuthTypes.Digest;
+            }
+            return HttpAuthTypes.None;
+        }
+
         public override Dictionary<string, sEmbeddedFile> EmbeddedFiles
         {
             get

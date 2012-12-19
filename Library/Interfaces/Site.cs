@@ -238,6 +238,19 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         {
             return false;
         }
+
+        protected virtual HttpAuthTypes GetAuthenticationTypeForUrl(Uri url,out string realm)
+        {
+            realm = null;
+            return HttpAuthTypes.None;
+        }
+
+        protected virtual sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url)
+        {
+            return null;
+        }
+
+        protected virtual void PostAuthentication(HttpRequest request, sHttpAuthUsernamePassword user) { }
         #endregion
 
         private string _id;
@@ -372,82 +385,145 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 DateTime start = DateTime.Now;
                 _currentSite = this;
                 bool found = false;
-                foreach (IRequestHandler handler in Handlers)
+                string realm = null;
+                bool authed = false;
+                HttpAuthTypes authType = this.GetAuthenticationTypeForUrl(request.URL,out realm);
+                switch (authType)
                 {
-                    if (handler.CanProcessRequest(request, this))
-                    {
-                        found = true;
-                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
-                        if (handler.IsReusable)
+                    case HttpAuthTypes.Digest:
+                        if (!(request.Headers["Authorization"] == null ? "" : request.Headers["Authorization"]).Trim().StartsWith("Digest"))
                         {
-                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                SessionManager.LoadStateForConnection(request, this);
-                            try
-                            {
-                                handler.ProcessRequest(request, this);
-                            }
-                            catch (ThreadAbortException tae)
-                            {
-                                if (!request.IsResponseSent)
-                                {
-                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                    request.SendResponse();
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.LogError(e);
-                                if (!RequestError(request, e))
-                                {
-                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                    request.ClearResponse();
-                                    request.ResponseWriter.Write(e.Message);
-                                }
-                            }
-                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                SessionManager.StoreSessionForConnection(request, this);
+                            request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\""+Convert.ToBase64String(_rand.NextBytes(4))+"\"";
+                            request.ResponseStatus = HttpStatusCodes.Unauthorized;
                         }
                         else
                         {
-                            IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                            hndl.Init();
-                            if (hndl.RequiresSessionForRequest(request, this))
-                                SessionManager.LoadStateForConnection(request, this);
-                            try
+                            Dictionary<string, string> pars = _ExtractAuthData(request.Headers["Authorization"].Trim().Substring(request.Headers["Authorization"].Trim().IndexOf(' ') + 1));
+                            string dpass = pars["response"];
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL))
                             {
-                                hndl.ProcessRequest(request, this);
-                            }
-                            catch (ThreadAbortException tae)
-                            {
-                                if (!request.IsResponseSent)
+                                if (usr.GetDigestString(realm,request.Method,pars["uri"],pars["nonce"]) == dpass)
                                 {
-                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                    request.SendResponse();
+                                    authed = true;
+                                    this.PostAuthentication(request, usr);
+                                    break;
                                 }
                             }
-                            catch (Exception e)
+                            if (!authed)
                             {
-                                Logger.LogError(e);
-                                if (!RequestError(request, e))
-                                {
-                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                    request.ClearResponse();
-                                    request.ResponseWriter.Write(e.Message);
-                                }
+                                request.ResponseStatus = HttpStatusCodes.Unauthorized;
+                                request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\"" + Convert.ToBase64String(_rand.NextBytes(4)) + "\"";
                             }
-                            if (hndl.RequiresSessionForRequest(request, this))
-                                SessionManager.StoreSessionForConnection(request, this);
-                            hndl.DeInit();
                         }
                         break;
-                    }
+                    case HttpAuthTypes.Basic:
+                        if (!(request.Headers["Authorization"] == null ? "" : request.Headers["Authorization"]).Trim().StartsWith("Basic"))
+                        {
+                            request.ResponseHeaders["WWW-Authenticate"] = "Basic realm=\"" + realm + "\"";
+                            request.ResponseStatus = HttpStatusCodes.Unauthorized;
+                        }
+                        else
+                        {
+                            string bpass = request.Headers["Authorization"].Trim().Split(' ')[1];
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL))
+                            {
+                                if (usr.BasicAuthorizationString == bpass)
+                                {
+                                    authed = true;
+                                    this.PostAuthentication(request, usr);
+                                    break;
+                                }
+                            }
+                            if (!authed)
+                            {
+                                request.ResponseStatus = HttpStatusCodes.Unauthorized;
+                                request.ResponseHeaders["WWW-Authenticate"] = "Basic realm=\"" + realm + "\"";
+                            }
+                        }
+                        break;
+                    case HttpAuthTypes.None:
+                        authed = true;
+                        break;
                 }
-                if (!found)
+                if (authed)
                 {
-                    request.ClearResponse();
-                    request.ResponseStatus = HttpStatusCodes.Not_Found;
+                    foreach (IRequestHandler handler in Handlers)
+                    {
+                        if (handler.CanProcessRequest(request, this))
+                        {
+                            found = true;
+                            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
+                            if (handler.IsReusable)
+                            {
+                                if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                    SessionManager.LoadStateForConnection(request, this);
+                                try
+                                {
+                                    handler.ProcessRequest(request, this);
+                                }
+                                catch (ThreadAbortException tae)
+                                {
+                                    if (!request.IsResponseSent)
+                                    {
+                                        request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                        request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                        request.SendResponse();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.LogError(e);
+                                    if (!RequestError(request, e))
+                                    {
+                                        request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                        request.ClearResponse();
+                                        request.ResponseWriter.Write(e.Message);
+                                    }
+                                }
+                                if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                    SessionManager.StoreSessionForConnection(request, this);
+                            }
+                            else
+                            {
+                                IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                                hndl.Init();
+                                if (hndl.RequiresSessionForRequest(request, this))
+                                    SessionManager.LoadStateForConnection(request, this);
+                                try
+                                {
+                                    hndl.ProcessRequest(request, this);
+                                }
+                                catch (ThreadAbortException tae)
+                                {
+                                    if (!request.IsResponseSent)
+                                    {
+                                        request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                        request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                        request.SendResponse();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.LogError(e);
+                                    if (!RequestError(request, e))
+                                    {
+                                        request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                        request.ClearResponse();
+                                        request.ResponseWriter.Write(e.Message);
+                                    }
+                                }
+                                if (hndl.RequiresSessionForRequest(request, this))
+                                    SessionManager.StoreSessionForConnection(request, this);
+                                hndl.DeInit();
+                            }
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        request.ClearResponse();
+                        request.ResponseStatus = HttpStatusCodes.Not_Found;
+                    }
                 }
             }
             PostRequest(request);
@@ -462,7 +538,32 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             catch (Exception e) { }
         }
 
+        private Dictionary<string, string> _ExtractAuthData(string bpass)
+        {
+            Dictionary<string, string> ret = new Dictionary<string, string>();
+            bpass = bpass.Trim();
+            while (bpass.Contains("="))
+            {
+                try
+                {
+                    string name = bpass.Substring(0, bpass.IndexOf("=")).Trim();
+                    bpass = bpass.Substring(bpass.IndexOf("=") + 2);
+                    string val = bpass.Substring(0, bpass.IndexOf("\"")).Trim();
+                    bpass = bpass.Substring(val.Length + 1).TrimStart(',');
+                    ret.Add(name, val);
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
+            }
+            return ret;
+        }
+
+        private MT19937 _rand;
+
         public Site() {
+            _rand = new MT19937(DateTime.Now.Ticks);
         }
 
         public string MapPath(string path)
