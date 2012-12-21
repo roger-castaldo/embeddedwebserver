@@ -57,7 +57,7 @@ namespace Tester
             }
         }
 
-        protected override sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url)
+        protected override sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url,string username)
         {
             if (url.AbsolutePath == "/" || url.AbsolutePath == "/index.html")
                 return new sHttpAuthUsernamePassword[] { new sHttpAuthUsernamePassword("roger", "castaldo") };

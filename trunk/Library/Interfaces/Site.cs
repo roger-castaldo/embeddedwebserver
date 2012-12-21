@@ -245,7 +245,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             return HttpAuthTypes.None;
         }
 
-        protected virtual sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url)
+        protected virtual sHttpAuthUsernamePassword[] GetAuthenticationInformationForUrl(Uri url,string username)
         {
             return null;
         }
@@ -408,7 +408,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         {
                             Dictionary<string, string> pars = _ExtractAuthData(request.Headers["Authorization"].Trim().Substring(request.Headers["Authorization"].Trim().IndexOf(' ') + 1));
                             string dpass = pars["response"];
-                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL))
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL,pars["username"]))
                             {
                                 if (usr.GetDigestString(realm,request.Method,pars["uri"],pars["nonce"]) == dpass)
                                 {
@@ -434,7 +434,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         else
                         {
                             string bpass = request.Headers["Authorization"].Trim().Split(' ')[1];
-                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL))
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL,ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]))
                             {
                                 if (usr.BasicAuthorizationString == bpass)
                                 {
