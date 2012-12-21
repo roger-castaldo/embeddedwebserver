@@ -82,6 +82,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             get{return _id;}
         }
 
+
+        public bool IsSSL
+        {
+            get { return _connection.Listener.UseSSL; }
+        }
+
         private Timer _timer;
 
         internal void Reset()
