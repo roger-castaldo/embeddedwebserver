@@ -122,12 +122,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 _listener.ClearConnection(this);
         }
 
-        private bool _isSSL;
-        public bool IsSSL
-        {
-            get { return _isSSL; }
-        }
-
         /*
          * This constructor loads and http connection from a given tcp client.
          * It establishes the required streams and objects, then loads in the 
@@ -151,7 +145,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             socket = s;
             _listener = listener;
             _cert = cert;
-            _isSSL = _listener.UseSSL;
             _currentConnection = this;
             if (_listener.UseSSL)
             {
