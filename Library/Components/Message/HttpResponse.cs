@@ -10,6 +10,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
     internal class HttpResponse
     {
+        private const int _CHUNK_SIZE = 65536;
+
         private HttpRequest _request;
 
         internal HttpResponse(HttpRequest request)
@@ -171,22 +173,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
                 _request.Connection.SendBuffer(outStream.ToArray(), _responseHeaders["Connection"] == "close");
-                outStream = new MemoryStream();
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[Math.Min(_CHUNK_SIZE,_outStream.Length)];
                 _outStream.Seek(0, SeekOrigin.Begin);
+                start = DateTime.Now;
                 while (_outStream.Position < _outStream.Length)
                 {
-                    int len;
-                    if (_outStream.Length - _outStream.Position > 1024)
-                        len = _outStream.Read(buffer, 0, 1024);
-                    else
-                        len = _outStream.Read(buffer, 0, (int)(_outStream.Length - _outStream.Position));
-                    outStream.Write(buffer, 0, len);
+                    if (_outStream.Length - _outStream.Position < buffer.Length)
+                        buffer = new byte[(int)(_outStream.Length - _outStream.Position)];
+                    _outStream.Read(buffer, 0, buffer.Length);
+                    _request.Connection.SendBuffer(buffer, (_outStream.Position < _outStream.Length ? false : _responseHeaders["Connection"]=="close"));
                 }
-                if (_request.URL != null)
-                    Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send content for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
-                start = DateTime.Now;
-                _request.Connection.SendBuffer(outStream.ToArray(),_responseHeaders["Connection"]=="close");
                 if (_request.URL != null)
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send response content for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
             }
