@@ -117,6 +117,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 _isResponseSent = true;
                 ResponseWriter.Flush();
                 _CompressIfNecessary();
+                Site.CurrentSite.PreSendResponseHeaders(_request);
                 DateTime start = DateTime.Now;
                 _responseHeaders.ContentLength = _outStream.Length.ToString();
                 if (_responseHeaders["Accept-Ranges"] == null)
@@ -173,6 +174,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to send headers for URL " + _request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
                 start = DateTime.Now;
                 _request.Connection.SendBuffer(outStream.ToArray(), _responseHeaders["Connection"] == "close");
+                Site.CurrentSite.PreSendResponseData(_request);
                 byte[] buffer = new byte[Math.Min(_CHUNK_SIZE,_outStream.Length)];
                 _outStream.Seek(0, SeekOrigin.Begin);
                 start = DateTime.Now;

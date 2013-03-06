@@ -228,6 +228,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         protected virtual void PreStop() { }
         //an implemented stop that gets called after the handlers are deinitialized
         protected virtual void PostStop() { }
+        //an implemented function that gets called before sending the response headers
+        public virtual void PreSendResponseHeaders(HttpRequest request) { }
+        //and implemented function that gets called before sending the response data 
+        public virtual void PreSendResponseData(HttpRequest request) { }
         //an implemented function that gets called before the processing of a request
         protected virtual void PreRequest(HttpRequest request) { }
         //an implemented function that gets called after the processing of a request
