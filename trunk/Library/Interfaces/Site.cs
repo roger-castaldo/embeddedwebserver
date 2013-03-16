@@ -561,9 +561,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 try
                 {
                     string name = bpass.Substring(0, bpass.IndexOf("=")).Trim();
-                    bpass = bpass.Substring(bpass.IndexOf("=") + 2);
-                    string val = bpass.Substring(0, bpass.IndexOf("\"")).Trim();
-                    bpass = bpass.Substring(val.Length + 1).TrimStart(',');
+                    bpass = bpass.Substring(bpass.IndexOf("=") + 1);
+                    string val = "";
+                    if (bpass.StartsWith("\""))
+                    {
+                        val = bpass.Substring(1, bpass.IndexOf("\"",1)-1).Trim();
+                        bpass = bpass.Substring(bpass.IndexOf("\"",1)+1).TrimStart(',');
+                    }
+                    else
+                    {
+                        val = bpass.Substring(0,bpass.IndexOf(","));
+                        bpass = bpass.Substring(val.Length + 1).TrimStart(',');
+                    }
                     ret.Add(name, val);
                 }
                 catch (Exception e)
