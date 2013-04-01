@@ -94,6 +94,77 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
                 request.ResponseStatus = HttpStatusCodes.Not_Found;
         }
 
+        public string GenerateJSForServiceType(string typePath)
+        {
+            Type t = Utility.LocateType(typePath);
+            if (t == null)
+            {
+                foreach (Type ty in Site.CurrentSite.EmbeddedServiceTypes)
+                {
+                    if (ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
+                    {
+                        if (((EmbeddedServiceNamespace)ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + ty.Name == typePath)
+                        {
+                            t = ty;
+                            break;
+                        }
+                    }
+                }
+            }
+            return GenerateJSForServiceType(t);
+        }
+
+        public string GenerateJSForServiceType(Type t)
+        {
+            if(t==null)
+                return null;
+            string ret = "";
+            Monitor.Enter(_lock);
+            if (_generatedJS.ContainsKey(t.FullName))
+            {
+                ret = (string)_generatedJS[t.FullName].Value;
+                Monitor.Exit(_lock);
+            }
+            else
+            {
+                Monitor.Exit(_lock);
+                string path = GetPathForType(t);
+
+                StringBuilder sw = new StringBuilder();
+
+                string[] splitted = t.FullName.Split('.');
+                if (t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
+                    splitted = (((EmbeddedServiceNamespace)t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + t.Name).Split('.');
+                sw.AppendLine("var " + splitted[0] + " = " + splitted[0] + " || {};");
+                string nspace = splitted[0];
+                for (int x = 1; x < splitted.Length - 1; x++)
+                {
+                    sw.AppendLine(nspace + "." + splitted[x] + " = " + nspace + "." + splitted[x] + " || {};");
+                    nspace += "." + splitted[x];
+                }
+                sw.Append(nspace + " = $.extend(" + nspace + ",{" + splitted[splitted.Length - 1] + ":{");
+                bool first = true;
+                foreach (MethodInfo mi in t.GetMethods())
+                {
+                    if (mi.GetCustomAttributes(typeof(WebMethod), true).Length > 0)
+                    {
+                        if (!first)
+                            sw.AppendLine(",");
+                        else
+                            first = false;
+                        GenerateFunctionCall(mi, t, path, sw);
+                    }
+                }
+                sw.AppendLine("}});");
+                ret = (Settings.CompressAllJS ? JSMinifier.Minify(sw.ToString()) : sw.ToString());
+                Monitor.Enter(_lock);
+                if (!_generatedJS.ContainsKey(t.FullName))
+                    _generatedJS.Add(t.FullName, new CachedItemContainer(ret));
+                Monitor.Exit(_lock);
+            }
+            return ret;
+        }
+
         /*
          * This function is used to process a call made to get the javascript 
          * to access a given service.  It appends code to add jquery or json 
@@ -103,89 +174,31 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
          */
         private void ProcessJSGeneration(HttpRequest request, Site site)
         {
-            Monitor.Enter(_lock);
-            if (_generatedJS.ContainsKey(request.Parameters["TYPE"]))
+            string js = GenerateJSForServiceType(request.Parameters["TYPE"]);
+            if (js == null)
+                request.ResponseStatus = HttpStatusCodes.Not_Found;
+            else
             {
-                request.ResponseWriter.Write(_generatedJS[request.Parameters["TYPE"]].Value);
-                Monitor.Exit(_lock);
-                request.SendResponse();
+                request.ResponseHeaders.ContentType = "text/javascript";
+                if (site.AddJqueryJavascript)
+                {
+                    request.ResponseWriter.WriteLine("if (document.getElementsByName(\"jqueryScriptTag\").length==0){");
+                    request.ResponseWriter.WriteLine("var e=window.document.createElement('script');");
+                    request.ResponseWriter.WriteLine("e.setAttribute('src','/jquery.js');");
+                    request.ResponseWriter.WriteLine("e.setAttribute('name','jqueryScriptTag');");
+                    request.ResponseWriter.WriteLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
+                }
+                if (site.AddJsonJavascript)
+                {
+                    request.ResponseWriter.WriteLine("if (document.getElementsByName(\"jsonScriptTag\").length==0){");
+                    request.ResponseWriter.WriteLine("var e=window.document.createElement('script');");
+                    request.ResponseWriter.WriteLine("e.setAttribute('src','/json.js');");
+                    request.ResponseWriter.WriteLine("e.setAttribute('name','jsonScriptTag');");
+                    request.ResponseWriter.WriteLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
+                }
+                request.ResponseWriter.WriteLine(js);
             }
-            if (!request.IsResponseSent)
-            {
-                Monitor.Exit(_lock);
-                Type t = Utility.LocateType(request.Parameters["TYPE"]);
-                if (t == null)
-                {
-                    foreach (Type ty in Site.CurrentSite.EmbeddedServiceTypes)
-                    {
-                        if (ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
-                        {
-                            if (((EmbeddedServiceNamespace)ty.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + ty.Name == request.Parameters["TYPE"])
-                            {
-                                t = ty;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (t == null)
-                {
-                    request.ResponseStatus = HttpStatusCodes.Not_Found;
-                }
-                else
-                {
-                    request.ResponseHeaders.ContentType = "text/javascript";
-                    string path = GetPathForType(t);
-
-                    StringBuilder sw = new StringBuilder();
-                    if (site.AddJqueryJavascript)
-                    {
-                        sw.AppendLine("if (document.getElementsByName(\"jqueryScriptTag\").length==0){");
-                        sw.AppendLine("var e=window.document.createElement('script');");
-                        sw.AppendLine("e.setAttribute('src','/jquery.js');");
-                        sw.AppendLine("e.setAttribute('name','jqueryScriptTag');");
-                        sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
-                    }
-                    if (site.AddJsonJavascript)
-                    {
-                        sw.AppendLine("if (document.getElementsByName(\"jsonScriptTag\").length==0){");
-                        sw.AppendLine("var e=window.document.createElement('script');");
-                        sw.AppendLine("e.setAttribute('src','/json.js');");
-                        sw.AppendLine("e.setAttribute('name','jsonScriptTag');");
-                        sw.AppendLine("document.getElementsByTagName('head')[0].insertBefore(e,document.getElementsByTagName('head')[0].childNodes[0]);}");
-                    }
-                    string[] splitted = t.FullName.Split('.');
-                    if (t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false).Length > 0)
-                        splitted = (((EmbeddedServiceNamespace)t.GetCustomAttributes(typeof(EmbeddedServiceNamespace), false)[0]).NameSpace + "." + t.Name).Split('.');
-                    sw.AppendLine("var " + splitted[0] + " = " + splitted[0] + " || {};");
-                    string nspace = splitted[0];
-                    for (int x = 1; x < splitted.Length - 1; x++)
-                    {
-                        sw.AppendLine(nspace + "." + splitted[x] + " = " + nspace + "." + splitted[x] + " || {};");
-                        nspace += "." + splitted[x];
-                    }
-                    sw.Append(nspace + " = $.extend(" + nspace + ",{" + splitted[splitted.Length - 1] + ":{");
-                    bool first = true;
-                    foreach (MethodInfo mi in t.GetMethods())
-                    {
-                        if (mi.GetCustomAttributes(typeof(WebMethod), true).Length > 0)
-                        {
-                            if (!first)
-                                sw.AppendLine(",");
-                            else
-                                first = false;
-                            GenerateFunctionCall(mi, t, path, sw);
-                        }
-                    }
-                    sw.AppendLine("}});");
-                    string res = (Settings.CompressAllJS ? JSMinifier.Minify(sw.ToString()) : sw.ToString());
-                    Monitor.Enter(_lock);
-                    if (!_generatedJS.ContainsKey(request.Parameters["TYPE"]))
-                        _generatedJS.Add(request.Parameters["TYPE"], new CachedItemContainer(res));
-                    Monitor.Exit(_lock);
-                    request.ResponseWriter.Write(res);
-                }
-            }
+            request.SendResponse();
         }
 
         //creates a hashed path to access a given embedded service type
