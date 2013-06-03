@@ -136,6 +136,18 @@ namespace Org.Reddragonit.EmbeddedWebServer
             }
         }
 
+        //the flag to allow gzip stream compression to occure
+        private const string ALLOW_GZIP_COMPRESSION_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.AllowGzipCompression";
+        public static bool AllowGzipCompression
+        {
+            get
+            {
+                if (ConfigurationSettings.AppSettings[ALLOW_GZIP_COMPRESSION_SETTING_ID] != null)
+                    return bool.Parse(ConfigurationSettings.AppSettings[ALLOW_GZIP_COMPRESSION_SETTING_ID]);
+                return true;
+            }
+        }
+
         //the comma seperated list of css files (absolute urls) to ignore for compress all flag
         private const string COMPRESS_ALL_CSS_IGNORE_PATHS_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.CompressAllCSSIgnorePaths";
         public static List<string> CompressAllCSSIgnorePaths
