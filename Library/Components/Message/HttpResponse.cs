@@ -5,6 +5,7 @@ using System.IO;
 using Org.Reddragonit.EmbeddedWebServer.Diagnostics;
 using Org.Reddragonit.EmbeddedWebServer.Interfaces;
 using Org.Reddragonit.EmbeddedWebServer.Minifiers;
+using System.IO.Compression;
 
 namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 {
@@ -210,6 +211,18 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 csw.Write(CSSMinifier.Minify(csr.ReadToEnd()));
                 csw.Flush();
                 _outStream = cms;
+            }
+            if ((_request.Headers["Accept-Encoding"] == null ? "" : _request.Headers["Accept-Encoding"]).Contains("gzip") && Settings.AllowGzipCompression)
+            {
+                ResponseHeaders["Content-Encoding"] = "gzip";
+                MemoryStream gms = new MemoryStream();
+                GZipStream gsm = new GZipStream(gms,CompressionMode.Compress);
+                StreamWriter gsw = new StreamWriter(gsm);
+                StreamReader gsr = new StreamReader(_outStream);
+                _outStream.Position = 0;
+                gsw.Write(gsr.ReadToEnd());
+                gsw.Flush();
+                _outStream = gms;
             }
         }
 
