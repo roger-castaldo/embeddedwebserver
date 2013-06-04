@@ -212,16 +212,21 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 csw.Flush();
                 _outStream = cms;
             }
-            if ((_request.Headers["Accept-Encoding"] == null ? "" : _request.Headers["Accept-Encoding"]).Contains("gzip") && Settings.AllowGzipCompression)
+            if ((_request.Headers["Accept-Encoding"] == null ? "" : _request.Headers["Accept-Encoding"]).Contains("deflate") && Settings.AllowDeflateCompression)
             {
-                ResponseHeaders["Content-Encoding"] = "gzip";
+                ResponseHeaders["Content-Encoding"] = "deflate";
                 MemoryStream gms = new MemoryStream();
-                GZipStream gsm = new GZipStream(gms,CompressionMode.Compress);
-                StreamWriter gsw = new StreamWriter(gsm);
-                StreamReader gsr = new StreamReader(_outStream);
-                _outStream.Position = 0;
-                gsw.Write(gsr.ReadToEnd());
-                gsw.Flush();
+                DeflateStream gsm = new DeflateStream(gms,CompressionMode.Compress,true);
+                _outStream.Seek(0,SeekOrigin.Begin);
+                byte[] buffer = new byte[Math.Min(_CHUNK_SIZE, _outStream.Length)];
+                while (_outStream.Position < _outStream.Length)
+                {
+                    if (_outStream.Length - _outStream.Position < buffer.Length)
+                        buffer = new byte[(int)(_outStream.Length - _outStream.Position)];
+                    _outStream.Read(buffer, 0, buffer.Length);
+                    gsm.Write(buffer, 0, buffer.Length);
+                }
+                gsm.Close();
                 _outStream = gms;
             }
         }

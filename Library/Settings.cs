@@ -137,13 +137,13 @@ namespace Org.Reddragonit.EmbeddedWebServer
         }
 
         //the flag to allow gzip stream compression to occure
-        private const string ALLOW_GZIP_COMPRESSION_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.AllowGzipCompression";
-        public static bool AllowGzipCompression
+        private const string ALLOW_DEFLATE_COMPRESSION_SETTING_ID = "Org.Reddragonit.EmbeddedWebServer.Settings.AllowDeflateCompression";
+        public static bool AllowDeflateCompression
         {
             get
             {
-                if (ConfigurationSettings.AppSettings[ALLOW_GZIP_COMPRESSION_SETTING_ID] != null)
-                    return bool.Parse(ConfigurationSettings.AppSettings[ALLOW_GZIP_COMPRESSION_SETTING_ID]);
+                if (ConfigurationSettings.AppSettings[ALLOW_DEFLATE_COMPRESSION_SETTING_ID] != null)
+                    return bool.Parse(ConfigurationSettings.AppSettings[ALLOW_DEFLATE_COMPRESSION_SETTING_ID]);
                 return true;
             }
         }
