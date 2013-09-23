@@ -570,8 +570,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                     }
                     else
                     {
-                        val = bpass.Substring(0,bpass.IndexOf(","));
-                        bpass = bpass.Substring(val.Length + 1).TrimStart(',');
+                        if (bpass.Contains(","))
+                        {
+                            val = bpass.Substring(0, bpass.IndexOf(","));
+                            bpass = bpass.Substring(val.Length + 1).TrimStart(',');
+                        }
+                        else
+                            val = bpass;
                     }
                     ret.Add(name, val);
                 }
