@@ -464,7 +464,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                             res = getArray("MSIE", "MSIE4", "MSIE" + getVersionNumber(userAgent, pos + 4));
                                         }
                                         else
-                                            if ((pos = userAgent.IndexOf("MSIE 7")) > -1 && userAgent.IndexOf("Trident/4.0") < 0)
+                                            if ((pos = userAgent.IndexOf("MSIE 7")) > -1 && (userAgent.IndexOf("Trident/4.0") < 0
+                                                || (userAgent.IndexOf("Trident/4.0") > -1 && userAgent.IndexOf("compatible;") > -1)))
                                             {
                                                 res = getArray("MSIE", "MSIE7", "MSIE" + getVersionNumber(userAgent, pos + 4));
                                             }
