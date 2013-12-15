@@ -306,7 +306,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                         query = query.Substring(1);
                     if (query.StartsWith("{") && query.EndsWith("}"))
                     {
-                        query = query.Substring(1);
+                        query = (query.StartsWith("{{") ? query.Substring(1) : query);
                         if (query != "{}")
                             _jsonParameter = JSON.JsonDecode(query);
                     }
