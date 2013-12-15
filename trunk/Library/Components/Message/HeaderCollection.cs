@@ -24,8 +24,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             {
                 if (_values.ContainsKey(name))
                     _values.Remove(name);
-                if (value!=null)
+                if (value != null)
+                {
+                    if (name == "Content-Type" && value.Contains("charset="))
+                    {
+                        _charset = value.Substring(value.IndexOf("charset=") + "charset=".Length).Trim();
+                        value = value.Substring(0, value.IndexOf(";"));
+                    }
                     _values.Add(name, value);
+                }
             }
         }
 
