@@ -197,8 +197,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             }
             else if (_shutdown)
             {
-                sock.Disconnect(false);
-                sock.Close();
+                if (sock != null)
+                {
+                    sock.Disconnect(false);
+                    sock.Close();
+                }
             }
 
         }
