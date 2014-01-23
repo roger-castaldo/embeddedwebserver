@@ -14,14 +14,36 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private const int _CHUNK_SIZE = 65536;
 
         private HttpRequest _request;
+        private Encoding _enc;
 
         internal HttpResponse(HttpRequest request)
         {
             _request = request;
             _outStream = new MemoryStream();
-            _responseWriter = new StreamWriter(_outStream);
+            string encoding = "ascii";
+            _enc = Encoding.ASCII;
+            if (request.Headers.CharSet != null)
+            {
+                switch (request.Headers.CharSet.ToLower())
+                {
+                    case "utf-7":
+                        encoding = "utf-7";
+                        _enc = Encoding.UTF7;
+                        break;
+                    case "utf-8":
+                        encoding = "utf-8";
+                        _enc = Encoding.UTF8;
+                        break;
+                    case "utf-32":
+                        encoding = "utf-32";
+                        _enc = Encoding.UTF32;
+                        break;
+                }
+            }
+            _responseWriter = new HttpStreamWriter(_outStream,_enc);
             _responseHeaders = new HeaderCollection();
             _responseHeaders["Server"] = Messages.Current["Org.Reddragonit.EmbeddedWebServer.DefaultHeaders.Server"];
+            _responseHeaders.CharSet = encoding;
             _responseStatus = HttpStatusCodes.OK;
             _responseCookie = new CookieCollection();
             _isResponseSent = false;
@@ -40,8 +62,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private Stream _outStream;
 
         //used to access the response buffer in order to write the response to it
-        private StreamWriter _responseWriter;
-        public StreamWriter ResponseWriter
+        private HttpStreamWriter _responseWriter;
+        public HttpStreamWriter ResponseWriter
         {
             get { return _responseWriter; }
         }
@@ -57,7 +79,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         {
             _responseWriter = null;
             _outStream = new MemoryStream();
-            _responseWriter = new StreamWriter(_outStream);
+            _responseWriter = new HttpStreamWriter(_outStream,_enc);
         }
 
         private string CookieDateFormat
@@ -147,10 +169,12 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     }else
                         _responseHeaders["Connection"] = "close";
                 }
+                if (_responseHeaders["Content-Type"] == null)
+                    _responseHeaders["Content-Type"] = "*/*";
                 MemoryStream outStream = new MemoryStream();
                 string line = "HTTP/1.0 " + ((int)ResponseStatus).ToString() + " " + ResponseStatus.ToString().Replace("_", "") + "\r\n";
                 foreach (string str in _responseHeaders.Keys)
-                    line += str + ": " + _responseHeaders[str] + "\r\n";
+                    line += str + ": " + (str=="Content-Type" ? (_responseHeaders.CharSet != null && !_responseHeaders["Content-Type"].Contains("charset=") ? _responseHeaders["Content-Type"] + ";charset=" + _responseHeaders.CharSet : _responseHeaders["Content-Type"]) : _responseHeaders[str]) + "\r\n";
                 if (_responseCookie != null)
                 {
                     if (Site.CurrentSite != null)
