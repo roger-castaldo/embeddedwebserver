@@ -61,6 +61,7 @@
     <Compile Include="Components\Message\HttpParser.cs" />
     <Compile Include="Components\Message\HttpRequest.cs" />
     <Compile Include="Components\Message\HttpResponse.cs" />
+    <Compile Include="Components\Message\HttpStreamWriter.cs" />
     <Compile Include="Components\MonoFix\WrappedStreamAsyncResult.cs" />
     <Compile Include="Components\MonoFix\WrappedTcpListener.cs" />
     <Compile Include="Components\MonoFix\WrappedTcpListenerAsyncResult.cs" />

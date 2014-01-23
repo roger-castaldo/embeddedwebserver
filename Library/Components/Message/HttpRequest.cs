@@ -506,7 +506,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             }
         }
         
-        public StreamWriter ResponseWriter
+        public HttpStreamWriter ResponseWriter
         {
             get { return _response.ResponseWriter; }
         }
