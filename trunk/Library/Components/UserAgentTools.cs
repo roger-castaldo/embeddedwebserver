@@ -482,6 +482,11 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                                                     else
                                                         res = getArray("MSIE", "<B>MSIE?</B>", "<B>MSIE?" + getVersionNumber(userAgent, userAgent.IndexOf("MSIE") + 4) + "</B>");
                     }
+                    else if (userAgent.Contains("Trident") && userAgent.Contains("like Gecko"))
+                    {
+                        string ver = userAgent.Substring(userAgent.IndexOf("rv:") + 3);
+                        res = getArray("MSIE", "MSIE" + ver.Substring(0, ver.IndexOf(".")), "MSIE" + getVersionNumber(ver, 0));
+                    }
                     else
                         if ((pos = userAgent.IndexOf("Gecko/")) > -1)
                         {
