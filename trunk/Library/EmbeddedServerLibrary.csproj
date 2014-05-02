@@ -72,7 +72,6 @@
     <Compile Include="Components\Readers\ITextReader.cs" />
     <Compile Include="Components\Message\UploadedFile.cs" />
     <Compile Include="Components\Message\UploadedFileCollection.cs" />
-    <Compile Include="Components\UserAgentTools.cs" />
     <Compile Include="Components\MonoFix\WrappedStream.cs" />
     <Compile Include="Components\ZipFile.cs" />
     <Compile Include="Diagnostics\Enums.cs" />
