@@ -9,9 +9,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
     public class Browser
     {
         private static readonly Regex _REG_BOT = new Regex("(help.yahoo.com/|msnbot/|google/|googlebot/|webcrawler/|inktomi|teoma)((\\d+\\.)+\\d+)?", RegexOptions.ECMAScript | RegexOptions.Compiled);
-        private static readonly Regex _REG_CRACKBERRY_10S = new Regex("^Mozilla/(\\d+\\.\\d+)\\s+\\(Windows NT (\\d+\\.\\d+); WOW\\d+\\)\\s+AppleWebKit/(\\d+\\.\\d+)\\s+\\(KHTML,\\s+like\\s+Gecko\\)\\s+Chrome/(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+Safari/(\\d+\\.\\d+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
-        private static readonly Regex _REG_OS = new Regex("((Windows[- ]NT;?|Windows[ _](9x|ME|CE;)?|Win( 9x|NT)?|Windows|((iPhone|iPod|iPad).+CPU iPhone OS)|Mac OS X|Android|Mac_PowerPC|Macintosh( PPC)?|FreeBSD|OpenBSD|Ubuntu/|Linux|CentOS|NetBSD|Unix|SunOS|IRIX|SonyEricsson|Nokia|BlackBerry|RIM Table OS|SymbianOS|BeOS|Nintendo Wii|J2ME/MIDP)\\s*((\\d+[\\._])*\\d+)?)", RegexOptions.ECMAScript | RegexOptions.Compiled);
-        private static readonly Regex _REG_BROWSER = new Regex("(Lotus-Notes|Opera|OPR|Opera Mini|Opera Mobi|MSIE|Trident|Camino|Chimera|Firebird|Phoenix|Galeon|Firefox|Netscape|Gecko|Chrome|Safari|Konqueror|KHTML|NetFront|BlackBerry|Mozilla/4\\.)(/?|\\s*)((\\d+\\.)*\\d+)", RegexOptions.ECMAScript | RegexOptions.Compiled);
+        private static readonly Regex _REG_OS = new Regex("((Windows[- ]NT;?|Windows[ _](9x|ME|CE;)?|Win( 9x|NT)?|Windows|((iPhone|iPod|iPad).+CPU iPhone OS)|Mac OS X|Android|Mac_PowerPC|Macintosh( PPC)?|FreeBSD|OpenBSD|Ubuntu/|Linux|CentOS|NetBSD|Unix|SunOS|IRIX|SonyEricsson|Nokia|BlackBerry|BB|RIM Table OS|SymbianOS|BeOS|Nintendo Wii|J2ME/MIDP)\\s*((\\d+[\\._])*\\d+)?)", RegexOptions.ECMAScript | RegexOptions.Compiled);
+        private static readonly Regex _REG_BROWSER = new Regex("(Lotus-Notes|Opera|OPR|Opera Mini|Opera Mobi|MSIE|Trident|Camino|Chimera|Firebird|Phoenix|Galeon|Firefox|Netscape|Gecko|Chrome|Mobile Safari|Safari|Konqueror|KHTML|NetFront|BlackBerry|Mozilla/4\\.)(/?|\\s*)((\\d+\\.)*\\d+)", RegexOptions.ECMAScript | RegexOptions.Compiled);
         private static readonly Regex _REG_VERSION_NUMBER = new Regex("\\d+\\.\\d+(\\.\\d+)*", RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly Regex _REG_SAFARI_MOBILE = new Regex("Version/\\d+\\.\\d+\\s+Mobile(\\s+Safari)?/", RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly Regex _REG_IE_MOBILE = new Regex("(Windows CE;|IEMobile \\d+\\.\\d+;)+", RegexOptions.ECMAScript | RegexOptions.Compiled);
@@ -107,242 +106,234 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             }
             else
             {
-                DateTime start = DateTime.Now;
-                if (_REG_CRACKBERRY_10S.IsMatch(userAgent))
+                m = _REG_OS.Match(userAgent);
+                if (!m.Success)
                 {
-                    _osType = BrowserOSTypes.BlackBerry;
-                    _osVersion = new Version("10.0");
-                    _isMobile = true;
-                    _browserFamily = BrowserFamilies.BlackBerry;
-                    _browserVersion = new Version("10.0");
+                    _osName = "Unknown";
+                    _osType = BrowserOSTypes.Other;
+                    _osVersion = new Version("0.0");
                 }
                 else
                 {
-                    m = _REG_OS.Match(userAgent);
-                    if (!m.Success)
+                    if (m.Groups[8].Value != "")
+                        _osVersion = new Version(m.Groups[8].Value.Replace("_", "."));
+                    switch (m.Groups[2].Value)
                     {
-                        _osName = "Unknown";
-                        _osType = BrowserOSTypes.Other;
-                        _osVersion = new Version("0.0");
-                    }
-                    else
-                    {
-                        if (m.Groups[8].Value != "")
-                            _osVersion = new Version(m.Groups[8].Value.Replace("_", "."));
-                        switch (m.Groups[2].Value)
-                        {
-                            case "Windows-NT":
-                            case "Windows NT;":
-                            case "Windows NT":
-                            case "Windows":
-                            case "Windows_98":
-                            case "Windows 9x":
-                            case "Windows ME":
-                            case "Windows CE;":
-                            case "Win":
-                            case "Win 9x":
-                            case "WinNT":
-                                _osType = BrowserOSTypes.Windows;
-                                switch (m.Groups[2].Value)
-                                {
-                                    case "Windows-NT":
-                                    case "Windows NT;":
-                                        _osName = "WinNT";
-                                        break;
-                                    case "Windows NT":
-                                        switch (m.Groups[8].Value)
-                                        {
-                                            case "5.1":
-                                                _osName = "WinXP";
-                                                break;
-                                            case "6.0":
-                                                _osName = "Vista";
-                                                break;
-                                            case "6.1":
-                                                _osName = "Seven";
-                                                break;
-                                            case "6.2":
-                                                _osName = "Eight";
-                                                break;
-                                            case "5.0":
-                                                _osName = "Win2000";
-                                                break;
-                                            case "5.2":
-                                                _osName = "Win2003";
-                                                break;
-                                            case "4.0":
-                                                _osName = "WinNT4";
-                                                break;
-                                            default:
-                                                _osName = "WinNT";
-                                                break;
-                                        }
-                                        break;
-                                    case "Windows":
-                                    case "Win":
-                                        switch (m.Groups[8].Value)
-                                        {
-                                            case "98":
-                                                _osName = "Win98";
-                                                break;
-                                            case "2000":
-                                                _osName = "Win2000";
-                                                break;
-                                            case "95":
-                                                _osName = "Win95";
-                                                break;
-                                            case "3.1":
-                                                _osName = "Win31";
-                                                break;
-                                            default:
-                                                _osName = "Win?";
-                                                break;
-                                        }
-                                        break;
-                                    case "Windows_98":
-                                        _osName = "Win98";
-                                        break;
-                                    case "Windows 9x":
-                                    case "Win 9x":
-                                        _osName = "Win9x";
-                                        break;
-                                    case "Windows ME":
-                                        _osName = "WinME";
-                                        break;
-                                    case "Windows CE;":
-                                        _osName = "WinCE";
-                                        break;
-                                    case "WinNT":
-                                        switch (m.Groups[8].Value)
-                                        {
-                                            case "4.0":
-                                                _osName = "WinNT4";
-                                                break;
-                                            default:
-                                                _osName = "WinNT";
-                                                break;
-                                        }
-                                        break;
-                                }
-                                break;
-                            case "Android":
-                                _osName = "Android";
-                                _osType = BrowserOSTypes.Linux;
-                                break;
-                            case "FreeBSD":
-                            case "OpenBSD":
-                            case "Ubuntu/":
-                            case "Linux":
-                            case "CentOS":
-                            case "NetBSD":
-                            case "Unix":
-                            case "SunOS":
-                            case "IRIX":
-                                _osType = BrowserOSTypes.Linux;
-                                _osName = m.Groups[2].Value;
-                                break;
-                            case "Nokia":
-                            case "SonyEricsson":
-                            case "SymbianOS":
-                            case "BeOS":
-                            case "Nintendo Wii":
-                            case "J2ME/MIDP":
-                                _osName = m.Groups[2].Value;
-                                _osType = BrowserOSTypes.Other;
-                                break;
-                            case "BlackBerry":
-                            case "RIM Tablet OS":
-                                _osName = "BlackBerry";
-                                _osType = BrowserOSTypes.BlackBerry;
-                                if (m.Groups[2].Value == "RIM Tablet OS")
-                                    _isTablet = true;
-                                else
-                                    _isMobile = true;
-                                break;
-                            case "Mac OS X":
-                            case "Macintosh":
-                                _osType = BrowserOSTypes.MAC;
-                                _osName = m.Groups[8].Value;
-                                break;
-                            case "MAC_PowerPC":
-                            case "Macintosh PPC":
-                                _osType = BrowserOSTypes.MAC;
-                                _osName = "MacPPC";
-                                break;
-                            default:
-                                switch (m.Groups[6].Value)
-                                {
-                                    case "iPhone":
-                                    case "iPod":
-                                    case "iPad":
-                                        _osType = BrowserOSTypes.MAC;
-                                        _osName = "iOS-" + m.Groups[6].Value;
-                                        switch (m.Groups[6].Value)
-                                        {
-                                            case "iPad":
-                                                _isMobile = false;
-                                                _isTablet = true;
-                                                break;
-                                            default:
-                                                _isMobile = true;
-                                                break;
+                        case "Windows-NT":
+                        case "Windows NT;":
+                        case "Windows NT":
+                        case "Windows":
+                        case "Windows_98":
+                        case "Windows 9x":
+                        case "Windows ME":
+                        case "Windows CE;":
+                        case "Win":
+                        case "Win 9x":
+                        case "WinNT":
+                            _osType = BrowserOSTypes.Windows;
+                            switch (m.Groups[2].Value)
+                            {
+                                case "Windows-NT":
+                                case "Windows NT;":
+                                    _osName = "WinNT";
+                                    break;
+                                case "Windows NT":
+                                    switch (m.Groups[8].Value)
+                                    {
+                                        case "5.1":
+                                            _osName = "WinXP";
+                                            break;
+                                        case "6.0":
+                                            _osName = "Vista";
+                                            break;
+                                        case "6.1":
+                                            _osName = "Seven";
+                                            break;
+                                        case "6.2":
+                                            _osName = "Eight";
+                                            break;
+                                        case "5.0":
+                                            _osName = "Win2000";
+                                            break;
+                                        case "5.2":
+                                            _osName = "Win2003";
+                                            break;
+                                        case "4.0":
+                                            _osName = "WinNT4";
+                                            break;
+                                        default:
+                                            _osName = "WinNT";
+                                            break;
+                                    }
+                                    break;
+                                case "Windows":
+                                case "Win":
+                                    switch (m.Groups[8].Value)
+                                    {
+                                        case "98":
+                                            _osName = "Win98";
+                                            break;
+                                        case "2000":
+                                            _osName = "Win2000";
+                                            break;
+                                        case "95":
+                                            _osName = "Win95";
+                                            break;
+                                        case "3.1":
+                                            _osName = "Win31";
+                                            break;
+                                        default:
+                                            _osName = "Win?";
+                                            break;
+                                    }
+                                    break;
+                                case "Windows_98":
+                                    _osName = "Win98";
+                                    break;
+                                case "Windows 9x":
+                                case "Win 9x":
+                                    _osName = "Win9x";
+                                    break;
+                                case "Windows ME":
+                                    _osName = "WinME";
+                                    break;
+                                case "Windows CE;":
+                                    _osName = "WinCE";
+                                    break;
+                                case "WinNT":
+                                    switch (m.Groups[8].Value)
+                                    {
+                                        case "4.0":
+                                            _osName = "WinNT4";
+                                            break;
+                                        default:
+                                            _osName = "WinNT";
+                                            break;
+                                    }
+                                    break;
+                            }
+                            break;
+                        case "Android":
+                            _osName = "Android";
+                            _osType = BrowserOSTypes.Linux;
+                            break;
+                        case "FreeBSD":
+                        case "OpenBSD":
+                        case "Ubuntu/":
+                        case "Linux":
+                        case "CentOS":
+                        case "NetBSD":
+                        case "Unix":
+                        case "SunOS":
+                        case "IRIX":
+                            _osType = BrowserOSTypes.Linux;
+                            _osName = m.Groups[2].Value;
+                            break;
+                        case "Nokia":
+                        case "SonyEricsson":
+                        case "SymbianOS":
+                        case "BeOS":
+                        case "Nintendo Wii":
+                        case "J2ME/MIDP":
+                            _osName = m.Groups[2].Value;
+                            _osType = BrowserOSTypes.Other;
+                            break;
+                        case "BlackBerry":
+                        case "RIM Tablet OS":
+                        case "BB":
+                            _osName = "BlackBerry";
+                            _osType = BrowserOSTypes.BlackBerry;
+                            if (m.Groups[2].Value == "RIM Tablet OS")
+                                _isTablet = true;
+                            else
+                                _isMobile = true;
+                            break;
+                        case "Mac OS X":
+                        case "Macintosh":
+                            _osType = BrowserOSTypes.MAC;
+                            _osName = m.Groups[8].Value;
+                            break;
+                        case "MAC_PowerPC":
+                        case "Macintosh PPC":
+                            _osType = BrowserOSTypes.MAC;
+                            _osName = "MacPPC";
+                            break;
+                        default:
+                            switch (m.Groups[6].Value)
+                            {
+                                case "iPhone":
+                                case "iPod":
+                                case "iPad":
+                                    _osType = BrowserOSTypes.MAC;
+                                    _osName = "iOS-" + m.Groups[6].Value;
+                                    switch (m.Groups[6].Value)
+                                    {
+                                        case "iPad":
+                                            _isMobile = false;
+                                            _isTablet = true;
+                                            break;
+                                        default:
+                                            _isMobile = true;
+                                            break;
 
-                                        }
-                                        break;
-                                }
-                                break;
-                        }
-                        Logger.Debug("Time to process OS from User Agent: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                                    }
+                                    break;
+                            }
+                            break;
                     }
-                    start = DateTime.Now;
-                    MatchCollection mc = _REG_BROWSER.Matches(userAgent);
-                    if (mc.Count > 0)
+                }
+                MatchCollection mc = _REG_BROWSER.Matches(userAgent);
+                if (mc.Count > 0)
+                {
+                    m = mc[mc.Count - 1];
+                    _browserVersion = (m.Groups[4].Value == "" ? null : new Version(m.Groups[3].Value));
+                    switch (m.Groups[1].Value)
                     {
-                        m = mc[mc.Count - 1];
-                        _browserVersion = (m.Groups[4].Value == "" ? null : new Version(m.Groups[3].Value));
-                        switch (m.Groups[1].Value)
-                        {
-                            case "Lotus-Notes":
-                                _browserFamily = BrowserFamilies.LotusNotes;
-                                break;
-                            case "Opera":
-                            case "OPR":
-                            case "Opera Mini":
-                            case "Opera Mobi":
-                                _browserFamily = BrowserFamilies.Opera;
-                                switch (m.Groups[1].Value)
-                                {
-                                    case "Opera Mini":
-                                    case "Opera Mobi":
-                                        _isMobile = true;
-                                        break;
-                                }
-                                break;
-                            case "MSIE":
-                            case "Trident":
-                                _browserFamily = BrowserFamilies.InternetExplorer;
-                                if (userAgent.Contains("rv:"))
-                                    _browserVersion = new Version(_REG_VERSION_NUMBER.Match(userAgent, userAgent.IndexOf("rv:")).Value);
-                                else if (userAgent.Contains("compatible;"))
-                                    _browserVersion = new Version("7.0");
-                                break;
-                            case "Mozilla/4.":
+                        case "Lotus-Notes":
+                            _browserFamily = BrowserFamilies.LotusNotes;
+                            break;
+                        case "Opera":
+                        case "OPR":
+                        case "Opera Mini":
+                        case "Opera Mobi":
+                            _browserFamily = BrowserFamilies.Opera;
+                            switch (m.Groups[1].Value)
+                            {
+                                case "Opera Mini":
+                                case "Opera Mobi":
+                                    _isMobile = true;
+                                    break;
+                            }
+                            break;
+                        case "MSIE":
+                        case "Trident":
+                            _browserFamily = BrowserFamilies.InternetExplorer;
+                            if (userAgent.Contains("rv:"))
+                                _browserVersion = new Version(_REG_VERSION_NUMBER.Match(userAgent, userAgent.IndexOf("rv:")).Value);
+                            else if (userAgent.Contains("compatible;"))
+                                _browserVersion = new Version("7.0");
+                            break;
+                        case "Mozilla/4.":
+                            _browserFamily = BrowserFamilies.Other;
+                            break;
+                        case "Safari":
+                            if (userAgent.Contains("Chrome/"))
+                                _browserFamily = BrowserFamilies.Chrome;
+                            else
+                                _browserFamily = BrowserFamilies.Safari;
+                            break;
+                        default:
+                            if (new List<string>(Enum.GetNames(typeof(BrowserFamilies))).Contains(m.Groups[1].Value))
+                                _browserFamily = (BrowserFamilies)Enum.Parse(typeof(BrowserFamilies), m.Groups[1].Value);
+                            else
                                 _browserFamily = BrowserFamilies.Other;
-                                break;
-                            default:
-                                if (new List<string>(Enum.GetNames(typeof(BrowserFamilies))).Contains(m.Groups[1].Value))
-                                    _browserFamily = (BrowserFamilies)Enum.Parse(typeof(BrowserFamilies), m.Groups[1].Value);
-                                else
-                                    _browserFamily = BrowserFamilies.Other;
-                                break;
-                        }
+                            break;
                     }
-                    else
-                    {
-                        _browserFamily = BrowserFamilies.Other;
-                        _browserVersion = new Version("0.0");
-                    }
-                    Logger.Debug("Time to process Browser from User Agent: " + DateTime.Now.Subtract(start).TotalMilliseconds.ToString() + "ms");
+                }
+                else
+                {
+                    _browserFamily = BrowserFamilies.Other;
+                    _browserVersion = new Version("0.0");
                 }
                 switch (_browserFamily)
                 {
