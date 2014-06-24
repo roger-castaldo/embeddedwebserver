@@ -272,6 +272,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public void Start()
         {
             _currentSite = this;
+            _handlerCache = new Dictionary<string, CachedItemContainer>();
             PreStart();
             foreach (IRequestHandler handler in Handlers)
             {
@@ -284,6 +285,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
         public void Stop()
         {
             _currentSite = this;
+            _handlerCache.Clear();
             PreStop();
             foreach (IRequestHandler handler in Handlers)
             {
@@ -375,6 +377,28 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             }
         }
 
+        private Dictionary<string, CachedItemContainer> _handlerCache;
+
+        [BackgroundOperationCall(-1,-1,-1,-1,BackgroundOperationDaysOfWeek.All)]
+        internal static void CleanHandlers()
+        {
+            List<Site> sites = ServerControl.Sites;
+            foreach (Site site in sites)
+            {
+                lock (site._handlerCache)
+                {
+                    string[] keys = new string[site._handlerCache.Count];
+                    site._handlerCache.Keys.CopyTo(keys, 0);
+                    foreach (string str in keys)
+                    {
+                        if (DateTime.Now.Subtract(site._handlerCache[str].LastAccess).TotalMilliseconds > 60)
+                            site._handlerCache.Remove(str);
+                    }
+                }
+            }
+            GC.Collect();
+        }
+
         /*
          * This function is called by the port listener once the appropriate site has
          * been located to process the given request.  It scans through all 
@@ -392,7 +416,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 HttpRequest.SetCurrentRequest(request);
                 DateTime start = DateTime.Now;
                 _currentSite = this;
-                bool found = false;
                 string realm = null;
                 bool authed = false;
                 bool loadSession = false;
@@ -461,82 +484,99 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 }
                 if (authed)
                 {
-                    foreach (IRequestHandler handler in Handlers)
+                    IRequestHandler handler = null;
+                    lock (_handlerCache)
                     {
-                        if (handler.CanProcessRequest(request, this))
+                        if (_handlerCache.ContainsKey(request.URL.AbsolutePath))
+                            handler = (IRequestHandler)_handlerCache[request.URL.AbsolutePath].Value;
+                    }
+                    if (handler == null)
+                    {
+                        foreach (IRequestHandler ih in Handlers)
                         {
-                            found = true;
-                            Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
-                            if (handler.IsReusable)
+                            if (ih.CanProcessRequest(request, this))
                             {
-                                if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                    SessionManager.LoadStateForConnection(request, this);
-                                try
+                                handler = ih;
+                                lock (_handlerCache)
                                 {
-                                    handler.ProcessRequest(request, this);
+                                    if (!_handlerCache.ContainsKey(request.URL.AbsolutePath))
+                                        _handlerCache.Add(request.URL.AbsolutePath, new CachedItemContainer(handler));
                                 }
-                                catch (ThreadAbortException tae)
-                                {
-                                    if (!request.IsResponseSent)
-                                    {
-                                        request.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                        request.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                        request.SendResponse();
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Logger.LogError(e);
-                                    if (!RequestError(request, e))
-                                    {
-                                        request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                        request.ClearResponse();
-                                        request.ResponseWriter.Write(e.Message);
-                                    }
-                                }
-                                if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
-                                    SessionManager.StoreSessionForConnection(request, this);
+                                break;
                             }
-                            else
-                            {
-                                IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                                hndl.Init();
-                                if (hndl.RequiresSessionForRequest(request, this))
-                                    SessionManager.LoadStateForConnection(request, this);
-                                try
-                                {
-                                    hndl.ProcessRequest(request, this);
-                                }
-                                catch (ThreadAbortException tae)
-                                {
-                                    if (!request.IsResponseSent)
-                                    {
-                                        request.ResponseStatus = HttpStatusCodes.Request_Timeout;
-                                        request.ResponseWriter.WriteLine("The request has taken to long to process.");
-                                        request.SendResponse();
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Logger.LogError(e);
-                                    if (!RequestError(request, e))
-                                    {
-                                        request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
-                                        request.ClearResponse();
-                                        request.ResponseWriter.Write(e.Message);
-                                    }
-                                }
-                                if (hndl.RequiresSessionForRequest(request, this))
-                                    SessionManager.StoreSessionForConnection(request, this);
-                                hndl.DeInit();
-                            }
-                            break;
                         }
                     }
-                    if (!found)
+                    if (handler==null)
                     {
                         request.ClearResponse();
                         request.ResponseStatus = HttpStatusCodes.Not_Found;
+                    }
+                    else
+                    {
+                        Logger.LogMessage(DiagnosticsLevels.TRACE, "Time to determine handler for URL " + request.URL.AbsolutePath + " = " + DateTime.Now.Subtract(start).TotalMilliseconds + " ms");
+                        if (handler.IsReusable)
+                        {
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.LoadStateForConnection(request, this);
+                            try
+                            {
+                                handler.ProcessRequest(request, this);
+                            }
+                            catch (ThreadAbortException tae)
+                            {
+                                if (!request.IsResponseSent)
+                                {
+                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    request.SendResponse();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError(e);
+                                if (!RequestError(request, e))
+                                {
+                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    request.ClearResponse();
+                                    request.ResponseWriter.Write(e.Message);
+                                }
+                            }
+                            if (handler.RequiresSessionForRequest(request, this) || (DefaultPage(request.IsMobile) == request.URL.AbsolutePath && SessionStateType != SiteSessionTypes.None))
+                                SessionManager.StoreSessionForConnection(request, this);
+                        }
+                        else
+                        {
+                            IRequestHandler hndl = (IRequestHandler)handler.GetType().GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                            hndl.Init();
+                            if (hndl.RequiresSessionForRequest(request, this))
+                                SessionManager.LoadStateForConnection(request, this);
+                            try
+                            {
+                                hndl.ProcessRequest(request, this);
+                            }
+                            catch (ThreadAbortException tae)
+                            {
+                                if (!request.IsResponseSent)
+                                {
+                                    request.ResponseStatus = HttpStatusCodes.Request_Timeout;
+                                    request.ResponseWriter.WriteLine("The request has taken to long to process.");
+                                    request.SendResponse();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError(e);
+                                if (!RequestError(request, e))
+                                {
+                                    request.ResponseStatus = HttpStatusCodes.Internal_Server_Error;
+                                    request.ClearResponse();
+                                    request.ResponseWriter.Write(e.Message);
+                                }
+                            }
+                            if (hndl.RequiresSessionForRequest(request, this))
+                                SessionManager.StoreSessionForConnection(request, this);
+                            hndl.DeInit();
+                        }
                     }
                 }
             }
