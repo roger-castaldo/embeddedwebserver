@@ -18,7 +18,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         }
 
         public new void Write(string value) {
-            _bw.Write(_enc.GetBytes(value));
+            if (value!=null)
+                _bw.Write(_enc.GetBytes(value));
         }
 
         public new void Write(string format, object arg0)
@@ -42,7 +43,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
 
         public new void WriteLine(string value)
         {
-            _bw.Write(_enc.GetBytes(value+this.NewLine));
+            if (value!=null)
+                _bw.Write(_enc.GetBytes(value+this.NewLine));
         }
 
         public new void WriteLine(string format, object arg0)
