@@ -385,16 +385,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             List<Site> sites = ServerControl.Sites;
             foreach (Site site in sites)
             {
-                lock (site._handlerCache)
+                Monitor.Enter(site._handlerCache);
+                string[] keys = new string[site._handlerCache.Count];
+                site._handlerCache.Keys.CopyTo(keys, 0);
+                foreach (string str in keys)
                 {
-                    string[] keys = new string[site._handlerCache.Count];
-                    site._handlerCache.Keys.CopyTo(keys, 0);
-                    foreach (string str in keys)
-                    {
-                        if (DateTime.Now.Subtract(site._handlerCache[str].LastAccess).TotalMilliseconds > 60)
-                            site._handlerCache.Remove(str);
-                    }
+                    if (DateTime.Now.Subtract(site._handlerCache[str].LastAccess).TotalMilliseconds > 60)
+                        site._handlerCache.Remove(str);
                 }
+                Monitor.Exit(site._handlerCache);
             }
             GC.Collect();
         }
@@ -422,22 +421,22 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 this.PreAuthentication(request, out loadSession);
                 if (loadSession)
                     SessionManager.LoadStateForConnection(request, this);
-                HttpAuthTypes authType = this.GetAuthenticationTypeForUrl(request.URL,out realm);
+                HttpAuthTypes authType = this.GetAuthenticationTypeForUrl(request.URL, out realm);
                 switch (authType)
                 {
                     case HttpAuthTypes.Digest:
                         if (!(request.Headers["Authorization"] == null ? "" : request.Headers["Authorization"]).Trim().StartsWith("Digest"))
                         {
-                            request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\""+Convert.ToBase64String(_rand.NextBytes(4))+"\"";
+                            request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\"" + Convert.ToBase64String(_rand.NextBytes(4)) + "\"";
                             request.ResponseStatus = HttpStatusCodes.Unauthorized;
                         }
                         else
                         {
                             Dictionary<string, string> pars = _ExtractAuthData(request.Headers["Authorization"].Trim().Substring(request.Headers["Authorization"].Trim().IndexOf(' ') + 1));
                             string dpass = pars["response"];
-                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL,pars["username"]))
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL, pars["username"]))
                             {
-                                if (usr.GetDigestString(realm,request.Method,pars["uri"],pars["nonce"]) == dpass)
+                                if (usr.GetDigestString(realm, request.Method, pars["uri"], pars["nonce"]) == dpass)
                                 {
                                     authed = true;
                                     this.PostAuthentication(request, usr);
@@ -446,7 +445,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             if (!authed)
                             {
-                                PostAuthenticationFailure(request,pars["username"]);
+                                PostAuthenticationFailure(request, pars["username"]);
                                 request.ResponseStatus = HttpStatusCodes.Unauthorized;
                                 request.ResponseHeaders["WWW-Authenticate"] = "Digest realm=\"" + realm + "\", nonce=\"" + Convert.ToBase64String(_rand.NextBytes(4)) + "\"";
                             }
@@ -461,7 +460,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                         else
                         {
                             string bpass = request.Headers["Authorization"].Trim().Split(' ')[1];
-                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL,ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]))
+                            foreach (sHttpAuthUsernamePassword usr in GetAuthenticationInformationForUrl(request.URL, ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]))
                             {
                                 if (usr.BasicAuthorizationString == bpass)
                                 {
@@ -472,7 +471,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             }
                             if (!authed)
                             {
-                                PostAuthenticationFailure(request,ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]);
+                                PostAuthenticationFailure(request, ASCIIEncoding.ASCII.GetString(Convert.FromBase64String(bpass)).Split(':')[0]);
                                 request.ResponseStatus = HttpStatusCodes.Unauthorized;
                                 request.ResponseHeaders["WWW-Authenticate"] = "Basic realm=\"" + realm + "\"";
                             }
@@ -485,11 +484,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                 if (authed)
                 {
                     IRequestHandler handler = null;
-                    lock (_handlerCache)
-                    {
-                        if (_handlerCache.ContainsKey(request.URL.AbsolutePath))
-                            handler = (IRequestHandler)_handlerCache[request.URL.AbsolutePath].Value;
-                    }
+                    Monitor.Enter(_handlerCache);
+                    if (_handlerCache.ContainsKey(request.URL.AbsolutePath))
+                        handler = (IRequestHandler)_handlerCache[request.URL.AbsolutePath].Value;
+                    Monitor.Exit(_handlerCache);
                     if (handler == null)
                     {
                         foreach (IRequestHandler ih in Handlers)
@@ -497,16 +495,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
                             if (ih.CanProcessRequest(request, this))
                             {
                                 handler = ih;
-                                lock (_handlerCache)
-                                {
-                                    if (!_handlerCache.ContainsKey(request.URL.AbsolutePath))
-                                        _handlerCache.Add(request.URL.AbsolutePath, new CachedItemContainer(handler));
-                                }
+                                Monitor.Enter(_handlerCache);
+                                if (!_handlerCache.ContainsKey(request.URL.AbsolutePath))
+                                    _handlerCache.Add(request.URL.AbsolutePath, new CachedItemContainer(handler));
+                                Monitor.Exit(_handlerCache);
                                 break;
                             }
                         }
                     }
-                    if (handler==null)
+                    if (handler == null)
                     {
                         request.ClearResponse();
                         request.ResponseStatus = HttpStatusCodes.Not_Found;
