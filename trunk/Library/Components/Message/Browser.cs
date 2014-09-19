@@ -339,7 +339,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                 {
                     case BrowserFamilies.Safari:
                         _isMobile = _REG_SAFARI_MOBILE.Matches(userAgent).Count > 0
-                            || _REG_HP_MOBILE.Matches(userAgent).Count >= 2;
+                            || _REG_HP_MOBILE.Matches(userAgent).Count >= 2
+                            ||_isMobile;
                         break;
                     case BrowserFamilies.InternetExplorer:
                         _isMobile = _REG_IE_MOBILE.Matches(userAgent).Count >= 2;
