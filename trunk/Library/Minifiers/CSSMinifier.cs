@@ -162,16 +162,36 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
 	        "outline-color"
         };
 
-        private static readonly Regex regBasicComment = new Regex("//.+\n", RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regComplexComment = new Regex("/\\*.+\\*/", RegexOptions.Compiled | RegexOptions.Multiline);
-        private static readonly Regex regOpeningBracket = new Regex("\\s*\\{\\s+",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regClosingBracket = new Regex("\\s*\\}\\s+",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regJoining = new Regex("\\s*:\\s*",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regEndSetting = new Regex("\\s*;\\s*",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regClosingBracketSpacer = new Regex("}\\s{0}",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regMarginPad = new Regex(":0"+UnitRegex+"?\\s+0"+UnitRegex+"?(\\s+0"+UnitRegex+"?(\\s+0"+UnitRegex+"?)?)?\\s*;",RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly Regex regDoubleSpace = new Regex("(\\s+|\t+)", RegexOptions.Compiled | RegexOptions.Multiline);
-        private static readonly Regex regLines = new Regex("[\r\n]", RegexOptions.Compiled | RegexOptions.Multiline);
+        private static readonly Regex regComments = new Regex("/((\\*[^*]*\\*+([^/*][^*]*\\*+)*/)|(/[^\n]+))", RegexOptions.Compiled | RegexOptions.ECMAScript | RegexOptions.Multiline);
+
+        private struct sRegexReplace
+        {
+            private string _replace;
+            private Regex _regex;
+
+            public sRegexReplace(string replace, Regex regex)
+            {
+                _replace = replace;
+                _regex = regex;
+            }
+
+            public string Execute(string code)
+            {
+                return _regex.Replace(code, _replace);
+            }
+        }
+
+        private static readonly sRegexReplace[] regexes = new sRegexReplace[]{
+            new sRegexReplace("",regComments),
+            new sRegexReplace("{",new Regex("\\s*\\{\\s+",RegexOptions.Compiled|RegexOptions.Multiline)),
+            new sRegexReplace("}",new Regex("\\s*\\}\\s+",RegexOptions.Compiled|RegexOptions.Multiline)),
+            new sRegexReplace(":",new Regex("\\s*:\\s*",RegexOptions.Compiled | RegexOptions.ECMAScript)),
+            new sRegexReplace(";",new Regex("\\s*;\\s*",RegexOptions.Compiled | RegexOptions.ECMAScript)),
+            new sRegexReplace("}\n",new Regex("}\\s{0}",RegexOptions.Compiled | RegexOptions.ECMAScript)),
+            new sRegexReplace(":0",new Regex(":0"+UnitRegex,RegexOptions.ECMAScript|RegexOptions.Compiled)),
+            new sRegexReplace("",new Regex("[\r\n]",RegexOptions.Compiled|RegexOptions.Multiline)),
+            new sRegexReplace(" ",new Regex("(\\s+|\\t+)",RegexOptions.Compiled|RegexOptions.Multiline)),
+        };
 
         private static Regex regColors;
 
@@ -190,17 +210,8 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
 		
 		public static string Minify(string css)
 		{
-			css = StripComments(css);
-            css = regBasicComment.Replace(css, string.Empty);
-            css = regComplexComment.Replace(css, string.Empty);
-            css = regOpeningBracket.Replace(css, "{");
-            css = regClosingBracket.Replace(css, "}");
-            css = regJoining.Replace(css, ":");
-            css = regEndSetting.Replace(css, ";");
-            css = regClosingBracketSpacer.Replace(css, "}\n");
-            css = regMarginPad.Replace(css, ":0;");
-            css = regLines.Replace(css, "");
-            css = regDoubleSpace.Replace(css, " ");
+            foreach (sRegexReplace srr in regexes)
+                css = srr.Execute(css);
             int lastIndex=0;
             while (regColors.Matches(css.ToLower(),lastIndex).Count > 0)
             {
@@ -215,69 +226,10 @@ namespace Org.Reddragonit.EmbeddedWebServer.Minifiers
             }
 			return css;
 		}
-		
-		internal static string StripComments(string originalString)
-		{
-			string ret = "";
-            for (int x = 0; x < originalString.Length; x++)
-            {
-                if ((originalString[x] == '/') && ret.EndsWith("/"))
-                {
-                    ret = ret.Substring(0, ret.Length - 1);
-                    while (x < originalString.Length)
-                    {
-                        if (originalString[x] == '\n')
-                            break;
-                        x++;
-                    }
-                }
-                else if ((originalString[x] == '*') && ret.EndsWith("/"))
-                {
-                    ret = ret.Substring(0, ret.Length - 1);
-                    x++;
-                    if (x < originalString.Length)
-                    {
-                        string tmp = originalString[x].ToString();
-                        while (x < originalString.Length)
-                        {
-                            if (originalString[x] == '/' && tmp.EndsWith("*"))
-                            {
-                                x++;
-                                break;
-                            }
-                            tmp += originalString[x];
-                            x++;
-                        }
-                    }
-                }
-                else if (originalString[x] == '\"')
-                {
-                    ret += originalString[x];
-                    x++;
-                    while (x < originalString.Length)
-                    {
-                        if ((originalString[x] == '\"') && !ret.EndsWith("\\"))
-                            break;
-                        ret += originalString[x];
-                        x++;
-                    }
-                }
-                else if (originalString[x] == '\'')
-                {
-                    ret += originalString[x];
-                    x++;
-                    while (x < originalString.Length)
-                    {
-                        if ((originalString[x] == '\'') && !ret.EndsWith("\\"))
-                            break;
-                        ret += originalString[x];
-                        x++;
-                    }
-                }
-                if (x<originalString.Length)
-                    ret += originalString[x];
-            }
-			return ret;
-		}
+
+        internal static string StripComments(string originalString)
+        {
+            return regComments.Replace(originalString, "");
+        }
 	}
 }
