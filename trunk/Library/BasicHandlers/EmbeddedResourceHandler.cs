@@ -94,107 +94,112 @@ namespace Org.Reddragonit.EmbeddedWebServer.BasicHandlers
         void IRequestHandler.ProcessRequest(HttpRequest request, Site site)
         {
             request.ResponseHeaders["Cache-Control"] = "Private";
-            sEmbeddedFile file = site.EmbeddedFiles[request.URL.AbsolutePath];
-            Stream str=null;
-            switch (file.FileType)
+            if (request.Headers["If-Modified-Since"] != null && DateTime.Parse(request.Headers["If-Modified-Since"]) >= site.StartTimestamp)
+                request.ResponseStatus = HttpStatusCodes.Not_Modified;
+            else
             {
-                case EmbeddedFileTypes.Compressed_Css:
-                    string comCss = Utility.ReadEmbeddedResource(file.DLLPath);
-                    if (comCss == null)
-                        request.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
-                    {
-                        request.ResponseHeaders.ContentType = "text/css";
-                        request.ResponseWriter.Write(comCss);
-                    }
-                    break;
-                case EmbeddedFileTypes.Compressed_Javascript:
-                    string comJs = Utility.ReadEmbeddedResource(file.DLLPath);
-                    if (comJs == null)
-                        request.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
-                    {
-                        request.ResponseHeaders.ContentType = "text/javascript";
-                        request.ResponseWriter.Write(comJs);
-                    }
-                    break;
-                case EmbeddedFileTypes.Css:
-                    bool loadCss = true;
-                    Monitor.Enter(_lock);
-                    if (_compressedCache.ContainsKey(file.DLLPath))
-                    {
-                        loadCss = false;
-                        request.ResponseHeaders.ContentType = "text/css";
-                        request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
-                    }
-                    Monitor.Exit(_lock);
-                    if (loadCss)
-                    {
-                        string css = Utility.ReadEmbeddedResource(file.DLLPath);
-                        if (css == null)
+                sEmbeddedFile file = site.EmbeddedFiles[request.URL.AbsolutePath];
+                Stream str = null;
+                switch (file.FileType)
+                {
+                    case EmbeddedFileTypes.Compressed_Css:
+                        string comCss = Utility.ReadEmbeddedResource(file.DLLPath);
+                        if (comCss == null)
                             request.ResponseStatus = HttpStatusCodes.Not_Found;
                         else
                         {
                             request.ResponseHeaders.ContentType = "text/css";
-                            Monitor.Enter(_lock);
-                            if (site.CompressCSS)
-                                css = CSSMinifier.Minify(css);
-                            if (!_compressedCache.ContainsKey(file.DLLPath))
-                            {
-                                _compressedCache.Add(file.DLLPath, new CachedItemContainer(css));
-                            }
-                            Monitor.Exit(_lock);
-                            request.ResponseWriter.Write(css);
+                            request.ResponseWriter.Write(comCss);
                         }
-                    }
-                    break;
-                case EmbeddedFileTypes.Javascript:
-                    bool loadJS = true;
-                    Monitor.Enter(_lock);
-                    if (_compressedCache.ContainsKey(file.DLLPath))
-                    {
-                        loadJS = false;
-                        request.ResponseHeaders.ContentType = "text/javascript";
-                        request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
-                    }
-                    Monitor.Exit(_lock);
-                    if (loadJS)
-                    {
-                        string js = Utility.ReadEmbeddedResource(file.DLLPath);
-                        if (js == null)
+                        break;
+                    case EmbeddedFileTypes.Compressed_Javascript:
+                        string comJs = Utility.ReadEmbeddedResource(file.DLLPath);
+                        if (comJs == null)
                             request.ResponseStatus = HttpStatusCodes.Not_Found;
                         else
                         {
                             request.ResponseHeaders.ContentType = "text/javascript";
-                            if (site.CompressJS)
-                                js = JSMinifier.Minify(js);
-                            Monitor.Enter(_lock);
-                            if (!_compressedCache.ContainsKey(file.DLLPath))
-                            {
-                                _compressedCache.Add(file.DLLPath, new CachedItemContainer(js));
-                            }
-                            Monitor.Exit(_lock);
-                            request.ResponseWriter.Write(js);
+                            request.ResponseWriter.Write(comJs);
                         }
-                    }
-                    break;
-                case EmbeddedFileTypes.Image:
-                    str = Utility.LocateEmbededResource(file.DLLPath);
-                    if (str == null)
-                        request.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
-                    {
-                        request.ResponseHeaders.ContentType = "image/"+file.ImageType.Value.ToString();
-                        request.UseResponseStream(str);
-                    }
-                    break;
-                case EmbeddedFileTypes.Text:
-                    str = Utility.LocateEmbededResource(file.DLLPath);
-                    if (str == null)
-                        request.ResponseStatus = HttpStatusCodes.Not_Found;
-                    else
-                        request.UseResponseStream(str);
-                    break;
+                        break;
+                    case EmbeddedFileTypes.Css:
+                        bool loadCss = true;
+                        Monitor.Enter(_lock);
+                        if (_compressedCache.ContainsKey(file.DLLPath))
+                        {
+                            loadCss = false;
+                            request.ResponseHeaders.ContentType = "text/css";
+                            request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
+                        }
+                        Monitor.Exit(_lock);
+                        if (loadCss)
+                        {
+                            string css = Utility.ReadEmbeddedResource(file.DLLPath);
+                            if (css == null)
+                                request.ResponseStatus = HttpStatusCodes.Not_Found;
+                            else
+                            {
+                                request.ResponseHeaders.ContentType = "text/css";
+                                Monitor.Enter(_lock);
+                                if (site.CompressCSS)
+                                    css = CSSMinifier.Minify(css);
+                                if (!_compressedCache.ContainsKey(file.DLLPath))
+                                {
+                                    _compressedCache.Add(file.DLLPath, new CachedItemContainer(css));
+                                }
+                                Monitor.Exit(_lock);
+                                request.ResponseWriter.Write(css);
+                            }
+                        }
+                        break;
+                    case EmbeddedFileTypes.Javascript:
+                        bool loadJS = true;
+                        Monitor.Enter(_lock);
+                        if (_compressedCache.ContainsKey(file.DLLPath))
+                        {
+                            loadJS = false;
+                            request.ResponseHeaders.ContentType = "text/javascript";
+                            request.ResponseWriter.Write(_compressedCache[file.DLLPath].Value);
+                        }
+                        Monitor.Exit(_lock);
+                        if (loadJS)
+                        {
+                            string js = Utility.ReadEmbeddedResource(file.DLLPath);
+                            if (js == null)
+                                request.ResponseStatus = HttpStatusCodes.Not_Found;
+                            else
+                            {
+                                request.ResponseHeaders.ContentType = "text/javascript";
+                                if (site.CompressJS)
+                                    js = JSMinifier.Minify(js);
+                                Monitor.Enter(_lock);
+                                if (!_compressedCache.ContainsKey(file.DLLPath))
+                                {
+                                    _compressedCache.Add(file.DLLPath, new CachedItemContainer(js));
+                                }
+                                Monitor.Exit(_lock);
+                                request.ResponseWriter.Write(js);
+                            }
+                        }
+                        break;
+                    case EmbeddedFileTypes.Image:
+                        str = Utility.LocateEmbededResource(file.DLLPath);
+                        if (str == null)
+                            request.ResponseStatus = HttpStatusCodes.Not_Found;
+                        else
+                        {
+                            request.ResponseHeaders.ContentType = "image/" + file.ImageType.Value.ToString();
+                            request.UseResponseStream(str);
+                        }
+                        break;
+                    case EmbeddedFileTypes.Text:
+                        str = Utility.LocateEmbededResource(file.DLLPath);
+                        if (str == null)
+                            request.ResponseStatus = HttpStatusCodes.Not_Found;
+                        else
+                            request.UseResponseStream(str);
+                        break;
+                }
             }
         }
 

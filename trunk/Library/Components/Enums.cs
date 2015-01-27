@@ -19,6 +19,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         OK = 200,
         Moved_Permanently = 301,
         Found = 302,
+        Not_Modified=304,
         Bad_Request = 400,
         Unauthorized = 401,
         Forbidden = 403,
