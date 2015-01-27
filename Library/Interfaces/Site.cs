@@ -268,9 +268,13 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             set { _id = value; }
         }
 
+        private DateTime _startTimestamp;
+        public DateTime StartTimestamp { get { return _startTimestamp; } }
+
         //Called to start the site up, runs all required initializations
         public void Start()
         {
+            _startTimestamp = DateTime.Now;
             _currentSite = this;
             _handlerCache = new Dictionary<string, CachedItemContainer>();
             PreStart();
