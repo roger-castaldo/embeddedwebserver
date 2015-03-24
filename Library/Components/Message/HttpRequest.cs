@@ -157,6 +157,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             else if (bodyComplete)
                 _ParseBody();
             Logger.Trace("Total time to load request: " + DateTime.Now.Subtract(_requestStart).TotalMilliseconds.ToString() + "ms [id:" + _id.ToString() + "]");
+            if (hasBody && !bodyComplete)
+                new Thread(_ProcessRequest).Start();
+            else
+                _ProcessRequest();
+        }
+
+        private void _ProcessRequest()
+        {
             _handlingThread = Thread.CurrentThread;
             _currentRequest = this;
             if (this.Headers != null)
@@ -206,7 +214,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         {
             _parser.RequestBodyBytesRecieved = null;
             _parser.RequestComplete = null;
-            if (_parameters == null)
+            if (_parameters == null || _parameters.Count==0)
                 _ParseBody();
         }
 
