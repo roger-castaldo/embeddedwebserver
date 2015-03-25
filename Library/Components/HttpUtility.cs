@@ -43,902 +43,691 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                 return GetContentTypeForExtension("." + fileExtension);
             switch (fileExtension.ToLower())
             {
-                case ".3dm":
-                    return "x-world/x-3dmf";
-                case ".3dmf":
-                    return "x-world/x-3dmf";
-                case ".a":
-                    return "application/octet-stream";
-                case ".aab":
-                    return "application/x-authorware-bin";
-                case ".aam":
-                    return "application/x-authorware-map";
-                case ".aas":
-                    return "application/x-authorware-seg";
-                case ".abc":
-                    return "text/vnd.abc";
-                case ".acgi":
-                    return "text/html";
-                case ".afl":
-                    return "video/animaflex";
-                case ".ai":
-                    return "application/postscript";
-                case ".aif":
-                    return "audio/aiff";
-                case ".aifc":
-                    return "audio/aiff";
-                case ".aiff":
-                    return "audio/aiff";
-                case ".aim":
-                    return "application/x-aim";
-                case ".aip":
-                    return "text/x-audiosoft-intra";
-                case ".ani":
-                    return "application/x-navi-animation";
-                case ".aos":
-                    return "application/x-nokia-9000-communicator-add-on-software";
-                case ".aps":
-                    return "application/mime";
-                case ".arc":
-                    return "application/octet-stream";
-                case ".arj":
-                    return "application/arj";
-                case ".art":
-                    return "image/x-jg";
-                case ".asf":
-                    return "video/x-ms-asf";
-                case ".asm":
-                    return "text/x-asm";
-                case ".asp":
-                    return "text/asp";
-                case ".asx":
-                    return "video/x-ms-asf";
-                case ".au":
-                    return "audio/basic";
-                case ".avi":
-                    return "video/avi";
-                case ".avs":
-                    return "video/avs-video";
-                case ".bcpio":
-                    return "application/x-bcpio";
-                case ".bin":
-                    return "application/octet-stream";
-                case ".bm":
-                    return "image/bmp";
-                case ".bmp":
-                    return "image/bmp";
-                case ".boo":
-                    return "application/book";
-                case ".book":
-                    return "application/book";
-                case ".boz":
-                    return "application/x-bzip2";
-                case ".bsh":
-                    return "application/x-bsh";
-                case ".bz":
-                    return "application/x-bzip";
-                case ".bz2":
-                    return "application/x-bzip2";
-                case ".c":
-                    return "text/plain";
-                case ".c++":
-                    return "text/plain";
-                case ".cat":
-                    return "application/vnd.ms-pki.seccat";
-                case ".cc":
-                    return "text/plain";
-                case ".ccad":
-                    return "application/clariscad";
-                case ".cco":
-                    return "application/x-cocoa";
-                case ".cdf":
-                    return "application/cdf";
-                case ".cer":
-                    return "application/pkix-cert";
-                case ".cha":
-                    return "application/x-chat";
-                case ".chat":
-                    return "application/x-chat";
-                case ".class":
-                    return "application/java";
-                case ".com":
-                    return "application/octet-stream";
-                case ".conf":
-                    return "text/plain";
-                case ".cpio":
-                    return "application/x-cpio";
-                case ".cpp":
-                    return "text/x-c";
-                case ".cpt":
-                    return "application/x-cpt";
-                case ".crl":
-                    return "application/pkcs-crl";
-                case ".crt":
-                    return "application/pkix-cert";
-                case ".csh":
-                    return "application/x-csh";
-                case ".css":
-                    return "text/css";
-                case ".cxx":
-                    return "text/plain";
-                case ".dcr":
-                    return "application/x-director";
-                case ".deepv":
-                    return "application/x-deepv";
-                case ".def":
-                    return "text/plain";
-                case ".der":
-                    return "application/x-x509-ca-cert";
-                case ".dif":
-                    return "video/x-dv";
-                case ".dir":
-                    return "application/x-director";
-                case ".dl":
-                    return "video/dl";
-                case ".doc":
-                    return "application/msword";
-                case ".dot":
-                    return "application/msword";
-                case ".dp":
-                    return "application/commonground";
-                case ".drw":
-                    return "application/drafting";
-                case ".dump":
-                    return "application/octet-stream";
-                case ".dv":
-                    return "video/x-dv";
-                case ".dvi":
-                    return "application/x-dvi";
-                case ".dwf":
-                    return "model/vnd.dwf";
-                case ".dwg":
-                    return "image/vnd.dwg";
-                case ".dxf":
-                    return "image/vnd.dwg";
-                case ".dxr":
-                    return "application/x-director";
-                case ".el":
-                    return "text/x-script.elisp";
-                case ".elc":
-                    return "application/x-elc";
-                case ".env":
-                    return "application/x-envoy";
-                case ".eps":
-                    return "application/postscript";
-                case ".es":
-                    return "application/x-esrehber";
-                case ".etx":
-                    return "text/x-setext";
-                case ".evy":
-                    return "application/envoy";
-                case ".exe":
-                    return "application/octet-stream";
-                case ".f":
-                    return "text/plain";
-                case ".f77":
-                    return "text/x-fortran";
-                case ".f90":
-                    return "text/plain";
-                case ".fdf":
-                    return "application/vnd.fdf";
-                case ".fif":
-                    return "image/fif";
-                case ".fli":
-                    return "video/fli";
-                case ".flo":
-                    return "image/florian";
-                case ".flx":
-                    return "text/vnd.fmi.flexstor";
-                case ".fmf":
-                    return "video/x-atomic3d-feature";
-                case ".for":
-                    return "text/x-fortran";
-                case ".fpx":
-                    return "image/vnd.fpx";
-                case ".frl":
-                    return "application/freeloader";
-                case ".funk":
-                    return "audio/make";
-                case ".g":
-                    return "text/plain";
-                case ".g3":
-                    return "image/g3fax";
-                case ".gif":
-                    return "image/gif";
-                case ".gl":
-                    return "video/gl";
-                case ".gsd":
-                    return "audio/x-gsm";
-                case ".gsm":
-                    return "audio/x-gsm";
-                case ".gsp":
-                    return "application/x-gsp";
-                case ".gss":
-                    return "application/x-gss";
-                case ".gtar":
-                    return "application/x-gtar";
-                case ".gz":
-                    return "application/x-gzip";
-                case ".gzip":
-                    return "application/x-gzip";
-                case ".h":
-                    return "text/plain";
-                case ".hdf":
-                    return "application/x-hdf";
-                case ".help":
-                    return "application/x-helpfile";
-                case ".hgl":
-                    return "application/vnd.hp-hpgl";
-                case ".hh":
-                    return "text/plain";
-                case ".hlb":
-                    return "text/x-script";
-                case ".hlp":
-                    return "application/hlp";
-                case ".hpg":
-                    return "application/vnd.hp-hpgl";
-                case ".hpgl":
-                    return "application/vnd.hp-hpgl";
-                case ".hqx":
-                    return "application/binhex";
-                case ".hta":
-                    return "application/hta";
-                case ".htc":
-                    return "text/x-component";
-                case ".htm":
-                    return "text/html";
-                case ".html":
-                    return "text/html";
-                case ".htmls":
-                    return "text/html";
-                case ".htt":
-                    return "text/webviewhtml";
-                case ".htx":
-                    return "text/html";
-                case ".ice":
-                    return "x-conference/x-cooltalk";
-                case ".ico":
-                    return "image/x-icon";
-                case ".idc":
-                    return "text/plain";
-                case ".ief":
-                    return "image/ief";
-                case ".iefs":
-                    return "image/ief";
-                case ".iges":
-                    return "application/iges";
-                case ".igs":
-                    return "application/iges";
-                case ".ima":
-                    return "application/x-ima";
-                case ".imap":
-                    return "application/x-httpd-imap";
-                case ".inf":
-                    return "application/inf";
-                case ".ins":
-                    return "application/x-internett-signup";
-                case ".ip":
-                    return "application/x-ip2";
-                case ".isu":
-                    return "video/x-isvideo";
-                case ".it":
-                    return "audio/it";
-                case ".iv":
-                    return "application/x-inventor";
-                case ".ivr":
-                    return "i-world/i-vrml";
-                case ".ivy":
-                    return "application/x-livescreen";
-                case ".jam":
-                    return "audio/x-jam";
-                case ".jav":
-                    return "text/plain";
-                case ".java":
-                    return "text/plain";
-                case ".jcm":
-                    return "application/x-java-commerce";
-                case ".jfif":
-                    return "image/jpeg";
-                case ".jfif-tbnl":
-                    return "image/jpeg";
-                case ".jpe":
-                    return "image/jpeg";
-                case ".jpeg":
-                    return "image/jpeg";
-                case ".jpg":
-                    return "image/jpeg";
-                case ".jps":
-                    return "image/x-jps";
-                case ".js":
-                    return "text/javascript";
-                case ".jut":
-                    return "image/jutvision";
-                case ".kar":
-                    return "audio/midi";
-                case ".ksh":
-                    return "application/x-ksh";
-                case ".la":
-                    return "audio/nspaudio";
-                case ".lam":
-                    return "audio/x-liveaudio";
-                case ".latex":
-                    return "application/x-latex";
-                case ".lha":
-                    return "application/octet-stream";
-                case ".lhx":
-                    return "application/octet-stream";
-                case ".list":
-                    return "text/plain";
-                case ".lma":
-                    return "audio/nspaudio";
-                case ".log":
-                    return "text/plain";
-                case ".lsp":
-                    return "application/x-lisp";
-                case ".lst":
-                    return "text/plain";
-                case ".lsx":
-                    return "text/x-la-asf";
-                case ".ltx":
-                    return "application/x-latex";
-                case ".lzh":
-                    return "application/octet-stream";
-                case ".lzx":
-                    return "application/octet-stream";
-                case ".m":
-                    return "text/plain";
-                case ".m1v":
-                    return "video/mpeg";
-                case ".m2a":
-                    return "audio/mpeg";
-                case ".m2v":
-                    return "video/mpeg";
-                case ".m3u":
-                    return "audio/x-mpequrl";
-                case ".man":
-                    return "application/x-troff-man";
-                case ".map":
-                    return "application/x-navimap";
-                case ".mar":
-                    return "text/plain";
-                case ".mbd":
-                    return "application/mbedlet";
-                case ".mc$":
-                    return "application/x-magic-cap-package-1.0";
-                case ".mcd":
-                    return "application/mcad";
-                case ".mcf":
-                    return "text/mcf";
-                case ".mcp":
-                    return "application/netmc";
-                case ".me":
-                    return "application/x-troff-me";
-                case ".mht":
-                    return "message/rfc822";
-                case ".mhtml":
-                    return "message/rfc822";
-                case ".mid":
-                    return "audio/midi";
-                case ".midi":
-                    return "audio/midi";
-                case ".mif":
-                    return "application/x-mif";
-                case ".mime":
-                    return "message/rfc822";
-                case ".mjf":
-                    return "audio/x-vnd.audioexplosion.mjuicemediafile";
-                case ".mjpg":
-                    return "video/x-motion-jpeg";
-                case ".mm":
-                    return "application/base64";
-                case ".mme":
-                    return "application/base64";
-                case ".mod":
-                    return "audio/mod";
-                case ".moov":
-                    return "video/quicktime";
-                case ".mov":
-                    return "video/quicktime";
-                case ".movie":
-                    return "video/x-sgi-movie";
-                case ".mp2":
-                    return "audio/mpeg";
-                case ".mp3":
-                    return "audio/mpeg";
-                case ".mpa":
-                    return "audio/mpeg";
-                case ".mpc":
-                    return "application/x-project";
-                case ".mpe":
-                    return "video/mpeg";
-                case ".mpeg":
-                    return "video/mpeg";
-                case ".mpg":
-                    return "video/mpeg";
-                case ".mpga":
-                    return "audio/mpeg";
-                case ".mpp":
-                    return "application/vnd.ms-project";
-                case ".mpt":
-                    return "application/vnd.ms-project";
-                case ".mpv":
-                    return "application/vnd.ms-project";
-                case ".mpx":
-                    return "application/vnd.ms-project";
-                case ".mrc":
-                    return "application/marc";
-                case ".ms":
-                    return "application/x-troff-ms";
-                case ".mv":
-                    return "video/x-sgi-movie";
-                case ".my":
-                    return "audio/make";
-                case ".mzz":
-                    return "application/x-vnd.audioexplosion.mzz";
-                case ".nap":
-                    return "image/naplps";
-                case ".naplps":
-                    return "image/naplps";
-                case ".nc":
-                    return "application/x-netcdf";
-                case ".ncm":
-                    return "application/vnd.nokia.configuration-message";
-                case ".nif":
-                    return "image/x-niff";
-                case ".niff":
-                    return "image/x-niff";
-                case ".nix":
-                    return "application/x-mix-transfer";
-                case ".nsc":
-                    return "application/x-conference";
-                case ".nvd":
-                    return "application/x-navidoc";
-                case ".o":
-                    return "application/octet-stream";
-                case ".oda":
-                    return "application/oda";
-                case ".omc":
-                    return "application/x-omc";
-                case ".omcd":
-                    return "application/x-omcdatamaker";
-                case ".omcr":
-                    return "application/x-omcregerator";
-                case ".p":
-                    return "text/x-pascal";
-                case ".p10":
-                    return "application/pkcs10";
-                case ".p12":
-                    return "application/pkcs-12";
-                case ".p7a":
-                    return "application/x-pkcs7-signature";
-                case ".p7c":
-                    return "application/pkcs7-mime";
-                case ".p7m":
-                    return "application/pkcs7-mime";
-                case ".p7r":
-                    return "application/x-pkcs7-certreqresp";
-                case ".p7s":
-                    return "application/pkcs7-signature";
-                case ".part":
-                    return "application/pro_eng";
-                case ".pas":
-                    return "text/pascal";
-                case ".pbm":
-                    return "image/x-portable-bitmap";
-                case ".pcl":
-                    return "application/vnd.hp-pcl";
-                case ".pct":
-                    return "image/x-pict";
-                case ".pcx":
-                    return "image/x-pcx";
-                case ".pdb":
-                    return "chemical/x-pdb";
-                case ".pdf":
-                    return "application/pdf";
-                case ".pfunk":
-                    return "audio/make";
-                case ".pgm":
-                    return "image/x-portable-greymap";
-                case ".pic":
-                    return "image/pict";
-                case ".pict":
-                    return "image/pict";
-                case ".pkg":
-                    return "application/x-newton-compatible-pkg";
-                case ".pko":
-                    return "application/vnd.ms-pki.pko";
-                case ".pl":
-                    return "text/plain";
-                case ".plx":
-                    return "application/x-pixclscript";
-                case ".pm":
-                    return "image/x-xpixmap";
-                case ".pm4":
-                    return "application/x-pagemaker";
-                case ".pm5":
-                    return "application/x-pagemaker";
-                case ".png":
-                    return "image/png";
-                case ".pnm":
-                    return "application/x-portable-anymap";
-                case ".pot":
-                    return "application/vnd.ms-powerpoint";
-                case ".pov":
-                    return "model/x-pov";
-                case ".ppa":
-                    return "application/vnd.ms-powerpoint";
-                case ".ppm":
-                    return "image/x-portable-pixmap";
-                case ".pps":
-                    return "application/vnd.ms-powerpoint";
-                case ".ppt":
-                    return "application/vnd.ms-powerpoint";
-                case ".ppz":
-                    return "application/vnd.ms-powerpoint";
-                case ".pre":
-                    return "application/x-freelance";
-                case ".prt":
-                    return "application/pro_eng";
-                case ".ps":
-                    return "application/postscript";
-                case ".psd":
-                    return "application/octet-stream";
-                case ".pvu":
-                    return "paleovu/x-pv";
-                case ".pwz":
-                    return "application/vnd.ms-powerpoint";
-                case ".py":
-                    return "text/x-script.phyton";
-                case ".pyc":
-                    return "applicaiton/x-bytecode.python";
-                case ".qcp":
-                    return "audio/vnd.qcelp";
-                case ".qd3":
-                    return "x-world/x-3dmf";
-                case ".qd3d":
-                    return "x-world/x-3dmf";
-                case ".qif":
-                    return "image/x-quicktime";
-                case ".qt":
-                    return "video/quicktime";
-                case ".qtc":
-                    return "video/x-qtc";
-                case ".qti":
-                    return "image/x-quicktime";
-                case ".qtif":
-                    return "image/x-quicktime";
-                case ".ra":
-                    return "audio/x-pn-realaudio";
-                case ".ram":
-                    return "audio/x-pn-realaudio";
-                case ".ras":
-                    return "application/x-cmu-raster";
-                case ".rast":
-                    return "image/cmu-raster";
-                case ".rexx":
-                    return "text/x-script.rexx";
-                case ".rf":
-                    return "image/vnd.rn-realflash";
-                case ".rgb":
-                    return "image/x-rgb";
-                case ".rm":
-                    return "application/vnd.rn-realmedia";
-                case ".rmi":
-                    return "audio/mid";
-                case ".rmm":
-                    return "audio/x-pn-realaudio";
-                case ".rmp":
-                    return "audio/x-pn-realaudio";
-                case ".rng":
-                    return "application/ringing-tones";
-                case ".rnx":
-                    return "application/vnd.rn-realplayer";
-                case ".roff":
-                    return "application/x-troff";
-                case ".rp":
-                    return "image/vnd.rn-realpix";
-                case ".rpm":
-                    return "audio/x-pn-realaudio-plugin";
-                case ".rt":
-                    return "text/richtext";
-                case ".rtf":
-                    return "text/richtext";
-                case ".rtx":
-                    return "text/richtext";
-                case ".rv":
-                    return "video/vnd.rn-realvideo";
-                case ".s":
-                    return "text/x-asm";
-                case ".s3m":
-                    return "audio/s3m";
-                case ".saveme":
-                    return "application/octet-stream";
-                case ".sbk":
-                    return "application/x-tbook";
-                case ".scm":
-                    return "application/x-lotusscreencam";
-                case ".sdml":
-                    return "text/plain";
-                case ".sdp":
-                    return "application/sdp";
-                case ".sdr":
-                    return "application/sounder";
-                case ".sea":
-                    return "application/sea";
-                case ".set":
-                    return "application/set";
-                case ".sgm":
-                    return "text/sgml";
-                case ".sgml":
-                    return "text/sgml";
-                case ".sh":
-                    return "application/x-sh";
-                case ".shar":
-                    return "application/x-shar";
-                case ".shtml":
-                    return "text/html";
-                case ".sid":
-                    return "audio/x-psid";
-                case ".sit":
-                    return "application/x-sit";
-                case ".skd":
-                    return "application/x-koan";
-                case ".skm":
-                    return "application/x-koan";
-                case ".skp":
-                    return "application/x-koan";
-                case ".skt":
-                    return "application/x-koan";
-                case ".sl":
-                    return "application/x-seelogo";
-                case ".smi":
-                    return "application/smil";
-                case ".smil":
-                    return "application/smil";
-                case ".snd":
-                    return "audio/basic";
-                case ".sol":
-                    return "application/solids";
-                case ".spc":
-                    return "text/x-speech";
-                case ".spl":
-                    return "application/futuresplash";
-                case ".spr":
-                    return "application/x-sprite";
-                case ".sprite":
-                    return "application/x-sprite";
-                case ".src":
-                    return "application/x-wais-source";
-                case ".ssi":
-                    return "text/x-server-parsed-html";
-                case ".ssm":
-                    return "application/streamingmedia";
-                case ".sst":
-                    return "application/vnd.ms-pki.certstore";
-                case ".step":
-                    return "application/step";
-                case ".stl":
-                    return "application/sla";
-                case ".stp":
-                    return "application/step";
-                case ".sv4cpio":
-                    return "application/x-sv4cpio";
-                case ".sv4crc":
-                    return "application/x-sv4crc";
-                case ".svf":
-                    return "image/vnd.dwg";
-                case ".svr":
-                    return "application/x-world";
-                case ".swf":
-                    return "application/x-shockwave-flash";
-                case ".t":
-                    return "application/x-troff";
-                case ".talk":
-                    return "text/x-speech";
-                case ".tar":
-                    return "application/x-tar";
-                case ".tbk":
-                    return "application/toolbook";
-                case ".tcl":
-                    return "application/x-tcl";
-                case ".tcsh":
-                    return "text/x-script.tcsh";
-                case ".tex":
-                    return "application/x-tex";
-                case ".texi":
-                    return "application/x-texinfo";
-                case ".texinfo":
-                    return "application/x-texinfo";
-                case ".text":
-                    return "text/plain";
-                case ".tgz":
-                    return "application/x-compressed";
-                case ".tif":
-                    return "image/tiff";
-                case ".tiff":
-                    return "image/tiff";
-                case ".tr":
-                    return "application/x-troff";
-                case ".tsi":
-                    return "audio/tsp-audio";
-                case ".tsp":
-                    return "application/dsptype";
-                case ".tsv":
-                    return "text/tab-separated-values";
-                case ".turbot":
-                    return "image/florian";
-                case ".txt":
-                    return "text/plain";
-                case ".uil":
-                    return "text/x-uil";
-                case ".uni":
-                    return "text/uri-list";
-                case ".unis":
-                    return "text/uri-list";
-                case ".unv":
-                    return "application/i-deas";
-                case ".uri":
-                    return "text/uri-list";
-                case ".uris":
-                    return "text/uri-list";
-                case ".ustar":
-                    return "application/x-ustar";
-                case ".uu":
-                    return "application/octet-stream";
-                case ".uue":
-                    return "text/x-uuencode";
-                case ".vcd":
-                    return "application/x-cdlink";
-                case ".vcs":
-                    return "text/x-vcalendar";
-                case ".vda":
-                    return "application/vda";
-                case ".vdo":
-                    return "video/vdo";
-                case ".vew":
-                    return "application/groupwise";
-                case ".viv":
-                    return "video/vivo";
-                case ".vivo":
-                    return "video/vivo";
-                case ".vmd":
-                    return "application/vocaltec-media-desc";
-                case ".vmf":
-                    return "application/vocaltec-media-file";
-                case ".voc":
-                    return "audio/voc";
-                case ".vos":
-                    return "video/vosaic";
-                case ".vox":
-                    return "audio/voxware";
-                case ".vqe":
-                    return "audio/x-twinvq-plugin";
-                case ".vqf":
-                    return "audio/x-twinvq";
-                case ".vql":
-                    return "audio/x-twinvq-plugin";
-                case ".vrml":
-                    return "application/x-vrml";
-                case ".vrt":
-                    return "x-world/x-vrt";
-                case ".vsd":
-                    return "application/x-visio";
-                case ".vst":
-                    return "application/x-visio";
-                case ".vsw":
-                    return "application/x-visio";
-                case ".w60":
-                    return "application/wordperfect6.0";
-                case ".w61":
-                    return "application/wordperfect6.1";
-                case ".w6w":
-                    return "application/msword";
-                case ".wav":
-                    return "audio/wav";
-                case ".wb1":
-                    return "application/x-qpro";
-                case ".wbmp":
-                    return "image/vnd.wap.wbmp";
-                case ".web":
-                    return "application/vnd.xara";
-                case ".wiz":
-                    return "application/msword";
-                case ".wk1":
-                    return "application/x-123";
-                case ".wmf":
-                    return "windows/metafile";
-                case ".wml":
-                    return "text/vnd.wap.wml";
-                case ".wmlc":
-                    return "application/vnd.wap.wmlc";
-                case ".wmls":
-                    return "text/vnd.wap.wmlscript";
-                case ".wmlsc":
-                    return "application/vnd.wap.wmlscriptc";
-                case ".word":
-                    return "application/msword";
-                case ".wp":
-                    return "application/wordperfect";
-                case ".wp5":
-                    return "application/wordperfect";
-                case ".wp6":
-                    return "application/wordperfect";
-                case ".wpd":
-                    return "application/wordperfect";
-                case ".wq1":
-                    return "application/x-lotus";
-                case ".wri":
-                    return "application/mswrite";
-                case ".wrl":
-                    return "application/x-world";
-                case ".wrz":
-                    return "x-world/x-vrml";
-                case ".wsc":
-                    return "text/scriplet";
-                case ".wsrc":
-                    return "application/x-wais-source";
-                case ".wtk":
-                    return "application/x-wintalk";
-                case ".xbm":
-                    return "image/x-xbitmap";
-                case ".xdr":
-                    return "video/x-amt-demorun";
-                case ".xgz":
-                    return "xgl/drawing";
-                case ".xif":
-                    return "image/vnd.xiff";
-                case ".xl":
-                    return "application/excel";
-                case ".xla":
-                    return "application/vnd.ms-excel";
-                case ".xlb":
-                    return "application/vnd.ms-excel";
-                case ".xlc":
-                    return "application/vnd.ms-excel";
-                case ".xld":
-                    return "application/vnd.ms-excel";
-                case ".xlk":
-                    return "application/vnd.ms-excel";
-                case ".xll":
-                    return "application/vnd.ms-excel";
-                case ".xlm":
-                    return "application/vnd.ms-excel";
-                case ".xls":
-                    return "application/vnd.ms-excel";
-                case ".xlt":
-                    return "application/vnd.ms-excel";
-                case ".xlv":
-                    return "application/vnd.ms-excel";
-                case ".xlw":
-                    return "application/vnd.ms-excel";
-                case ".xm":
-                    return "audio/xm";
-                case ".xml":
-                    return "application/xml";
-                case ".xmz":
-                    return "xgl/movie";
-                case ".xpix":
-                    return "application/x-vnd.ls-xpix";
-                case ".xpm":
-                    return "image/xpm";
-                case ".x-png":
-                    return "image/png";
-                case ".xsr":
-                    return "video/x-amt-showrun";
-                case ".xwd":
-                    return "image/x-xwd";
-                case ".xyz":
-                    return "chemical/x-pdb";
-                case ".z":
-                    return "application/x-compressed";
-                case ".zip":
-                    return "application/zip";
-                case ".zoo":
-                    return "application/octet-stream";
-                case ".zsh":
-                    return "text/x-script.zsh";
-                default:
-                    return "application/octet-stream";
+                case ".x3d": return "application/vnd.hzn-3d-crossword";
+                case ".3gp": return "video/3gpp";
+                case ".3g2": return "video/3gpp2";
+                case ".mseq": return "application/vnd.mseq";
+                case ".pwn": return "application/vnd.3m.post-it-notes";
+                case ".plb": return "application/vnd.3gpp.pic-bw-large";
+                case ".psb": return "application/vnd.3gpp.pic-bw-small";
+                case ".pvb": return "application/vnd.3gpp.pic-bw-var";
+                case ".tcap": return "application/vnd.3gpp2.tcap";
+                case ".7z": return "application/x-7z-compressed";
+                case ".abw": return "application/x-abiword";
+                case ".ace": return "application/x-ace-compressed";
+                case ".acc": return "application/vnd.americandynamics.acc";
+                case ".acu": return "application/vnd.acucobol";
+                case ".atc": return "application/vnd.acucorp";
+                case ".adp": return "audio/adpcm";
+                case ".aab": return "application/x-authorware-bin";
+                case ".aam": return "application/x-authorware-map";
+                case ".aas": return "application/x-authorware-seg";
+                case ".air": return "application/vnd.adobe.air-application-installer-package+zip";
+                case ".swf": return "application/x-shockwave-flash";
+                case ".fxp": return "application/vnd.adobe.fxp";
+                case ".pdf": return "application/pdf";
+                case ".ppd": return "application/vnd.cups-ppd";
+                case ".dir": return "application/x-director";
+                case ".xdp": return "application/vnd.adobe.xdp+xml";
+                case ".xfdf": return "application/vnd.adobe.xfdf";
+                case ".aac": return "audio/x-aac";
+                case ".ahead": return "application/vnd.ahead.space";
+                case ".azf": return "application/vnd.airzip.filesecure.azf";
+                case ".azs": return "application/vnd.airzip.filesecure.azs";
+                case ".azw": return "application/vnd.amazon.ebook";
+                case ".ami": return "application/vnd.amiga.ami";
+                case "N/A": return "application/andrew-inset";
+                case ".apk": return "application/vnd.android.package-archive";
+                case ".cii": return "application/vnd.anser-web-certificate-issue-initiation";
+                case ".fti": return "application/vnd.anser-web-funds-transfer-initiation";
+                case ".atx": return "application/vnd.antix.game-component";
+                case ".mpkg": return "application/vnd.apple.installer+xml";
+                case ".aw": return "application/applixware";
+                case ".les": return "application/vnd.hhe.lesson-player";
+                case ".swi": return "application/vnd.aristanetworks.swi";
+                case ".s": return "text/x-asm";
+                case ".atomcat": return "application/atomcat+xml";
+                case ".atomsvc": return "application/atomsvc+xml";
+                case ".atom, .xml": return "application/atom+xml";
+                case ".ac": return "application/pkix-attr-cert";
+                case ".aif": return "audio/x-aiff";
+                case ".avi": return "video/x-msvideo";
+                case ".aep": return "application/vnd.audiograph";
+                case ".dxf": return "image/vnd.dxf";
+                case ".dwf": return "model/vnd.dwf";
+                case ".par": return "text/plain-bas";
+                case ".bcpio": return "application/x-bcpio";
+                case ".bin": return "application/octet-stream";
+                case ".bmp": return "image/bmp";
+                case ".torrent": return "application/x-bittorrent";
+                case ".cod": return "application/vnd.rim.cod";
+                case ".mpm": return "application/vnd.blueice.multipass";
+                case ".bmi": return "application/vnd.bmi";
+                case ".sh": return "application/x-sh";
+                case ".btif": return "image/prs.btif";
+                case ".rep": return "application/vnd.businessobjects";
+                case ".bz": return "application/x-bzip";
+                case ".bz2": return "application/x-bzip2";
+                case ".csh": return "application/x-csh";
+                case ".c": return "text/x-c";
+                case ".cdxml": return "application/vnd.chemdraw+xml";
+                case ".css": return "text/css";
+                case ".cdx": return "chemical/x-cdx";
+                case ".cml": return "chemical/x-cml";
+                case ".csml": return "chemical/x-csml";
+                case ".cdbcmsg": return "application/vnd.contact.cmsg";
+                case ".cla": return "application/vnd.claymore";
+                case ".c4g": return "application/vnd.clonk.c4group";
+                case ".sub": return "image/vnd.dvb.subtitle";
+                case ".cdmia": return "application/cdmi-capability";
+                case ".cdmic": return "application/cdmi-container";
+                case ".cdmid": return "application/cdmi-domain";
+                case ".cdmio": return "application/cdmi-object";
+                case ".cdmiq": return "application/cdmi-queue";
+                case ".c11amc": return "application/vnd.cluetrust.cartomobile-config";
+                case ".c11amz": return "application/vnd.cluetrust.cartomobile-config-pkg";
+                case ".ras": return "image/x-cmu-raster";
+                case ".dae": return "model/vnd.collada+xml";
+                case ".csv": return "text/csv";
+                case ".cpt": return "application/mac-compactpro";
+                case ".wmlc": return "application/vnd.wap.wmlc";
+                case ".cgm": return "image/cgm";
+                case ".ice": return "x-conference/x-cooltalk";
+                case ".cmx": return "image/x-cmx";
+                case ".xar": return "application/vnd.xara";
+                case ".cmc": return "application/vnd.cosmocaller";
+                case ".cpio": return "application/x-cpio";
+                case ".clkx": return "application/vnd.crick.clicker";
+                case ".clkk": return "application/vnd.crick.clicker.keyboard";
+                case ".clkp": return "application/vnd.crick.clicker.palette";
+                case ".clkt": return "application/vnd.crick.clicker.template";
+                case ".clkw": return "application/vnd.crick.clicker.wordbank";
+                case ".wbs": return "application/vnd.criticaltools.wbs+xml";
+                case ".cryptonote": return "application/vnd.rig.cryptonote";
+                case ".cif": return "chemical/x-cif";
+                case ".cmdf": return "chemical/x-cmdf";
+                case ".cu": return "application/cu-seeme";
+                case ".cww": return "application/prs.cww";
+                case ".curl": return "text/vnd.curl";
+                case ".dcurl": return "text/vnd.curl.dcurl";
+                case ".mcurl": return "text/vnd.curl.mcurl";
+                case ".scurl": return "text/vnd.curl.scurl";
+                case ".car": return "application/vnd.curl.car";
+                case ".pcurl": return "application/vnd.curl.pcurl";
+                case ".cmp": return "application/vnd.yellowriver-custom-menu";
+                case ".dssc": return "application/dssc+der";
+                case ".xdssc": return "application/dssc+xml";
+                case ".deb": return "application/x-debian-package";
+                case ".uva": return "audio/vnd.dece.audio";
+                case ".uvi": return "image/vnd.dece.graphic";
+                case ".uvh": return "video/vnd.dece.hd";
+                case ".uvm": return "video/vnd.dece.mobile";
+                case ".uvu": return "video/vnd.uvvu.mp4";
+                case ".uvp": return "video/vnd.dece.pd";
+                case ".uvs": return "video/vnd.dece.sd";
+                case ".uvv": return "video/vnd.dece.video";
+                case ".dvi": return "application/x-dvi";
+                case ".seed": return "application/vnd.fdsn.seed";
+                case ".dtb": return "application/x-dtbook+xml";
+                case ".res": return "application/x-dtbresource+xml";
+                case ".ait": return "application/vnd.dvb.ait";
+                case ".svc": return "application/vnd.dvb.service";
+                case ".eol": return "audio/vnd.digital-winds";
+                case ".djvu": return "image/vnd.djvu";
+                case ".dtd": return "application/xml-dtd";
+                case ".mlp": return "application/vnd.dolby.mlp";
+                case ".wad": return "application/x-doom";
+                case ".dpg": return "application/vnd.dpgraph";
+                case ".dra": return "audio/vnd.dra";
+                case ".dfac": return "application/vnd.dreamfactory";
+                case ".dts": return "audio/vnd.dts";
+                case ".dtshd": return "audio/vnd.dts.hd";
+                case ".dwg": return "image/vnd.dwg";
+                case ".geo": return "application/vnd.dynageo";
+                case ".es": return "application/ecmascript";
+                case ".mag": return "application/vnd.ecowin.chart";
+                case ".mmr": return "image/vnd.fujixerox.edmics-mmr";
+                case ".rlc": return "image/vnd.fujixerox.edmics-rlc";
+                case ".exi": return "application/exi";
+                case ".mgz": return "application/vnd.proteus.magazine";
+                case ".epub": return "application/epub+zip";
+                case ".eml": return "message/rfc822";
+                case ".nml": return "application/vnd.enliven";
+                case ".xpr": return "application/vnd.is-xpr";
+                case ".xif": return "image/vnd.xiff";
+                case ".xfdl": return "application/vnd.xfdl";
+                case ".emma": return "application/emma+xml";
+                case ".ez2": return "application/vnd.ezpix-album";
+                case ".ez3": return "application/vnd.ezpix-package";
+                case ".fst": return "image/vnd.fst";
+                case ".fvt": return "video/vnd.fvt";
+                case ".fbs": return "image/vnd.fastbidsheet";
+                case ".fe_launch": return "application/vnd.denovo.fcselayout-link";
+                case ".f4v": return "video/x-f4v";
+                case ".flv": return "video/x-flv";
+                case ".fpx": return "image/vnd.fpx";
+                case ".npx": return "image/vnd.net-fpx";
+                case ".flx": return "text/vnd.fmi.flexstor";
+                case ".fli": return "video/x-fli";
+                case ".ftc": return "application/vnd.fluxtime.clip";
+                case ".fdf": return "application/vnd.fdf";
+                case ".f": return "text/x-fortran";
+                case ".mif": return "application/vnd.mif";
+                case ".fm": return "application/vnd.framemaker";
+                case ".fh": return "image/x-freehand";
+                case ".fsc": return "application/vnd.fsc.weblaunch";
+                case ".fnc": return "application/vnd.frogans.fnc";
+                case ".ltf": return "application/vnd.frogans.ltf";
+                case ".ddd": return "application/vnd.fujixerox.ddd";
+                case ".xdw": return "application/vnd.fujixerox.docuworks";
+                case ".xbd": return "application/vnd.fujixerox.docuworks.binder";
+                case ".oas": return "application/vnd.fujitsu.oasys";
+                case ".oa2": return "application/vnd.fujitsu.oasys2";
+                case ".oa3": return "application/vnd.fujitsu.oasys3";
+                case ".fg5": return "application/vnd.fujitsu.oasysgp";
+                case ".bh2": return "application/vnd.fujitsu.oasysprs";
+                case ".spl": return "application/x-futuresplash";
+                case ".fzs": return "application/vnd.fuzzysheet";
+                case ".g3": return "image/g3fax";
+                case ".gmx": return "application/vnd.gmx";
+                case ".gtw": return "model/vnd.gtw";
+                case ".txd": return "application/vnd.genomatix.tuxedo";
+                case ".ggb": return "application/vnd.geogebra.file";
+                case ".ggt": return "application/vnd.geogebra.tool";
+                case ".gdl": return "model/vnd.gdl";
+                case ".gex": return "application/vnd.geometry-explorer";
+                case ".gxt": return "application/vnd.geonext";
+                case ".g2w": return "application/vnd.geoplan";
+                case ".g3w": return "application/vnd.geospace";
+                case ".gsf": return "application/x-font-ghostscript";
+                case ".bdf": return "application/x-font-bdf";
+                case ".gtar": return "application/x-gtar";
+                case ".texinfo": return "application/x-texinfo";
+                case ".gnumeric": return "application/x-gnumeric";
+                case ".kml": return "application/vnd.google-earth.kml+xml";
+                case ".kmz": return "application/vnd.google-earth.kmz";
+                case ".gqf": return "application/vnd.grafeq";
+                case ".gif": return "image/gif";
+                case ".gv": return "text/vnd.graphviz";
+                case ".gac": return "application/vnd.groove-account";
+                case ".ghf": return "application/vnd.groove-help";
+                case ".gim": return "application/vnd.groove-identity-message";
+                case ".grv": return "application/vnd.groove-injector";
+                case ".gtm": return "application/vnd.groove-tool-message";
+                case ".tpl": return "application/vnd.groove-tool-template";
+                case ".vcg": return "application/vnd.groove-vcard";
+                case ".h261": return "video/h261";
+                case ".h263": return "video/h263";
+                case ".h264": return "video/h264";
+                case ".hpid": return "application/vnd.hp-hpid";
+                case ".hps": return "application/vnd.hp-hps";
+                case ".hdf": return "application/x-hdf";
+                case ".rip": return "audio/vnd.rip";
+                case ".hbci": return "application/vnd.hbci";
+                case ".jlt": return "application/vnd.hp-jlyt";
+                case ".pcl": return "application/vnd.hp-pcl";
+                case ".hpgl": return "application/vnd.hp-hpgl";
+                case ".hvs": return "application/vnd.yamaha.hv-script";
+                case ".hvd": return "application/vnd.yamaha.hv-dic";
+                case ".hvp": return "application/vnd.yamaha.hv-voice";
+                case ".sfd-hdstx": return "application/vnd.hydrostatix.sof-data";
+                case ".stk": return "application/hyperstudio";
+                case ".hal": return "application/vnd.hal+xml";
+                case ".html": return "text/html";
+                case ".irm": return "application/vnd.ibm.rights-management";
+                case ".sc": return "application/vnd.ibm.secure-container";
+                case ".ics": return "text/calendar";
+                case ".icc": return "application/vnd.iccprofile";
+                case ".ico": return "image/x-icon";
+                case ".igl": return "application/vnd.igloader";
+                case ".ief": return "image/ief";
+                case ".ivp": return "application/vnd.immervision-ivp";
+                case ".ivu": return "application/vnd.immervision-ivu";
+                case ".rif": return "application/reginfo+xml";
+                case ".3dml": return "text/vnd.in3d.3dml";
+                case ".spot": return "text/vnd.in3d.spot";
+                case ".igs": return "model/iges";
+                case ".i2g": return "application/vnd.intergeo";
+                case ".cdy": return "application/vnd.cinderella";
+                case ".xpw": return "application/vnd.intercon.formnet";
+                case ".fcs": return "application/vnd.isac.fcs";
+                case ".ipfix": return "application/ipfix";
+                case ".cer": return "application/pkix-cert";
+                case ".pki": return "application/pkixcmp";
+                case ".crl": return "application/pkix-crl";
+                case ".pkipath": return "application/pkix-pkipath";
+                case ".igm": return "application/vnd.insors.igm";
+                case ".rcprofile": return "application/vnd.ipunplugged.rcprofile";
+                case ".irp": return "application/vnd.irepository.package+xml";
+                case ".jad": return "text/vnd.sun.j2me.app-descriptor";
+                case ".jar": return "application/java-archive";
+                case ".class": return "application/java-vm";
+                case ".jnlp": return "application/x-java-jnlp-file";
+                case ".ser": return "application/java-serialized-object";
+                case ".java": return "text/x-java-source,java";
+                case ".js": return "application/javascript";
+                case ".json": return "application/json";
+                case ".joda": return "application/vnd.joost.joda-archive";
+                case ".jpm": return "video/jpm";
+                case ".jpeg, .jpg": return "image/jpeg";
+                case ".jpgv": return "video/jpeg";
+                case ".ktz": return "application/vnd.kahootz";
+                case ".mmd": return "application/vnd.chipnuts.karaoke-mmd";
+                case ".karbon": return "application/vnd.kde.karbon";
+                case ".chrt": return "application/vnd.kde.kchart";
+                case ".kfo": return "application/vnd.kde.kformula";
+                case ".flw": return "application/vnd.kde.kivio";
+                case ".kon": return "application/vnd.kde.kontour";
+                case ".kpr": return "application/vnd.kde.kpresenter";
+                case ".ksp": return "application/vnd.kde.kspread";
+                case ".kwd": return "application/vnd.kde.kword";
+                case ".htke": return "application/vnd.kenameaapp";
+                case ".kia": return "application/vnd.kidspiration";
+                case ".kne": return "application/vnd.kinar";
+                case ".sse": return "application/vnd.kodak-descriptor";
+                case ".lasxml": return "application/vnd.las.las+xml";
+                case ".latex": return "application/x-latex";
+                case ".lbd": return "application/vnd.llamagraphics.life-balance.desktop";
+                case ".lbe": return "application/vnd.llamagraphics.life-balance.exchange+xml";
+                case ".jam": return "application/vnd.jam";
+                case ".123": return "application/vnd.lotus-1-2-3";
+                case ".apr": return "application/vnd.lotus-approach";
+                case ".pre": return "application/vnd.lotus-freelance";
+                case ".nsf": return "application/vnd.lotus-notes";
+                case ".org": return "application/vnd.lotus-organizer";
+                case ".scm": return "application/vnd.lotus-screencam";
+                case ".lwp": return "application/vnd.lotus-wordpro";
+                case ".lvp": return "audio/vnd.lucent.voice";
+                case ".m3u": return "audio/x-mpegurl";
+                case ".m4v": return "video/x-m4v";
+                case ".hqx": return "application/mac-binhex40";
+                case ".portpkg": return "application/vnd.macports.portpkg";
+                case ".mgp": return "application/vnd.osgeo.mapguide.package";
+                case ".mrc": return "application/marc";
+                case ".mrcx": return "application/marcxml+xml";
+                case ".mxf": return "application/mxf";
+                case ".nbp": return "application/vnd.wolfram.player";
+                case ".ma": return "application/mathematica";
+                case ".mathml": return "application/mathml+xml";
+                case ".mbox": return "application/mbox";
+                case ".mc1": return "application/vnd.medcalcdata";
+                case ".mscml": return "application/mediaservercontrol+xml";
+                case ".cdkey": return "application/vnd.mediastation.cdkey";
+                case ".mwf": return "application/vnd.mfer";
+                case ".mfm": return "application/vnd.mfmp";
+                case ".msh": return "model/mesh";
+                case ".mads": return "application/mads+xml";
+                case ".mets": return "application/mets+xml";
+                case ".mods": return "application/mods+xml";
+                case ".meta4": return "application/metalink4+xml";
+                case ".potm": return "application/vnd.ms-powerpoint.template.macroenabled.12";
+                case ".docm": return "application/vnd.ms-word.document.macroenabled.12";
+                case ".dotm": return "application/vnd.ms-word.template.macroenabled.12";
+                case ".mcd": return "application/vnd.mcd";
+                case ".flo": return "application/vnd.micrografx.flo";
+                case ".igx": return "application/vnd.micrografx.igx";
+                case ".es3": return "application/vnd.eszigno3+xml";
+                case ".mdb": return "application/x-msaccess";
+                case ".asf": return "video/x-ms-asf";
+                case ".exe": return "application/x-msdownload";
+                case ".cil": return "application/vnd.ms-artgalry";
+                case ".cab": return "application/vnd.ms-cab-compressed";
+                case ".ims": return "application/vnd.ms-ims";
+                case ".application": return "application/x-ms-application";
+                case ".clp": return "application/x-msclip";
+                case ".mdi": return "image/vnd.ms-modi";
+                case ".eot": return "application/vnd.ms-fontobject";
+                case ".xls": return "application/vnd.ms-excel";
+                case ".xlam": return "application/vnd.ms-excel.addin.macroenabled.12";
+                case ".xlsb": return "application/vnd.ms-excel.sheet.binary.macroenabled.12";
+                case ".xltm": return "application/vnd.ms-excel.template.macroenabled.12";
+                case ".xlsm": return "application/vnd.ms-excel.sheet.macroenabled.12";
+                case ".chm": return "application/vnd.ms-htmlhelp";
+                case ".crd": return "application/x-mscardfile";
+                case ".lrm": return "application/vnd.ms-lrm";
+                case ".mvb": return "application/x-msmediaview";
+                case ".mny": return "application/x-msmoney";
+                case ".pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+                case ".sldx": return "application/vnd.openxmlformats-officedocument.presentationml.slide";
+                case ".ppsx": return "application/vnd.openxmlformats-officedocument.presentationml.slideshow";
+                case ".potx": return "application/vnd.openxmlformats-officedocument.presentationml.template";
+                case ".xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                case ".xltx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.template";
+                case ".docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                case ".dotx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.template";
+                case ".obd": return "application/x-msbinder";
+                case ".thmx": return "application/vnd.ms-officetheme";
+                case ".onetoc": return "application/onenote";
+                case ".pya": return "audio/vnd.ms-playready.media.pya";
+                case ".pyv": return "video/vnd.ms-playready.media.pyv";
+                case ".ppt": return "application/vnd.ms-powerpoint";
+                case ".ppam": return "application/vnd.ms-powerpoint.addin.macroenabled.12";
+                case ".sldm": return "application/vnd.ms-powerpoint.slide.macroenabled.12";
+                case ".pptm": return "application/vnd.ms-powerpoint.presentation.macroenabled.12";
+                case ".ppsm": return "application/vnd.ms-powerpoint.slideshow.macroenabled.12";
+                case ".mpp": return "application/vnd.ms-project";
+                case ".pub": return "application/x-mspublisher";
+                case ".scd": return "application/x-msschedule";
+                case ".xap": return "application/x-silverlight-app";
+                case ".stl": return "application/vnd.ms-pki.stl";
+                case ".cat": return "application/vnd.ms-pki.seccat";
+                case ".vsd": return "application/vnd.visio";
+                case ".wm": return "video/x-ms-wm";
+                case ".wma": return "audio/x-ms-wma";
+                case ".wax": return "audio/x-ms-wax";
+                case ".wmx": return "video/x-ms-wmx";
+                case ".wmd": return "application/x-ms-wmd";
+                case ".wpl": return "application/vnd.ms-wpl";
+                case ".wmz": return "application/x-ms-wmz";
+                case ".wmv": return "video/x-ms-wmv";
+                case ".wvx": return "video/x-ms-wvx";
+                case ".wmf": return "application/x-msmetafile";
+                case ".trm": return "application/x-msterminal";
+                case ".doc": return "application/msword";
+                case ".wri": return "application/x-mswrite";
+                case ".wps": return "application/vnd.ms-works";
+                case ".xbap": return "application/x-ms-xbap";
+                case ".xps": return "application/vnd.ms-xpsdocument";
+                case ".mid": return "audio/midi";
+                case ".mpy": return "application/vnd.ibm.minipay";
+                case ".afp": return "application/vnd.ibm.modcap";
+                case ".rms": return "application/vnd.jcp.javame.midlet-rms";
+                case ".tmo": return "application/vnd.tmobile-livetv";
+                case ".prc": return "application/x-mobipocket-ebook";
+                case ".mbk": return "application/vnd.mobius.mbk";
+                case ".dis": return "application/vnd.mobius.dis";
+                case ".plc": return "application/vnd.mobius.plc";
+                case ".mqy": return "application/vnd.mobius.mqy";
+                case ".msl": return "application/vnd.mobius.msl";
+                case ".txf": return "application/vnd.mobius.txf";
+                case ".daf": return "application/vnd.mobius.daf";
+                case ".fly": return "text/vnd.fly";
+                case ".mpc": return "application/vnd.mophun.certificate";
+                case ".mpn": return "application/vnd.mophun.application";
+                case ".mj2": return "video/mj2";
+                case ".mpga": return "audio/mpeg";
+                case ".mxu": return "video/vnd.mpegurl";
+                case ".mpeg": return "video/mpeg";
+                case ".m21": return "application/mp21";
+                case ".mp4a": return "audio/mp4";
+                case ".mp4": return "application/mp4";
+                case ".m3u8": return "application/vnd.apple.mpegurl";
+                case ".mus": return "application/vnd.musician";
+                case ".msty": return "application/vnd.muvee.style";
+                case ".mxml": return "application/xv+xml";
+                case ".ngdat": return "application/vnd.nokia.n-gage.data";
+                case ".n-gage": return "application/vnd.nokia.n-gage.symbian.install";
+                case ".ncx": return "application/x-dtbncx+xml";
+                case ".nc": return "application/x-netcdf";
+                case ".nlu": return "application/vnd.neurolanguage.nlu";
+                case ".dna": return "application/vnd.dna";
+                case ".nnd": return "application/vnd.noblenet-directory";
+                case ".nns": return "application/vnd.noblenet-sealer";
+                case ".nnw": return "application/vnd.noblenet-web";
+                case ".rpst": return "application/vnd.nokia.radio-preset";
+                case ".rpss": return "application/vnd.nokia.radio-presets";
+                case ".n3": return "text/n3";
+                case ".edm": return "application/vnd.novadigm.edm";
+                case ".edx": return "application/vnd.novadigm.edx";
+                case ".ext": return "application/vnd.novadigm.ext";
+                case ".gph": return "application/vnd.flographit";
+                case ".ecelp4800": return "audio/vnd.nuera.ecelp4800";
+                case ".ecelp7470": return "audio/vnd.nuera.ecelp7470";
+                case ".ecelp9600": return "audio/vnd.nuera.ecelp9600";
+                case ".oda": return "application/oda";
+                case ".ogx": return "application/ogg";
+                case ".oga": return "audio/ogg";
+                case ".ogv": return "video/ogg";
+                case ".dd2": return "application/vnd.oma.dd2+xml";
+                case ".oth": return "application/vnd.oasis.opendocument.text-web";
+                case ".opf": return "application/oebps-package+xml";
+                case ".qbo": return "application/vnd.intu.qbo";
+                case ".oxt": return "application/vnd.openofficeorg.extension";
+                case ".osf": return "application/vnd.yamaha.openscoreformat";
+                case ".weba": return "audio/webm";
+                case ".webm": return "video/webm";
+                case ".odc": return "application/vnd.oasis.opendocument.chart";
+                case ".otc": return "application/vnd.oasis.opendocument.chart-template";
+                case ".odb": return "application/vnd.oasis.opendocument.database";
+                case ".odf": return "application/vnd.oasis.opendocument.formula";
+                case ".odft": return "application/vnd.oasis.opendocument.formula-template";
+                case ".odg": return "application/vnd.oasis.opendocument.graphics";
+                case ".otg": return "application/vnd.oasis.opendocument.graphics-template";
+                case ".odi": return "application/vnd.oasis.opendocument.image";
+                case ".oti": return "application/vnd.oasis.opendocument.image-template";
+                case ".odp": return "application/vnd.oasis.opendocument.presentation";
+                case ".otp": return "application/vnd.oasis.opendocument.presentation-template";
+                case ".ods": return "application/vnd.oasis.opendocument.spreadsheet";
+                case ".ots": return "application/vnd.oasis.opendocument.spreadsheet-template";
+                case ".odt": return "application/vnd.oasis.opendocument.text";
+                case ".odm": return "application/vnd.oasis.opendocument.text-master";
+                case ".ott": return "application/vnd.oasis.opendocument.text-template";
+                case ".ktx": return "image/ktx";
+                case ".sxc": return "application/vnd.sun.xml.calc";
+                case ".stc": return "application/vnd.sun.xml.calc.template";
+                case ".sxd": return "application/vnd.sun.xml.draw";
+                case ".std": return "application/vnd.sun.xml.draw.template";
+                case ".sxi": return "application/vnd.sun.xml.impress";
+                case ".sti": return "application/vnd.sun.xml.impress.template";
+                case ".sxm": return "application/vnd.sun.xml.math";
+                case ".sxw": return "application/vnd.sun.xml.writer";
+                case ".sxg": return "application/vnd.sun.xml.writer.global";
+                case ".stw": return "application/vnd.sun.xml.writer.template";
+                case ".otf": return "application/x-font-otf";
+                case ".osfpvg": return "application/vnd.yamaha.openscoreformat.osfpvg+xml";
+                case ".dp": return "application/vnd.osgi.dp";
+                case ".pdb": return "application/vnd.palm";
+                case ".p": return "text/x-pascal";
+                case ".paw": return "application/vnd.pawaafile";
+                case ".pclxl": return "application/vnd.hp-pclxl";
+                case ".efif": return "application/vnd.picsel";
+                case ".pcx": return "image/x-pcx";
+                case ".psd": return "image/vnd.adobe.photoshop";
+                case ".prf": return "application/pics-rules";
+                case ".pic": return "image/x-pict";
+                case ".chat": return "application/x-chat";
+                case ".p10": return "application/pkcs10";
+                case ".p12": return "application/x-pkcs12";
+                case ".p7m": return "application/pkcs7-mime";
+                case ".p7s": return "application/pkcs7-signature";
+                case ".p7r": return "application/x-pkcs7-certreqresp";
+                case ".p7b": return "application/x-pkcs7-certificates";
+                case ".p8": return "application/pkcs8";
+                case ".plf": return "application/vnd.pocketlearn";
+                case ".pnm": return "image/x-portable-anymap";
+                case ".pbm": return "image/x-portable-bitmap";
+                case ".pcf": return "application/x-font-pcf";
+                case ".pfr": return "application/font-tdpfr";
+                case ".pgn": return "application/x-chess-pgn";
+                case ".pgm": return "image/x-portable-graymap";
+                case ".png": return "image/png";
+                case ".ppm": return "image/x-portable-pixmap";
+                case ".pskcxml": return "application/pskc+xml";
+                case ".pml": return "application/vnd.ctc-posml";
+                case ".ai": return "application/postscript";
+                case ".pfa": return "application/x-font-type1";
+                case ".pbd": return "application/vnd.powerbuilder6";
+                case "": return "application/pgp-encrypted";
+                case ".pgp": return "application/pgp-signature";
+                case ".box": return "application/vnd.previewsystems.box";
+                case ".ptid": return "application/vnd.pvi.ptid1";
+                case ".pls": return "application/pls+xml";
+                case ".str": return "application/vnd.pg.format";
+                case ".ei6": return "application/vnd.pg.osasli";
+                case ".dsc": return "text/prs.lines.tag";
+                case ".psf": return "application/x-font-linux-psf";
+                case ".qps": return "application/vnd.publishare-delta-tree";
+                case ".wg": return "application/vnd.pmi.widget";
+                case ".qxd": return "application/vnd.quark.quarkxpress";
+                case ".esf": return "application/vnd.epson.esf";
+                case ".msf": return "application/vnd.epson.msf";
+                case ".ssf": return "application/vnd.epson.ssf";
+                case ".qam": return "application/vnd.epson.quickanime";
+                case ".qfx": return "application/vnd.intu.qfx";
+                case ".qt": return "video/quicktime";
+                case ".rar": return "application/x-rar-compressed";
+                case ".ram": return "audio/x-pn-realaudio";
+                case ".rmp": return "audio/x-pn-realaudio-plugin";
+                case ".rsd": return "application/rsd+xml";
+                case ".rm": return "application/vnd.rn-realmedia";
+                case ".bed": return "application/vnd.realvnc.bed";
+                case ".mxl": return "application/vnd.recordare.musicxml";
+                case ".musicxml": return "application/vnd.recordare.musicxml+xml";
+                case ".rnc": return "application/relax-ng-compact-syntax";
+                case ".rdz": return "application/vnd.data-vision.rdz";
+                case ".rdf": return "application/rdf+xml";
+                case ".rp9": return "application/vnd.cloanto.rp9";
+                case ".jisp": return "application/vnd.jisp";
+                case ".rtf": return "application/rtf";
+                case ".rtx": return "text/richtext";
+                case ".link66": return "application/vnd.route66.link66+xml";
+                case ".rss, .xml": return "application/rss+xml";
+                case ".shf": return "application/shf+xml";
+                case ".st": return "application/vnd.sailingtracker.track";
+                case ".svg": return "image/svg+xml";
+                case ".sus": return "application/vnd.sus-calendar";
+                case ".sru": return "application/sru+xml";
+                case ".setpay": return "application/set-payment-initiation";
+                case ".setreg": return "application/set-registration-initiation";
+                case ".sema": return "application/vnd.sema";
+                case ".semd": return "application/vnd.semd";
+                case ".semf": return "application/vnd.semf";
+                case ".see": return "application/vnd.seemail";
+                case ".snf": return "application/x-font-snf";
+                case ".spq": return "application/scvp-vp-request";
+                case ".spp": return "application/scvp-vp-response";
+                case ".scq": return "application/scvp-cv-request";
+                case ".scs": return "application/scvp-cv-response";
+                case ".sdp": return "application/sdp";
+                case ".etx": return "text/x-setext";
+                case ".movie": return "video/x-sgi-movie";
+                case ".ifm": return "application/vnd.shana.informed.formdata";
+                case ".itp": return "application/vnd.shana.informed.formtemplate";
+                case ".iif": return "application/vnd.shana.informed.interchange";
+                case ".ipk": return "application/vnd.shana.informed.package";
+                case ".tfi": return "application/thraud+xml";
+                case ".shar": return "application/x-shar";
+                case ".rgb": return "image/x-rgb";
+                case ".slt": return "application/vnd.epson.salt";
+                case ".aso": return "application/vnd.accpac.simply.aso";
+                case ".imp": return "application/vnd.accpac.simply.imp";
+                case ".twd": return "application/vnd.simtech-mindmapper";
+                case ".csp": return "application/vnd.commonspace";
+                case ".saf": return "application/vnd.yamaha.smaf-audio";
+                case ".mmf": return "application/vnd.smaf";
+                case ".spf": return "application/vnd.yamaha.smaf-phrase";
+                case ".teacher": return "application/vnd.smart.teacher";
+                case ".svd": return "application/vnd.svd";
+                case ".rq": return "application/sparql-query";
+                case ".srx": return "application/sparql-results+xml";
+                case ".gram": return "application/srgs";
+                case ".grxml": return "application/srgs+xml";
+                case ".ssml": return "application/ssml+xml";
+                case ".skp": return "application/vnd.koan";
+                case ".sgml": return "text/sgml";
+                case ".sdc": return "application/vnd.stardivision.calc";
+                case ".sda": return "application/vnd.stardivision.draw";
+                case ".sdd": return "application/vnd.stardivision.impress";
+                case ".smf": return "application/vnd.stardivision.math";
+                case ".sdw": return "application/vnd.stardivision.writer";
+                case ".sgl": return "application/vnd.stardivision.writer-global";
+                case ".sm": return "application/vnd.stepmania.stepchart";
+                case ".sit": return "application/x-stuffit";
+                case ".sitx": return "application/x-stuffitx";
+                case ".sdkm": return "application/vnd.solent.sdkm+xml";
+                case ".xo": return "application/vnd.olpc-sugar";
+                case ".au": return "audio/basic";
+                case ".wqd": return "application/vnd.wqd";
+                case ".sis": return "application/vnd.symbian.install";
+                case ".smi": return "application/smil+xml";
+                case ".xsm": return "application/vnd.syncml+xml";
+                case ".bdm": return "application/vnd.syncml.dm+wbxml";
+                case ".xdm": return "application/vnd.syncml.dm+xml";
+                case ".sv4cpio": return "application/x-sv4cpio";
+                case ".sv4crc": return "application/x-sv4crc";
+                case ".sbml": return "application/sbml+xml";
+                case ".tsv": return "text/tab-separated-values";
+                case ".tiff": return "image/tiff";
+                case ".tao": return "application/vnd.tao.intent-module-archive";
+                case ".tar": return "application/x-tar";
+                case ".tcl": return "application/x-tcl";
+                case ".tex": return "application/x-tex";
+                case ".tfm": return "application/x-tex-tfm";
+                case ".tei": return "application/tei+xml";
+                case ".txt": return "text/plain";
+                case ".dxp": return "application/vnd.spotfire.dxp";
+                case ".sfs": return "application/vnd.spotfire.sfs";
+                case ".tsd": return "application/timestamped-data";
+                case ".tpt": return "application/vnd.trid.tpt";
+                case ".mxs": return "application/vnd.triscape.mxs";
+                case ".t": return "text/troff";
+                case ".tra": return "application/vnd.trueapp";
+                case ".ttf": return "application/x-font-ttf";
+                case ".ttl": return "text/turtle";
+                case ".umj": return "application/vnd.umajin";
+                case ".uoml": return "application/vnd.uoml+xml";
+                case ".unityweb": return "application/vnd.unity";
+                case ".ufd": return "application/vnd.ufdl";
+                case ".uri": return "text/uri-list";
+                case ".utz": return "application/vnd.uiq.theme";
+                case ".ustar": return "application/x-ustar";
+                case ".uu": return "text/x-uuencode";
+                case ".vcs": return "text/x-vcalendar";
+                case ".vcf": return "text/x-vcard";
+                case ".vcd": return "application/x-cdlink";
+                case ".vsf": return "application/vnd.vsf";
+                case ".wrl": return "model/vrml";
+                case ".vcx": return "application/vnd.vcx";
+                case ".mts": return "model/vnd.mts";
+                case ".vtu": return "model/vnd.vtu";
+                case ".vis": return "application/vnd.visionary";
+                case ".viv": return "video/vnd.vivo";
+                case ".ccxml": return "application/ccxml+xml,";
+                case ".vxml": return "application/voicexml+xml";
+                case ".src": return "application/x-wais-source";
+                case ".wbxml": return "application/vnd.wap.wbxml";
+                case ".wbmp": return "image/vnd.wap.wbmp";
+                case ".wav": return "audio/x-wav";
+                case ".davmount": return "application/davmount+xml";
+                case ".woff": return "application/x-font-woff";
+                case ".wspolicy": return "application/wspolicy+xml";
+                case ".webp": return "image/webp";
+                case ".wtb": return "application/vnd.webturbo";
+                case ".wgt": return "application/widget";
+                case ".hlp": return "application/winhlp";
+                case ".wml": return "text/vnd.wap.wml";
+                case ".wmls": return "text/vnd.wap.wmlscript";
+                case ".wmlsc": return "application/vnd.wap.wmlscriptc";
+                case ".wpd": return "application/vnd.wordperfect";
+                case ".stf": return "application/vnd.wt.stf";
+                case ".wsdl": return "application/wsdl+xml";
+                case ".xbm": return "image/x-xbitmap";
+                case ".xpm": return "image/x-xpixmap";
+                case ".xwd": return "image/x-xwindowdump";
+                case ".der": return "application/x-x509-ca-cert";
+                case ".fig": return "application/x-xfig";
+                case ".xhtml": return "application/xhtml+xml";
+                case ".xml": return "application/xml";
+                case ".xdf": return "application/xcap-diff+xml";
+                case ".xenc": return "application/xenc+xml";
+                case ".xer": return "application/patch-ops-error+xml";
+                case ".rl": return "application/resource-lists+xml";
+                case ".rs": return "application/rls-services+xml";
+                case ".rld": return "application/resource-lists-diff+xml";
+                case ".xslt": return "application/xslt+xml";
+                case ".xop": return "application/xop+xml";
+                case ".xpi": return "application/x-xpinstall";
+                case ".xspf": return "application/xspf+xml";
+                case ".xul": return "application/vnd.mozilla.xul+xml";
+                case ".xyz": return "chemical/x-xyz";
+                case ".yaml": return "text/yaml";
+                case ".yang": return "application/yang";
+                case ".yin": return "application/yin+xml";
+                case ".zir": return "application/vnd.zul";
+                case ".zip": return "application/zip";
+                case ".zmm": return "application/vnd.handheld-entertainment+xml";
+                case ".zaz": return "application/vnd.zzazz.deck+xml";
+                default: return "application/octet-stream";
             }
         }
     }
