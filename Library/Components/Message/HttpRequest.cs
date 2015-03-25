@@ -241,61 +241,50 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             }
             if (_contentBuffer.Length>0)
             {
-                string _content = Encoding.Default.GetString(_contentBuffer.ToArray());
                 if (_headers.ContentType.StartsWith("multipart/form-data"))
                 {
                     if (_headers.ContentType.Contains("boundary=") ||
                         (_headers.ContentTypeBoundary != null))
                     {
+                        _contentBuffer.Seek(0,SeekOrigin.Begin);
+                        BinaryReader brContent = new BinaryReader(_contentBuffer);
                         string boundary = (_headers.ContentTypeBoundary != null ? _headers.ContentTypeBoundary :
                                 "--" + _headers.ContentType.Substring(_headers.ContentType.IndexOf("boundary=") + "boundary=".Length).Replace("-", ""));
                         string line;
                         string var;
                         string value;
                         string fileName;
-                        while ((line = streamReadLine(ref _content)) != null)
+                        while ((line = streamReadLine(brContent)) != null)
                         {
                             if (line.EndsWith(boundary + "--"))
                                 break;
                             else if (line.EndsWith(boundary))
                             {
-                                line = streamReadLine(ref _content);
+                                line = streamReadLine(brContent);
                                 if (line.Contains("filename="))
                                 {
                                     var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
                                     var = var.Substring(0, var.IndexOf("\";"));
                                     fileName = line.Substring(line.IndexOf("filename=\"") + "filename=\"".Length);
                                     fileName = fileName.Substring(0, fileName.Length - 1);
-                                    string contentType = streamReadLine(ref _content);
+                                    string contentType = streamReadLine(brContent);
                                     contentType = contentType.Substring(contentType.IndexOf(":") + 1);
                                     contentType = contentType.Trim();
-                                    streamReadLine(ref _content);
-                                    MemoryStream str = new MemoryStream();
-                                    BinaryWriter br = new BinaryWriter(str);
-                                    while ((line = PeakLine(_content)) != null)
-                                    {
-                                        if (line.EndsWith(boundary) || line.EndsWith(boundary + "--"))
-                                            break;
-                                        else
-                                            br.Write(line.ToCharArray());
-                                        streamReadLine(ref _content);
-                                    }
-                                    br.Flush();
-                                    str.Seek(0, SeekOrigin.Begin);
-                                    uploadedFiles.Add(var, new UploadedFile(var, fileName, contentType, str));
+                                    streamReadLine(brContent);
+                                    uploadedFiles.Add(var, new UploadedFile(var, fileName, contentType, streamReadBinary(brContent,boundary)));
                                 }
                                 else
                                 {
                                     var = line.Substring(line.IndexOf("name=\"") + "name=\"".Length);
                                     var = var.Substring(0, var.Length - 1);
-                                    streamReadLine(ref _content);
+                                    streamReadLine(brContent);
                                     value = "";
-                                    while ((line = PeakLine(_content)) != null)
+                                    while ((line = PeakLine(brContent)) != null)
                                     {
                                         if (line.EndsWith(boundary) || line.EndsWith(boundary + "--"))
                                             break;
                                         else
-                                            value += streamReadLine(ref _content);
+                                            value += streamReadLine(brContent);
                                     }
                                     Parameters.Add(var, value.Trim());
                                 }
@@ -305,43 +294,47 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     else
                         throw new Exception("Unknown format, content-type: " + _headers.ContentType + " unable to parse in parameters.");
                 }
-                else if (_headers.ContentType == "application/x-www-form-urlencoded")
+                else
                 {
-                    if (_headers.CharSet != null)
-                        _content = Encoding.GetEncoding(_headers.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
-                    string query = HttpUtility.UrlDecode(_content);
-                    if (query.StartsWith("?"))
-                        query = query.Substring(1);
-                    if (query.StartsWith("{") && query.EndsWith("}"))
+                    string _content = Encoding.Default.GetString(_contentBuffer.ToArray());
+                    if (_headers.ContentType == "application/x-www-form-urlencoded")
                     {
-                        query = (query.StartsWith("{{") ? query.Substring(1) : query);
-                        if (query != "{}")
-                            _jsonParameter = JSON.JsonDecode(query);
-                    }
-                    else
-                    {
-                        NameValueCollection col = HttpUtility.ParseQueryString(_content);
-                        foreach (string str in col.Keys)
+                        if (_headers.CharSet != null)
+                            _content = Encoding.GetEncoding(_headers.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
+                        string query = HttpUtility.UrlDecode(_content);
+                        if (query.StartsWith("?"))
+                            query = query.Substring(1);
+                        if (query.StartsWith("{") && query.EndsWith("}"))
                         {
-                            Parameters.Add(str, HttpUtility.UrlDecode(col[str]));
+                            query = (query.StartsWith("{{") ? query.Substring(1) : query);
+                            if (query != "{}")
+                                _jsonParameter = JSON.JsonDecode(query);
+                        }
+                        else
+                        {
+                            NameValueCollection col = HttpUtility.ParseQueryString(_content);
+                            foreach (string str in col.Keys)
+                            {
+                                Parameters.Add(str, HttpUtility.UrlDecode(col[str]));
+                            }
                         }
                     }
-                }
-                else if (_headers.ContentType.StartsWith("application/json"))
-                {
-                    if (_headers.CharSet != null)
-                        _content = Encoding.GetEncoding(_headers.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
-                    string query = HttpUtility.UrlDecode(_content);
-                    if (query.StartsWith("?"))
-                        query = query.Substring(1);
-                    if (query.StartsWith("{") && query.EndsWith("}"))
+                    else if (_headers.ContentType.StartsWith("application/json"))
                     {
-                        if (query != "{}")
-                            _jsonParameter = JSON.JsonDecode(query);
+                        if (_headers.CharSet != null)
+                            _content = Encoding.GetEncoding(_headers.CharSet).GetString(ASCIIEncoding.ASCII.GetBytes(_content));
+                        string query = HttpUtility.UrlDecode(_content);
+                        if (query.StartsWith("?"))
+                            query = query.Substring(1);
+                        if (query.StartsWith("{") && query.EndsWith("}"))
+                        {
+                            if (query != "{}")
+                                _jsonParameter = JSON.JsonDecode(query);
+                        }
                     }
+                    else
+                        throw new Exception("Unknown format, content-type: " + _headers.ContentType + " unable to parse in parameters.");
                 }
-                else
-                    throw new Exception("Unknown format, content-type: " + _headers.ContentType + " unable to parse in parameters.");
             }
             _parameters = new ParameterCollection(Parameters);
             _uploadedFiles = new UploadedFileCollection(uploadedFiles);
@@ -472,6 +465,79 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             }
         }
 
+        private char peekChar(BinaryReader br)
+        {
+            char ret = (char)br.ReadByte();
+            br.BaseStream.Seek(-1, SeekOrigin.Current);
+            return ret;
+        }
+
+        private MemoryStream streamReadBinary(BinaryReader br,string boundary)
+        {
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter bw = new BinaryWriter(ms);
+            bool exit = false;
+            while (br.BaseStream.Position < br.BaseStream.Length && !exit)
+            {
+                char ic = peekChar(br);
+                switch((char)ic){
+                    case '\r':
+                        br.ReadChar();
+                        if (peekChar(br)=='\n'){
+                            br.ReadChar();
+                            string line = PeakLine(br);
+                            if (line != null)
+                            {
+                                line = line.Trim();
+                                if (line == boundary || line == boundary + "--")
+                                {
+                                    streamReadLine(br);
+                                    exit = true;
+                                }
+                            }
+                            if(!exit)
+                                bw.Write('\n');
+                        }else
+                            bw.Write('\r');
+                        break;
+                    default:
+                        bw.Write(br.ReadByte());
+                        break;
+                }
+            }
+            bw.Flush();
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms;
+        }
+
+        private string streamReadLine(BinaryReader br)
+        {
+            string ret = null;
+            if (br.BaseStream.Position < br.BaseStream.Length)
+            {
+                ret = "";
+                while (br.BaseStream.Position < br.BaseStream.Length)
+                {
+                    char c = peekChar(br);
+                    switch (c)
+                    {
+                        case '\r':
+                            ret += br.ReadChar();
+                            if (peekChar(br)=='\n')
+                            {
+                                br.ReadChar();
+                                return ret.Trim();
+                            }
+                            break;
+                        default:
+                            ret += br.ReadChar();
+                            break;
+                    }
+                }
+            }
+            return ret;
+        }
+
         private string streamReadLine(ref string stream)
         {
             string ret = null;
@@ -488,6 +554,14 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
                     stream = "";
                 }
             }
+            return ret;
+        }
+
+        private string PeakLine(BinaryReader br)
+        {
+            long position = br.BaseStream.Position;
+            string ret = streamReadLine(br);
+            br.BaseStream.Seek(position, SeekOrigin.Begin);
             return ret;
         }
 
