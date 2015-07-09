@@ -20,6 +20,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
         Moved_Permanently = 301,
         Found = 302,
         Not_Modified=304,
+        Temporary_Redirect=307,
         Bad_Request = 400,
         Unauthorized = 401,
         Forbidden = 403,
