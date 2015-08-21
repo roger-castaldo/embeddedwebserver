@@ -477,37 +477,52 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
             bool exit = false;
+            Queue<byte> buff = new Queue<byte>();
+            byte[] bboundary = ASCIIEncoding.ASCII.GetBytes("\r\n"+boundary);
+            while (buff.Count < bboundary.Length)
+                buff.Enqueue(br.ReadByte());
+            if (_IsBoundaryMatch(br,buff, bboundary))
+            {
+                exit = true;
+                buff.Clear();
+            }
             while (br.BaseStream.Position < br.BaseStream.Length && !exit)
             {
-                char ic = peekChar(br);
-                switch((char)ic){
-                    case '\r':
-                        br.ReadChar();
-                        if (peekChar(br)=='\n'){
-                            br.ReadChar();
-                            string line = PeakLine(br);
-                            if (line != null)
-                            {
-                                line = line.Trim();
-                                if (line == boundary || line == boundary + "--")
-                                {
-                                    streamReadLine(br);
-                                    exit = true;
-                                }
-                            }
-                            if(!exit)
-                                bw.Write('\n');
-                        }else
-                            bw.Write('\r');
-                        break;
-                    default:
-                        bw.Write(br.ReadByte());
-                        break;
+                bw.Write(buff.Dequeue());
+                buff.Enqueue(br.ReadByte());
+                if (_IsBoundaryMatch(br, buff, bboundary))
+                {
+                    exit = true;
+                    buff.Clear();
                 }
             }
+            if (_IsBoundaryMatch(br,buff, bboundary))
+                buff.Clear();
+            while (buff.Count > 0)
+                bw.Write(buff.Dequeue());
             bw.Flush();
             ms.Seek(0, SeekOrigin.Begin);
             return ms;
+        }
+
+        private bool _IsBoundaryMatch(BinaryReader br,Queue<byte> buff, byte[] bboundary)
+        {
+            for (int x = 0; x < bboundary.Length; x++)
+            {
+                if (buff.ToArray()[x] != bboundary[x])
+                    return false;
+            }
+            try
+            {
+                if (br.PeekChar() == '-')
+                {
+                    long pos = br.BaseStream.Position;
+                    if (new string(br.ReadChars(4)) != "--\r\n")
+                        br.BaseStream.Seek(pos, SeekOrigin.Begin);
+                }
+            }
+            catch (Exception e) { }
+            return true;
         }
 
         private string streamReadLine(BinaryReader br)
@@ -560,7 +575,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Message
         private string PeakLine(BinaryReader br)
         {
             long position = br.BaseStream.Position;
-            string ret = streamReadLine(br);
+            string ret = null;
+            try
+            {
+                ret = streamReadLine(br);
+            }
+            catch (Exception e) {
+                br.BaseStream.Seek(position, SeekOrigin.Begin);
+                throw e;
+            }
             br.BaseStream.Seek(position, SeekOrigin.Begin);
             return ret;
         }
