@@ -48,7 +48,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
             }
         }
 
-        internal void AuthenticateAsServer(X509Certificate certificate)
+        internal void AuthenticateAsServer(X509Certificate2 certificate)
         {
             ((SslStream)_stream).AuthenticateAsServer(certificate);
         }
@@ -101,7 +101,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
         internal IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callBack,object state)
         {
             if (!_override)
-                return _stream.BeginRead(buffer, offset, count, callBack, state);
+            {
+                try
+                {
+                    return _stream.BeginRead(buffer, offset, count, callBack, state);
+                }
+                catch (Exception e) {
+                    return null;
+                }
+            }
             else
             {
                 if (_thread != null)
@@ -111,7 +119,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.MonoFix
                         throw new Exception("Unable to Begin Reading, already async reading.");
                 }
                 WrappedStreamAsyncResult result = _Results.Dequeue();
-                result.Start(state, _waitHandle,callBack, offset, buffer, count);
+                result.Start(state, _waitHandle, callBack, offset, buffer, count);
                 _thread = new Thread(new ParameterizedThreadStart(_BackgroundRead));
                 _thread.IsBackground = true;
                 _thread.Start(result);

@@ -48,13 +48,15 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
 
         //the underlying socket for the connection
         private Socket socket;
-        private X509Certificate _cert;
+        private X509Certificate2 _cert;
         private List<HttpRequest> _requests;
         private WrappedStream _inputStream;
         private bool _shutdown;
         private bool _disposed;
         private HttpParser _parser;
         private byte[] _buffer;
+        private int _read = 0;
+        private int _written = 0;
         private MT19937 _rand;
         private Timer _idleTimer;
         private PortListener _listener;
@@ -133,7 +135,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
             _parser = new HttpParser();
         }
         
-        internal void Start(Socket s, PortListener listener, X509Certificate cert,long id)
+        internal void Start(Socket s, PortListener listener, X509Certificate2 cert,long id)
         {
             _idleTimer = new Timer(new TimerCallback(_IdleTimeout), null, _CONNECTION_IDLE_TIMEOUT, Timeout.Infinite);
             _rand = new MT19937(id);
@@ -208,18 +210,16 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components
                     string temp = Encoding.Default.GetString(_buffer, 0, bytesLeft);
                     Logger.Trace(temp);
                 }
-
-                int offset = _parser.Parse(_buffer,0,bytesLeft);
-                bytesLeft -= offset;
-
-                if (bytesLeft > 0)
+                _written += bytesLeft;
+                _read += _parser.Parse(_buffer,_read,_written-_read);
+                if (_written-_read == 0)
                 {
-                    Logger.Trace("Moving " + bytesLeft + " from " + offset + " to beginning of array.");
-                    Buffer.BlockCopy(_buffer, offset, _buffer, 0, bytesLeft);
+                    _written = 0;
+                    _read = 0;
                 }
                 try
                 {
-                    _inputStream.BeginRead(_buffer, 0, _buffer.Length - offset, OnReceive, null);
+                    _inputStream.BeginRead(_buffer, _written, _buffer.Length - _written, OnReceive, null);
                 }
                 catch (Exception e)
                 {

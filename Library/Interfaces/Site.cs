@@ -38,7 +38,7 @@ namespace Org.Reddragonit.EmbeddedWebServer.Interfaces
             get { return new sIPPortPair[] { new sIPPortPair(IPAddress.Any, 80,false) }; }
         }
 
-        public virtual X509Certificate GetCertificateForEndpoint(sIPPortPair pair)
+        public virtual X509Certificate2 GetCertificateForEndpoint(sIPPortPair pair)
         {
             throw new NotImplementedException();
         }

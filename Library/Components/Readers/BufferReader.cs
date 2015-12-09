@@ -68,7 +68,6 @@ namespace Org.Reddragonit.EmbeddedWebServer.Components.Readers
         {
             if (!(buffer is byte[]))
                 throw new ArgumentException("Buffer needs to be a byte array", "buffer");
-
             _buffer = (byte[])buffer;
             Index = offset;
             Length = count;

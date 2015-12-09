@@ -44,9 +44,9 @@ namespace Tester
             }
         }
 
-        public override X509Certificate GetCertificateForEndpoint(sIPPortPair pair)
+        public override X509Certificate2 GetCertificateForEndpoint(sIPPortPair pair)
         {
-            return new X509Certificate(".\\testCert.cer");
+            return new X509Certificate2(".\\testCert.pfx");
         }
 
         public override SiteSessionTypes SessionStateType

@@ -92,6 +92,7 @@ namespace Org.Reddragonit.EmbeddedWebServer
                 throw new Exception(Messages.Current["Org.Reddragonit.EmbeddedWebServer.ServerControl.Errors.ServerStarted"]);
             else
             {
+                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
                 MT19937 _rand = new MT19937(DateTime.Now.Ticks);
                 _listeners = new List<PortListener>();
                 foreach (Type t in Utility.LocateTypeInstances(typeof(Site)))
