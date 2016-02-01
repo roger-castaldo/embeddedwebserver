@@ -11,7 +11,7 @@ using Org.Reddragonit.EmbeddedWebServer.Attributes;
 
 namespace Org.Reddragonit.EmbeddedWebServer
 {
-    public class ServerControl : MarshalByRefObject,IBackgroundOperationContainer
+    public class ServerControl : IBackgroundOperationContainer
     {
         /*
          * This is the main exposed class.  It is used to control the web server itself by calling to
@@ -188,11 +188,6 @@ namespace Org.Reddragonit.EmbeddedWebServer
         public static void UnRegisterBackgroundOperationPostCall(ServerControl.delPostBackgroundCall call)
         {
             _backgroundRunner.UnregisterPostCall(call);
-        }
-
-        public override object InitializeLifetimeService()
-        {
-            return null;
         }
     }
 }
